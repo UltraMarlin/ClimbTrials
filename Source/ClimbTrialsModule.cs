@@ -1,6 +1,6 @@
 ﻿using System;
-using Celeste.Mod.ClimbTrials.Entities;
-using Microsoft.Xna.Framework;
+
+using Celeste.Mod.ClimbTrials.Runs;
 
 namespace Celeste.Mod.ClimbTrials;
 
@@ -31,17 +31,11 @@ public class ClimbTrialsModule : EverestModule
 
   public override void Load()
   {
-    Everest.Events.Level.OnLoadLevel += LoadLevel;
+    RunManager.Load();
   }
 
   public override void Unload()
   {
-    Everest.Events.Level.OnLoadLevel -= LoadLevel;
-  }
-
-  private static void LoadLevel(Level level, Player.IntroTypes playerIntro, bool isFromLoader)
-  {
-    level.Add(new Countdown());
-    Logger.Log(LogLevel.Info, "ClimbTrialsModule/LoadLevel", "Level Loaded, spawned Countdown");
+    RunManager.Unload();
   }
 }
