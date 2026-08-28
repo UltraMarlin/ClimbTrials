@@ -22,5 +22,10 @@ public static class MainMenuEntry
         () => menu.Overworld.Goto<OuiTrials>()
       )
     );
+
+    if (!OuiTrials.ReturnPending)
+      return;
+    OuiTrials.ReturnPending = false;
+    menu.Overworld.Goto<OuiTrials>();
   }
 }

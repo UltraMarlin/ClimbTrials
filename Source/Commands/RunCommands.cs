@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Reflection.Metadata.Ecma335;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Runs;
 using Microsoft.Xna.Framework;
@@ -63,27 +62,15 @@ public static class RunCommands
   public static void DefDump(string id = "c1-xx", string name = "Untitled")
   {
     static string F(float v) => v.ToString(CultureInfo.InvariantCulture) + "f";
-    string[] lines =
-    [
-      "new Trial",
-      "{",
-      $"  Id = \"{id}\",",
-      $"  Name = \"{name}\",",
-      "  Difficulty = Difficulty.Normal,",
-      "  Run = new()",
-      "  {",
-      $"    Sid = \"{sid}\",",
-      $"    Mode = \"{mode}\",",
-      $"    StartRoom = \"{startRoom}\",",
-      $"    Spawn = new({F(spawn.X)}, {F(spawn.Y)}),",
-      $"    FinishRoom = \"{finishRoom}\",",
-      $"    Finish = new({finish.X}, {finish.Y}, {finish.Width}, {finish.Height}),",
-      "  },",
-      "},",
-    ];
-    foreach (string line in lines)
-      Engine.Commands.Log(line);
-    Logger.Log(LogLevel.Info, "ClimbTrials/Def", "\n" + string.Join("\n", lines));
+    string finishRect = $"new({finish.X}, {finish.Y}, {finish.Width}, {finish.Height})";
+    string run =
+      $"Run = new() {{ Sid = \"{sid}\", Mode = AreaMode.{mode}, StartRoom = \"{startRoom}\", "
+      + $"Spawn = new({F(spawn.X)}, {F(spawn.Y)}), FinishRoom = \"{finishRoom}\", "
+      + $"Finish = {finishRect} }}";
+    string trial =
+      $"new Trial {{ Id = \"{id}\", Name = \"{name}\", Difficulty = Difficulty.Normal, {run} }},";
+    Engine.Commands.Log(trial);
+    Logger.Log(LogLevel.Info, "ClimbTrials/Def", trial);
   }
 
   private static bool TryGetPlayer(out Level level, out Player player)

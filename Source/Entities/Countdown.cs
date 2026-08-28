@@ -7,13 +7,17 @@ namespace Celeste.Mod.ClimbTrials.Entities;
 
 public class Countdown : Entity
 {
-  private static readonly (float Beat, float Go)[] Pace =
-  [
-    (0.6f, 0.4f),
-    (0.3f, 0.25f),
-    (0.2f, 0.2f),
-    (0.0f, 0.0f),
-  ];
+  private static (float Beat, float Go) PaceFor(CountdownMode mode)
+  {
+    return mode switch
+    {
+      CountdownMode.Slow => (0.6f, 0.4f),
+      CountdownMode.Fast => (0.6f, 0.4f),
+      CountdownMode.VeryFast => (0.2f, 0.2f),
+      _ => (0.6f, 0.4f),
+    };
+  }
+
   public const string BeatSound = "event:/game/general/cassette_block_switch_1";
   private const string GoSound = "event:/game/general/cassette_block_switch_2";
   private static readonly Color GoColor = Calc.HexToColor("6ded87");
@@ -26,15 +30,13 @@ public class Countdown : Entity
   private int remaining;
   private float beatAge;
   private bool showingGo;
-  private bool countdownEnabled;
   private Level level;
 
   public Countdown(Action onDone)
     : base()
   {
     this.onDone = onDone;
-    countdownEnabled = ClimbTrialsModule.Settings.CountdownMode != CountdownMode.Off;
-    (beat, go) = Pace[(int)ClimbTrialsModule.Settings.CountdownMode];
+    (beat, go) = PaceFor(ClimbTrialsModule.Settings.CountdownMode);
     remaining = ClimbTrialsModule.Settings.CountdownLength;
     Tag = Tags.HUD | Tags.FrozenUpdate;
     Add(new Coroutine(Routine()));
@@ -46,6 +48,7 @@ public class Countdown : Entity
     level = SceneAs<Level>();
     level.Frozen = true;
     SetWorldAudioPaused(true);
+    Logger.Log(LogLevel.Info, "ClimbTrials/Countdown", $"Added");
   }
 
   private void CountdownDone()
@@ -57,13 +60,6 @@ public class Countdown : Entity
 
   private IEnumerator Routine()
   {
-    if (!countdownEnabled)
-    {
-      CountdownDone();
-      RemoveSelf();
-      yield break;
-    }
-
     while (remaining > 0)
     {
       beatAge = 0f;

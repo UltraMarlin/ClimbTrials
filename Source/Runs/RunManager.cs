@@ -56,7 +56,7 @@ public static class RunManager
     SaveData.Instance.StartSession(session);
     awaitingControl = true;
     Engine.Scene = new LevelLoader(session, run.Spawn);
-    Logger.Log(LogLevel.Info, LogTag, $"starting trial with Id '{Trial.Id}'");
+    Logger.Log(LogLevel.Info, LogTag, $"StartRun: starting trial with Id '{Trial.Id}'");
   }
 
   public static void Stop()
@@ -96,11 +96,17 @@ public static class RunManager
     if (!awaitingControl || Run == null || player.IsIntroState)
       return;
     awaitingControl = false;
+    Logger.Log(LogLevel.Info, LogTag, $"OnPlayerAfterUpdate: BeginAttempt");
     BeginAttempt(player.SceneAs<Level>());
   }
 
   private static void BeginAttempt(Level level)
   {
+    if (ClimbTrialsModule.Settings.CountdownMode == CountdownMode.Off)
+    {
+      Attempt.Start();
+      return;
+    }
     Attempt.BeginCountdown();
     level.Add(new Countdown(onDone: Attempt.Start));
   }

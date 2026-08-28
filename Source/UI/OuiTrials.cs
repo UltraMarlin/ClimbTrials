@@ -53,15 +53,6 @@ public class OuiTrials : Oui
     Visible = false;
   }
 
-  public override bool IsStart(Overworld overworld, Overworld.StartMode start)
-  {
-    if (!ReturnPending)
-      return false;
-    ReturnPending = false;
-    Add(new Coroutine(Enter(null)));
-    return true;
-  }
-
   public override void Update()
   {
     base.Update();

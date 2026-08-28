@@ -22,26 +22,32 @@ public static class PauseMenu
   {
     if (RunManager.Run == null)
       return;
-    Replace(menu, "menu_pause_restartarea", "climbtrials_pause_restart", RestartTrial);
-    Replace(menu, "menu_pause_return", "climbtrials_pause_return", ReturnToTrials);
+
+    TextMenu.Item restart = new TextMenu.Button(Dialog.Clean("climbtrials_pause_restart")).Pressed(
+      RestartTrial
+    );
+    TextMenu.Item back = new TextMenu.Button(Dialog.Clean("climbtrials_pause_return")).Pressed(
+      ReturnToTrials
+    );
+
+    int restartIndex = Replace(menu, "menu_pause_restartarea", restart);
+    if (Replace(menu, "menu_pause_return", back) >= 0)
+      return;
+    menu.Insert(restartIndex + 1, back);
   }
 
-  private static void Replace(
-    TextMenu menu,
-    string vanillaKey,
-    string ourKey,
-    System.Action onPressed
-  )
+  private static int Replace(TextMenu menu, string vanillaKey, TextMenu.Item replacement)
   {
     string vanillaLabel = Dialog.Clean(vanillaKey);
     TextMenu.Button old = menu
       .Items.OfType<TextMenu.Button>()
       .FirstOrDefault(b => b.Label == vanillaLabel);
     if (old == null)
-      return;
+      return -1;
     int index = menu.Items.IndexOf(old);
     menu.Remove(old);
-    menu.Insert(index, new TextMenu.Button(Dialog.Clean(ourKey)).Pressed(onPressed));
+    menu.Insert(index, replacement);
+    return index;
   }
 
   public static void RestartTrial()
