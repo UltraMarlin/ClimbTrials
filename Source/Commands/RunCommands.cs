@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Reflection.Metadata.Ecma335;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Runs;
 using Microsoft.Xna.Framework;
@@ -11,6 +12,7 @@ public static class RunCommands
   private static string sid,
     startRoom,
     finishRoom;
+  private static AreaMode mode;
   private static Vector2 spawn;
   private static Rectangle finish;
 
@@ -38,9 +40,10 @@ public static class RunCommands
     if (!TryGetPlayer(out Level level, out Player player))
       return;
     sid = level.Session.Area.SID;
+    mode = level.Session.Area.Mode;
     startRoom = level.Session.Level;
     spawn = player.Position;
-    Engine.Commands.Log($"spawn: {sid} room {startRoom} at {spawn}");
+    Engine.Commands.Log($"spawn: {sid} {mode} room {startRoom} at {spawn}");
   }
 
   [Command(
@@ -70,6 +73,7 @@ public static class RunCommands
       "  Run = new()",
       "  {",
       $"    Sid = \"{sid}\",",
+      $"    Mode = \"{mode}\",",
       $"    StartRoom = \"{startRoom}\",",
       $"    Spawn = new({F(spawn.X)}, {F(spawn.Y)}),",
       $"    FinishRoom = \"{finishRoom}\",",

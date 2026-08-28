@@ -46,7 +46,7 @@ public static class RunManager
     Attempt.Reset();
     Countdown.SetWorldAudioPaused(false);
 
-    SaveData.InitializeDebugMode();
+    SaveData.Start(new SaveData { Name = "ClimbTrials" }, -1);
     Session session = new(run.Area)
     {
       Level = run.StartRoom,
