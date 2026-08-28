@@ -1,8 +1,7 @@
 using System;
+using Celeste.Mod.ClimbTrials.Runs;
 using Microsoft.Xna.Framework;
 using Monocle;
-
-using Celeste.Mod.ClimbTrials.Runs;
 
 namespace Celeste.Mod.ClimbTrials.Entities;
 
@@ -10,7 +9,8 @@ public class FinishZone : Entity
 {
   private const int Cell = 4;
   private const string FinishSound = "event:/game/07_summit/checkpoint_confetti";
-  private readonly int width, height;
+  private readonly int width,
+    height;
 
   public FinishZone(Rectangle worldRect)
   {
@@ -24,7 +24,8 @@ public class FinishZone : Entity
 
   private void OnPlayer(Player player)
   {
-    if (!RunManager.Finish()) return;
+    if (!RunManager.Finish())
+      return;
     Audio.Play(FinishSound, TopCenter);
     Scene.Add(new SummitCheckpoint.ConfettiRenderer(TopCenter));
   }
@@ -32,7 +33,7 @@ public class FinishZone : Entity
   public override void Update()
   {
     base.Update();
-    if (RunManager.Attempt.State == AttemptState.Idle)
+    if (RunManager.Run == null)
       RemoveSelf();
   }
 
@@ -43,8 +44,13 @@ public class FinishZone : Entity
     Color light = (finished ? Color.Gold : Color.White) * 0.75f;
     Color dark = Color.Black * 0.75f;
     for (int y = 0; y < height; y += Cell)
-      for (int x = 0; x < width; x += Cell)
-        Draw.Rect(X + x, Y + y, Math.Min(Cell, width - x), Math.Min(Cell, height - y),
-          ((x / Cell + y / Cell) % 2 == 0) ? light : dark);
+    for (int x = 0; x < width; x += Cell)
+      Draw.Rect(
+        X + x,
+        Y + y,
+        Math.Min(Cell, width - x),
+        Math.Min(Cell, height - y),
+        ((x / Cell + y / Cell) % 2 == 0) ? light : dark
+      );
   }
 }

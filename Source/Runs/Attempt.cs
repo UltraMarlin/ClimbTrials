@@ -2,7 +2,13 @@ using System;
 
 namespace Celeste.Mod.ClimbTrials.Runs;
 
-public enum AttemptState { Idle, Countdown, Running, Finished }
+public enum AttemptState
+{
+  Idle,
+  Countdown,
+  Running,
+  Finished,
+}
 
 public sealed class Attempt
 {
@@ -38,12 +44,13 @@ public sealed class Attempt
 
   public void Reset()
   {
+    ElapsedTicks = 0;
     State = AttemptState.Idle;
   }
 
   public static string Format(long ticks)
   {
     TimeSpan t = TimeSpan.FromTicks(ticks);
-    return t.ToString(t.TotalSeconds < 60 ? "s\\.fff" : "m\\:ss\\.fff");
+    return t.ToString(t.TotalHours >= 1 ? "h\\:mm\\:ss\\.fff" : "m\\:ss\\.fff");
   }
 }

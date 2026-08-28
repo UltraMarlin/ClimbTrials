@@ -1,6 +1,6 @@
 ﻿using System;
-
 using Celeste.Mod.ClimbTrials.Runs;
+using Celeste.Mod.ClimbTrials.UI;
 
 namespace Celeste.Mod.ClimbTrials;
 
@@ -31,11 +31,15 @@ public class ClimbTrialsModule : EverestModule
 
   public override void Load()
   {
+    MainMenuEntry.Load();
+    PauseMenu.Load();
     RunManager.Load();
   }
 
   public override void Unload()
   {
+    MainMenuEntry.Unload();
+    PauseMenu.Unload();
     RunManager.Unload();
   }
 }
