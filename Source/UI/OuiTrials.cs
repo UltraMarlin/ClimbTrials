@@ -26,7 +26,7 @@ public class OuiTrials : Oui
 
   private readonly Campaign campaign = Campaigns.All[0];
 
-  private const bool ShowDeletePbsRow = true;
+  private readonly bool ShowDeletePbsRow = true;
   private int DeleteRow => ShowDeletePbsRow ? campaign.Trials.Count : -1;
   private int RowCount => campaign.Trials.Count + (ShowDeletePbsRow ? 1 : 0);
   private int selected;
