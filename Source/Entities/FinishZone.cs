@@ -27,7 +27,11 @@ public class FinishZone : Entity
     if (!RunManager.Finish())
       return;
     Audio.Play(FinishSound, TopCenter);
-    Scene.Add(new SummitCheckpoint.ConfettiRenderer(TopCenter));
+    SummitCheckpoint.ConfettiRenderer confetti = new(TopCenter);
+    confetti.Tag |= Tags.FrozenUpdate;
+    Scene.Add(confetti);
+    if (RunManager.LastFinish != null)
+      Scene.Add(new FinishSequence(RunManager.LastFinish));
   }
 
   public override void Update()

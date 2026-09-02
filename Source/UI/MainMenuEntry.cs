@@ -26,7 +26,12 @@ public static class MainMenuEntry
         menu,
         Vector2.Zero,
         Vector2.Zero,
-        () => menu.Overworld.Goto<OuiTrials>()
+        () =>
+        {
+          Audio.Play(SFX.ui_main_button_select);
+          Audio.Play(SFX.ui_main_whoosh_large_in);
+          menu.Overworld.Goto<OuiTrials>();
+        }
       )
     );
 

@@ -17,6 +17,7 @@ public sealed class Trial
   public string Name { get; init; }
   public Difficulty Difficulty { get; init; }
   public RunDefinition Run { get; init; }
+  public GoalTimes Goals { get; init; }
 
   public string SkullTexture =>
     Difficulty switch

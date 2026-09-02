@@ -12,6 +12,7 @@ public static class RunManager
   public static Trial Trial { get; private set; }
   public static RunDefinition Run { get; private set; }
   public static Attempt Attempt { get; } = new();
+  public static FinishResult LastFinish { get; private set; }
 
   private static bool awaitingControl;
 
@@ -46,6 +47,7 @@ public static class RunManager
   private static LevelLoader CreateRunLoader(RunDefinition run)
   {
     Run = run;
+    LastFinish = null;
     Attempt.Reset();
     Countdown.SetWorldAudioPaused(false);
 
@@ -56,10 +58,10 @@ public static class RunManager
       RespawnPoint = run.Spawn,
       FirstLevel = false,
     };
-    session.SetFlag(TrialFlagPrefix + Trial.Id);
+    session.SetFlag(TrialFlagPrefix + Trial?.Id);
     SaveData.Instance.StartSession(session);
     awaitingControl = true;
-    Logger.Log(LogLevel.Info, LogTag, $"StartRun: starting trial with Id '{Trial.Id}'");
+    Logger.Log(LogLevel.Info, LogTag, $"StartRun: starting trial with Id '{Trial?.Id}'");
     return new LevelLoader(session, run.Spawn);
   }
 
@@ -82,6 +84,7 @@ public static class RunManager
   {
     Trial = null;
     Run = null;
+    LastFinish = null;
     Attempt.Reset();
     Countdown.SetWorldAudioPaused(false);
   }
@@ -95,6 +98,9 @@ public static class RunManager
     if (level.Tracker.GetEntity<RunTimerDisplay>() == null)
       level.Add(new RunTimerDisplay());
 
+    if (Trial?.Goals != null && level.Tracker.GetEntity<GoalListDisplay>() == null)
+      level.Add(new GoalListDisplay());
+
     if (room == Run.FinishRoom)
     {
       level.Add(new FinishZone(Run.Finish));
@@ -106,7 +112,10 @@ public static class RunManager
     if (Run == null)
       return;
     Attempt.Tick(Engine.RawDeltaTime);
-    if (Attempt.State != AttemptState.Idle && ClimbTrialsModule.Settings.Retry.Pressed)
+    if (
+      Attempt.State is AttemptState.Countdown or AttemptState.Running
+      && ClimbTrialsModule.Settings.Retry.Pressed
+    )
       StartRun(Run);
   }
 
@@ -145,10 +154,12 @@ public static class RunManager
     if (Attempt.State != AttemptState.Running)
       return false;
     Attempt.Finish();
+    if (Trial != null)
+      LastFinish = TrialRecords.Record(Trial, Attempt.ElapsedTicks);
     Logger.Log(
       LogLevel.Info,
       LogTag,
-      $"run '{Trial.Id}' finished in {Attempt.Format(Attempt.ElapsedTicks)}"
+      $"run '{Trial?.Id}' finished in {Attempt.Format(Attempt.ElapsedTicks)}"
     );
     return true;
   }

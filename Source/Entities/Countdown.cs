@@ -12,9 +12,9 @@ public class Countdown : Entity
     return mode switch
     {
       CountdownMode.Slow => (0.6f, 0.4f),
-      CountdownMode.Fast => (0.6f, 0.4f),
+      CountdownMode.Fast => (0.35f, 0.25f),
       CountdownMode.VeryFast => (0.2f, 0.2f),
-      _ => (0.6f, 0.4f),
+      _ => (0.35f, 0.25f),
     };
   }
 
