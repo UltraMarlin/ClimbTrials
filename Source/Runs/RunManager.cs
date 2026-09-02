@@ -1,3 +1,4 @@
+using System.Linq;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Entities;
 using Monocle;
@@ -13,6 +14,8 @@ public static class RunManager
   public static Attempt Attempt { get; } = new();
 
   private static bool awaitingControl;
+
+  private const string TrialFlagPrefix = "ClimbTrials:trial:";
 
   public static void Load()
   {
@@ -40,7 +43,7 @@ public static class RunManager
     StartRun(trial.Run);
   }
 
-  public static void StartRun(RunDefinition run)
+  private static LevelLoader CreateRunLoader(RunDefinition run)
   {
     Run = run;
     Attempt.Reset();
@@ -53,10 +56,26 @@ public static class RunManager
       RespawnPoint = run.Spawn,
       FirstLevel = false,
     };
+    session.SetFlag(TrialFlagPrefix + Trial.Id);
     SaveData.Instance.StartSession(session);
     awaitingControl = true;
-    Engine.Scene = new LevelLoader(session, run.Spawn);
     Logger.Log(LogLevel.Info, LogTag, $"StartRun: starting trial with Id '{Trial.Id}'");
+    return new LevelLoader(session, run.Spawn);
+  }
+
+  public static void StartRun(RunDefinition run)
+  {
+    Engine.Scene = CreateRunLoader(run);
+  }
+
+  public static LevelLoader RestartFromSession(Session session)
+  {
+    string flag = session.Flags.FirstOrDefault(f => f.StartsWith(TrialFlagPrefix));
+    Trial trial = flag == null ? null : Campaigns.FindTrial(flag[TrialFlagPrefix.Length..]);
+    if (trial == null)
+      return null;
+    Trial = trial;
+    return CreateRunLoader(trial.Run);
   }
 
   public static void Stop()
