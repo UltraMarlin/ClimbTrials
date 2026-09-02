@@ -34,6 +34,10 @@ public class ClimbTrialsModule : EverestModule
     MainMenuEntry.Load();
     PauseMenu.Load();
     RunManager.Load();
+  }
+
+  public override void Initialize()
+  {
     HotReload.Recover();
   }
 
