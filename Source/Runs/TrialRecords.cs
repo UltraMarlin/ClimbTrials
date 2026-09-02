@@ -38,12 +38,13 @@ public static class TrialRecords
       Write();
     }
 
+    Medal before = Medal.None;
     Medal newMedal = Medal.None;
-    if (isPb && trial.Goals != null)
+    if (trial.Goals != null)
     {
-      Medal before = previous == null ? Medal.None : trial.Goals.MedalFor(previous.BestTicks);
+      before = previous == null ? Medal.None : trial.Goals.MedalFor(previous.BestTicks);
       Medal after = trial.Goals.MedalFor(ticks);
-      if (after > before)
+      if (isPb && after > before)
         newMedal = after;
     }
 
@@ -52,6 +53,7 @@ public static class TrialRecords
       Ticks = ticks,
       PreviousBestTicks = previous?.BestTicks,
       IsPersonalBest = isPb,
+      PreviousMedal = before,
       NewMedal = newMedal,
     };
   }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Linq;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Runs;
 using Celeste.Mod.ClimbTrials.UI;
@@ -11,7 +12,7 @@ namespace Celeste.Mod.ClimbTrials.Entities;
 public class FinishSequence : Entity
 {
   private const float FreezeDelay = 0.2f;
-  private const float TimeFadeDuration = 0.3f;
+  private const float TimeFadeDuration = 0.2f;
   private const float NoPanelPromptDelay = 0.4f;
   private const float PromptFadeDuration = 0.3f;
   private const float TimeBaselineY = 470f;
@@ -19,16 +20,23 @@ public class FinishSequence : Entity
   private const float DeltaBaselineY = 542f;
   private const float DeltaScale = 1.4f;
   private const float PromptY = 1000f;
-  private const float MedalDelay = 0.2f;
+  private const float MedalsVisualDelay = 0.35f;
+  private const float MedalStagger = 0.3f;
   private const float MedalPopDuration = 2f;
   private const float MedalY = 640f;
   private const float MedalHeight = 256f;
-  private const string MedalSound = "event:/ui/main/postcard_ch1_in";
+  private const float MedalSpacing = 110f;
+  private const string BronzeMedalSound = "event:/ui/main/postcard_ch3_out";
+  private const string SilverMedalSound = "event:/ui/main/postcard_ch1_out";
+  private const string GoldMedalSound = "event:/ui/main/postcard_ch4_out";
+  private const string MasterMedalSound = "event:/ui/main/postcard_csides_out";
+  private const string PbSound = "event:/ui/game/increment_strawberry";
 
-  private float medalAge = -1f;
   private static readonly Color DeltaColor = Calc.HexToColor("6ded87");
 
   private readonly FinishResult result;
+  private readonly Medal[] medals;
+  private readonly float[] medalAges;
   private Level level;
   private float timeAge = -1f;
   private float promptAge = -1f;
@@ -36,6 +44,9 @@ public class FinishSequence : Entity
   public FinishSequence(FinishResult result)
   {
     this.result = result;
+    medals = [.. result.UnlockedMedals()];
+    medalAges = new float[medals.Length];
+    Array.Fill(medalAges, -1f);
     Tag = Tags.HUD | Tags.FrozenUpdate;
     Add(new Coroutine(Routine()));
   }
@@ -52,13 +63,19 @@ public class FinishSequence : Entity
     level.Frozen = true;
     if (result.IsPersonalBest)
     {
+      Audio.Play(PbSound);
       timeAge = 0f;
       yield return TimeFadeDuration;
-      if (result.NewMedal != Medal.None)
+      if (medals.Length > 0)
       {
-        Audio.Play(MedalSound);
-        yield return MedalDelay;
-        medalAge = 0f;
+        for (int i = 0; i < medals.Length; i++)
+        {
+          if (i > 0)
+            yield return MedalStagger;
+          Audio.Play(SoundFor(medals[i]));
+          yield return MedalsVisualDelay;
+          medalAges[i] = 0f;
+        }
         yield return MedalPopDuration;
       }
     }
@@ -82,8 +99,9 @@ public class FinishSequence : Entity
     if (timeAge >= 0f)
       timeAge += Engine.RawDeltaTime;
 
-    if (medalAge >= 0f)
-      medalAge += Engine.RawDeltaTime;
+    for (int i = 0; i < medalAges.Length; i++)
+      if (medalAges[i] >= 0f)
+        medalAges[i] += Engine.RawDeltaTime;
 
     if (promptAge >= 0f)
       promptAge += Engine.RawDeltaTime;
@@ -107,8 +125,7 @@ public class FinishSequence : Entity
       return;
     if (timeAge >= 0f)
       RenderResult();
-    if (medalAge >= 0f)
-      RenderMedal();
+    RenderMedals();
     if (promptAge >= 0f)
       RenderPrompts();
   }
@@ -138,12 +155,29 @@ public class FinishSequence : Entity
     );
   }
 
-  private void RenderMedal()
+  private void RenderMedals()
   {
-    float t = Math.Clamp(medalAge / MedalPopDuration, 0f, 1f);
-    float pop = 1f + 0.6f * (1f - Ease.CubeOut(t));
-    MedalIcon.Draw(new Vector2(960f, MedalY), result.NewMedal, MedalHeight * pop);
+    float firstX = 960f - (medals.Length - 1) * MedalSpacing / 2f;
+    for (int i = 0; i < medals.Length; i++)
+    {
+      if (medalAges[i] < 0f)
+        continue;
+      float t = Math.Clamp(medalAges[i] / MedalPopDuration, 0f, 1f);
+      float pop = 1f + 0.6f * (1f - Ease.CubeOut(t));
+      Vector2 center = new(firstX + i * MedalSpacing, MedalY);
+      MedalIcon.Draw(center, medals[i], MedalHeight * pop);
+    }
   }
+
+  private static string SoundFor(Medal medal) =>
+    medal switch
+    {
+      Medal.Bronze => BronzeMedalSound,
+      Medal.Silver => SilverMedalSound,
+      Medal.Gold => GoldMedalSound,
+      Medal.Grandmaster => MasterMedalSound,
+      _ => PbSound,
+    };
 
   private void RenderPrompts()
   {
