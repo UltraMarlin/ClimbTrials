@@ -124,7 +124,6 @@ public static class RunManager
     if (!awaitingControl || Run == null || player.IsIntroState)
       return;
     awaitingControl = false;
-    Logger.Log(LogLevel.Info, LogTag, $"OnPlayerAfterUpdate: BeginAttempt");
     BeginAttempt(player.SceneAs<Level>());
   }
 

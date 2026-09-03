@@ -48,7 +48,6 @@ public class Countdown : Entity
     level = SceneAs<Level>();
     level.Frozen = true;
     SetWorldAudioPaused(true);
-    Logger.Log(LogLevel.Info, "ClimbTrials/Countdown", $"Added");
   }
 
   private void CountdownDone()
