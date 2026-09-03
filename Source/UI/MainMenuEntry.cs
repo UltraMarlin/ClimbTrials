@@ -12,8 +12,7 @@ public static class MainMenuEntry
 
   public static Scene RebuildOverworld()
   {
-    OuiTrials.ReturnPending = true;
-    return new OverworldLoader(Overworld.StartMode.MainMenu);
+    return new OverworldLoader(OuiTrials.ReturnStartMode);
   }
 
   private static void OnCreateButtons(OuiMainMenu menu, List<MenuButton> buttons)
@@ -34,10 +33,5 @@ public static class MainMenuEntry
         }
       )
     );
-
-    if (!OuiTrials.ReturnPending)
-      return;
-    OuiTrials.ReturnPending = false;
-    menu.Overworld.Goto<OuiTrials>();
   }
 }

@@ -58,8 +58,7 @@ public static class PauseMenu
   public static void ReturnToTrials()
   {
     RunManager.Stop();
-    OuiTrials.ReturnPending = true;
-    Engine.Scene = new OverworldLoader(Overworld.StartMode.MainMenu);
+    Engine.Scene = new OverworldLoader(OuiTrials.ReturnStartMode);
   }
 
   private static void OnPause(Level level, int startIndex, bool minimal, bool quickReset)

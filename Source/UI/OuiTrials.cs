@@ -8,8 +8,8 @@ namespace Celeste.Mod.ClimbTrials.UI;
 
 public class OuiTrials : Oui
 {
-  public static bool ReturnPending;
   private static int lastSelected;
+  public const Overworld.StartMode ReturnStartMode = (Overworld.StartMode)5602393;
 
   private const float OnScreenX = 960f,
     OffScreenX = 2880f;
@@ -36,6 +36,15 @@ public class OuiTrials : Oui
 
   public override IEnumerator Enter(Oui from)
   {
+    if (from == null)
+    {
+      Overworld.Mountain.SnapCamera(
+        -1,
+        new MountainCamera(new Vector3(0f, 6f, 12f), MountainRenderer.RotateLookAt)
+      );
+      Overworld.Mountain.GotoRotationMode();
+      Overworld.Maddy.Hide();
+    }
     TrialRecords.EnsureLoaded();
     selected = lastSelected;
     starting = false;
@@ -49,6 +58,14 @@ public class OuiTrials : Oui
     x = OnScreenX;
     alpha = 1f;
     Focused = true;
+  }
+
+  public override bool IsStart(Overworld overworld, Overworld.StartMode start)
+  {
+    if (start != ReturnStartMode)
+      return false;
+    Add(new Coroutine(Enter(null)));
+    return true;
   }
 
   public override IEnumerator Leave(Oui next)
