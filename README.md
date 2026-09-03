@@ -1,2 +1,3 @@
 # ClimbTrials
-Replace with your mod's readme!
+
+This mod adds a time trials game mode with local personal bests and replays.

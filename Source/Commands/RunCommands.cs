@@ -59,7 +59,7 @@ public static class RunCommands
   }
 
   [Command("ct_def_dump", "ClimbTrials: print a Trial initializer. ct_def_dump [id] [name]")]
-  public static void DefDump(string id = "c1-xx", string name = "Untitled")
+  public static void DefDump(string id = "id", string name = "Untitled")
   {
     static string F(float v) => v.ToString(CultureInfo.InvariantCulture) + "f";
     string finishRect = $"new({finish.X}, {finish.Y}, {finish.Width}, {finish.Height})";
@@ -68,7 +68,7 @@ public static class RunCommands
       + $"Spawn = new({F(spawn.X)}, {F(spawn.Y)}), FinishRoom = \"{finishRoom}\", "
       + $"Finish = {finishRect} }}";
     string trial =
-      $"new Trial {{ Id = \"{id}\", Name = \"{name}\", Difficulty = Difficulty.Normal, {run} }},";
+      $"new Trial {{ Id = \"{id}\", Name = \"{name}\", Difficulty = Difficulty.Normal, {run}, Goals = GoalTimes.FromSeconds(bronze: 25, silver: 20, gold: 15, grandmaster: 10), }},";
     Engine.Commands.Log(trial);
     Logger.Log(LogLevel.Info, "ClimbTrials/Def", trial);
   }

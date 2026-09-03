@@ -1,5 +1,6 @@
 using System.Collections;
 using Celeste.Mod.ClimbTrials.Content;
+using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.Runs;
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -33,6 +34,13 @@ public class OuiTrials : Oui
   private float x = OffScreenX;
   private float alpha;
   private bool starting;
+  private bool selectedHasReplay;
+
+  private void RefreshReplayHint()
+  {
+    selectedHasReplay =
+      selected < campaign.Trials.Count && ReplayStore.Exists(campaign.Trials[selected].Id);
+  }
 
   public override IEnumerator Enter(Oui from)
   {
@@ -48,6 +56,7 @@ public class OuiTrials : Oui
     TrialRecords.EnsureLoaded();
     selected = lastSelected;
     starting = false;
+    RefreshReplayHint();
     Visible = true;
     for (float ease = 0f; ease < 1f; ease += Engine.DeltaTime * 4f)
     {
@@ -90,13 +99,29 @@ public class OuiTrials : Oui
     {
       selected++;
       Audio.Play("event:/ui/main/rollover_down");
+      RefreshReplayHint();
     }
     if (Input.MenuUp.Pressed && selected > 0)
     {
       selected--;
       Audio.Play("event:/ui/main/rollover_up");
+      RefreshReplayHint();
     }
     lastSelected = selected;
+
+    if (Input.MenuJournal.Pressed && selected < campaign.Trials.Count)
+    {
+      Replay replay = ReplayStore.Load(campaign.Trials[selected].Id);
+      if (replay == null)
+      {
+        Audio.Play("event:/ui/main/button_invalid");
+        return;
+      }
+      Audio.Play("event:/ui/main/button_select");
+      starting = true;
+      Add(new Coroutine(StartRoutine(campaign.Trials[selected], replay)));
+      return;
+    }
 
     if (Input.MenuCancel.Pressed)
     {
@@ -107,6 +132,8 @@ public class OuiTrials : Oui
     {
       Audio.Play("event:/ui/main/button_back");
       TrialRecords.Clear();
+      ReplayStore.DeleteAll();
+      RefreshReplayHint();
     }
     else if (Input.MenuConfirm.Pressed)
     {
@@ -116,7 +143,7 @@ public class OuiTrials : Oui
     }
   }
 
-  private IEnumerator StartRoutine(Trial trial)
+  private IEnumerator StartRoutine(Trial trial, Replay replay = null)
   {
     Focused = false;
     AreaData area = AreaData.Get(trial.Run.Sid);
@@ -124,7 +151,33 @@ public class OuiTrials : Oui
     Audio.SetMusic(null, true, true);
     Audio.SetAmbience(null, true);
     yield return 0.5f;
-    RunManager.StartTrial(trial);
+    if (replay != null)
+      RunManager.StartReplay(replay);
+    else
+      RunManager.StartTrial(trial);
+  }
+
+  private void RenderFooter()
+  {
+    if (!RunManager.RecordingEnabled)
+      ActiveFont.DrawOutline(
+        Dialog.Clean("climbtrials_recording_off") + " " + string.Join(", ", ModCheck.Others()),
+        new Vector2(x, 1060f),
+        new Vector2(0.5f, 0.5f),
+        Vector2.One * 0.5f,
+        Color.White * 0.7f * alpha,
+        2f,
+        Color.Black * alpha
+      );
+    if (!selectedHasReplay)
+      return;
+    ButtonPrompt.Draw(
+      Input.MenuJournal,
+      Dialog.Clean("climbtrials_trials_watch_pb"),
+      new Vector2(x - 200f, ButtonPrompt.RowY),
+      ButtonPrompt.Align.Left,
+      alpha
+    );
   }
 
   public override void Render()
@@ -220,5 +273,6 @@ public class OuiTrials : Oui
       2f,
       Color.Black * alpha
     );
+    RenderFooter();
   }
 }

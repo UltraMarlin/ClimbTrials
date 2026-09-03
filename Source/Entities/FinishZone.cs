@@ -26,9 +26,10 @@ public class FinishZone : Entity
   {
     if (!RunManager.Finish())
       return;
+    player.StateMachine.State = Player.StDummy;
     Audio.Play(FinishSound, TopCenter);
     SummitCheckpoint.ConfettiRenderer confetti = new(TopCenter);
-    confetti.Tag |= Tags.FrozenUpdate;
+    confetti.Tag |= Tags.FrozenUpdate | Tags.Persistent;
     Scene.Add(confetti);
     if (RunManager.LastFinish != null)
       Scene.Add(new FinishSequence(RunManager.LastFinish));

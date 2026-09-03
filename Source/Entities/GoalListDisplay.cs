@@ -49,6 +49,8 @@ public class GoalListDisplay : Entity
     Trial trial = RunManager.Trial;
     if (trial?.Goals == null || !RunTimerDisplay.ShouldShow)
       return;
+    if (RunManager.Replaying && !RunManager.Replay.IsOwn)
+      return;
     float y = ListY;
     foreach (Row row in Rows(trial))
     {

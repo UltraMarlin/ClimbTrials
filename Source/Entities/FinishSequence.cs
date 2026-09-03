@@ -11,7 +11,7 @@ namespace Celeste.Mod.ClimbTrials.Entities;
 
 public class FinishSequence : Entity
 {
-  private const float FreezeDelay = 0.2f;
+  private const float FreezeDelay = 0.5f;
   private const float TimeFadeDuration = 0.2f;
   private const float NoPanelPromptDelay = 0.4f;
   private const float PromptFadeDuration = 0.3f;
@@ -19,7 +19,6 @@ public class FinishSequence : Entity
   private const float TimeScale = 2.8f;
   private const float DeltaBaselineY = 542f;
   private const float DeltaScale = 1.4f;
-  private const float PromptY = 1000f;
   private const float MedalsVisualDelay = 0.35f;
   private const float MedalStagger = 0.3f;
   private const float MedalPopDuration = 2f;
@@ -47,7 +46,7 @@ public class FinishSequence : Entity
     medals = [.. result.UnlockedMedals()];
     medalAges = new float[medals.Length];
     Array.Fill(medalAges, -1f);
-    Tag = Tags.HUD | Tags.FrozenUpdate;
+    Tag = Tags.HUD | Tags.FrozenUpdate | Tags.Persistent;
     Add(new Coroutine(Routine()));
   }
 
@@ -112,6 +111,13 @@ public class FinishSequence : Entity
     if (Input.MenuConfirm.Pressed || ClimbTrialsModule.Settings.Retry.Pressed)
     {
       RunManager.StartRun(RunManager.Run);
+      return;
+    }
+
+    if (Input.MenuJournal.Pressed && RunManager.LastReplay != null)
+    {
+      Audio.Play("event:/ui/main/button_select");
+      RunManager.StartReplay(RunManager.LastReplay);
       return;
     }
 
@@ -182,42 +188,27 @@ public class FinishSequence : Entity
   private void RenderPrompts()
   {
     float alpha = Ease.CubeOut(Math.Clamp(promptAge / PromptFadeDuration, 0f, 1f));
-    DrawPrompt(
+    ButtonPrompt.Draw(
       Input.MenuCancel,
       Dialog.Clean("climbtrials_finish_back"),
-      new Vector2(120f, PromptY),
-      rightAlign: false,
+      new Vector2(ButtonPrompt.LeftX, ButtonPrompt.RowY),
+      ButtonPrompt.Align.Left,
       alpha
     );
-    DrawPrompt(
+    ButtonPrompt.Draw(
       Input.MenuConfirm,
       Dialog.Clean("climbtrials_finish_retry"),
-      new Vector2(1800f, PromptY),
-      rightAlign: true,
+      new Vector2(ButtonPrompt.RightX, ButtonPrompt.RowY),
+      ButtonPrompt.Align.Right,
       alpha
     );
-  }
-
-  private static void DrawPrompt(
-    VirtualButton button,
-    string label,
-    Vector2 iconCenter,
-    bool rightAlign,
-    float alpha
-  )
-  {
-    MTexture icon = Input.GuiButton(button, Input.PrefixMode.Latest);
-    icon.DrawCentered(iconCenter, Color.White * alpha, Vector2.One);
-    float gap = icon.Width / 2f + 16f;
-    Vector2 textPosition = iconCenter + new Vector2(rightAlign ? -gap : gap, 0f);
-    ActiveFont.DrawOutline(
-      label,
-      textPosition,
-      new Vector2(rightAlign ? 1f : 0f, 0.5f),
-      Vector2.One * 0.8f,
-      Color.White * alpha,
-      2f,
-      Color.Black * alpha
-    );
+    if (RunManager.LastReplay != null)
+      ButtonPrompt.Draw(
+        Input.MenuJournal,
+        Dialog.Clean("climbtrials_finish_watch"),
+        new Vector2(ButtonPrompt.CenterX, ButtonPrompt.RowY),
+        ButtonPrompt.Align.Center,
+        alpha
+      );
   }
 }

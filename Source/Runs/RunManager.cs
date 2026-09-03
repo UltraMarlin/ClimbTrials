@@ -1,6 +1,7 @@
 using System.Linq;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Entities;
+using Celeste.Mod.ClimbTrials.Replays;
 using Microsoft.Xna.Framework;
 using Monocle;
 
@@ -14,8 +15,16 @@ public static class RunManager
   public static RunDefinition Run { get; private set; }
   public static Attempt Attempt { get; } = new();
   public static FinishResult LastFinish { get; private set; }
+  public static Replay Replay { get; private set; }
+  public static bool Replaying => Replay != null;
+  public static Replay LastReplay => Replay ?? Recorder.Last;
+  public static bool AttemptInProgress =>
+    Run != null && Attempt.State is AttemptState.Countdown or AttemptState.Running;
+  public static bool RecordingEnabled => !ModCheck.OthersLoaded;
 
   private static bool awaitingControl;
+  private static int loadSeed;
+  private static string pendingNotice;
 
   private const string TrialFlagPrefix = "ClimbTrials:trial:";
 
@@ -45,11 +54,13 @@ public static class RunManager
     StartRun(trial.Run);
   }
 
-  private static LevelLoader CreateRunLoader(RunDefinition run)
+  private static LevelLoader CreateRunLoader(RunDefinition run, Replay replay)
   {
     Run = run;
     LastFinish = null;
     Attempt.Reset();
+    ClearReplayState();
+    Replay = replay;
     Countdown.SetWorldAudioPaused(false);
 
     SaveData.Start(new SaveData { Name = "ClimbTrials" }, -1);
@@ -62,13 +73,31 @@ public static class RunManager
     session.SetFlag(TrialFlagPrefix + Trial?.Id);
     SaveData.Instance.StartSession(session);
     awaitingControl = true;
-    Logger.Log(LogLevel.Info, LogTag, $"StartRun: starting trial with Id '{Trial?.Id}'");
-    return new LevelLoader(session, run.Spawn);
+
+    loadSeed = replay?.LoadSeed ?? Calc.Random.Next();
+    Determinism.Begin(loadSeed);
+    Logger.Log(LogLevel.Info, LogTag, $"StartRun: trial '{Trial?.Id}', replay {replay != null}");
+    return Determinism.CreateLoader(loadSeed, session, run.Spawn);
   }
 
   public static void StartRun(RunDefinition run)
   {
-    Engine.Scene = CreateRunLoader(run);
+    Engine.Scene = CreateRunLoader(run, null);
+  }
+
+  public static void StartReplay(Replay replay)
+  {
+    Trial trial = Campaigns.FindTrial(replay.TrialId);
+    if (trial == null)
+      return;
+    Trial = trial;
+    Engine.Scene = CreateRunLoader(trial.Run, replay);
+  }
+
+  public static void RestartAttempt(string noticeKey)
+  {
+    pendingNotice = noticeKey;
+    StartRun(Run);
   }
 
   public static LevelLoader RestartFromSession(Session session)
@@ -78,7 +107,7 @@ public static class RunManager
     if (trial == null)
       return null;
     Trial = trial;
-    return CreateRunLoader(trial.Run);
+    return CreateRunLoader(trial.Run, null);
   }
 
   public static void Stop()
@@ -87,7 +116,16 @@ public static class RunManager
     Run = null;
     LastFinish = null;
     Attempt.Reset();
+    ClearReplayState();
     Countdown.SetWorldAudioPaused(false);
+  }
+
+  private static void ClearReplayState()
+  {
+    Replay = null;
+    Determinism.End();
+    Recorder.Abort();
+    Replayer.Clear();
   }
 
   private static void OnLoadLevel(Level level, Player.IntroTypes playerIntro, bool isFromLoader)
@@ -101,6 +139,21 @@ public static class RunManager
 
     if (Trial?.Goals != null && level.Tracker.GetEntity<GoalListDisplay>() == null)
       level.Add(new GoalListDisplay());
+
+    if (Replaying && level.Tracker.GetEntity<ReplayBanner>() == null)
+      level.Add(new ReplayBanner());
+
+    RunNotice notice = level.Tracker.GetEntity<RunNotice>();
+    if (notice == null)
+    {
+      notice = new RunNotice();
+      level.Add(notice);
+    }
+    if (pendingNotice != null)
+    {
+      notice.Show(pendingNotice);
+      pendingNotice = null;
+    }
 
     if (room == Run.FinishRoom)
     {
@@ -132,11 +185,26 @@ public static class RunManager
   {
     if (ClimbTrialsModule.Settings.CountdownMode == CountdownMode.Off)
     {
-      Attempt.Start();
+      OnAttemptStart();
       return;
     }
     Attempt.BeginCountdown();
-    level.Add(new Countdown(onDone: Attempt.Start));
+    level.Add(new Countdown(onDone: OnAttemptStart));
+  }
+
+  private static void OnAttemptStart()
+  {
+    Attempt.Start();
+    Level level = Engine.Scene as Level;
+    if (Replay != null)
+    {
+      Determinism.Reseed(Replay.RunSeed);
+      Replayer.Begin(Replay, level);
+      return;
+    }
+    int runSeed = Calc.Random.Next();
+    Determinism.Reseed(runSeed);
+    Recorder.Begin(Trial?.Id, loadSeed, runSeed, level);
   }
 
   private static void SuppressVanillaTimer(
@@ -154,8 +222,21 @@ public static class RunManager
     if (Attempt.State != AttemptState.Running)
       return false;
     Attempt.Finish();
+    Determinism.End();
+    if (Replay != null)
+    {
+      bool inSync = Replayer.Finish();
+      LastFinish = new FinishResult { Ticks = Attempt.ElapsedTicks };
+      Logger.Log(LogLevel.Info, LogTag, $"replay of '{Trial?.Id}' finished, in sync: {inSync}");
+      return true;
+    }
+    Replay recorded = Recorder.Finish(Attempt.ElapsedTicks);
     if (Trial != null)
+    {
       LastFinish = TrialRecords.Record(Trial, Attempt.ElapsedTicks);
+      if (LastFinish.IsPersonalBest && recorded != null)
+        ReplayStore.Save(recorded);
+    }
     Logger.Log(
       LogLevel.Info,
       LogTag,
@@ -176,6 +257,7 @@ public static class RunManager
     if (
       body != null
       && Run != null
+      && !Replaying
       && Attempt.State is AttemptState.Countdown or AttemptState.Running
       && ClimbTrialsModule.Settings.ResetOnDeath
     )

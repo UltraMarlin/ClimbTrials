@@ -42,6 +42,22 @@ public static class FirstCampaign
       },
       new Trial
       {
+        Id = "mirror-test",
+        Name = "Mirror",
+        Difficulty = Difficulty.Normal,
+        Run = new()
+        {
+          Sid = "Celeste/2-OldSite",
+          Mode = AreaMode.Normal,
+          StartRoom = "d3",
+          Spawn = new(1624f, 600f),
+          FinishRoom = "d3",
+          Finish = new(1666, 464, 16, 24),
+        },
+        Goals = GoalTimes.FromSeconds(bronze: 25, silver: 20, gold: 15, grandmaster: 10),
+      },
+      new Trial
+      {
         Id = "c1n-03",
         Name = "Epilogue Bridge",
         Difficulty = Difficulty.Normal,
@@ -58,6 +74,22 @@ public static class FirstCampaign
       },
       new Trial
       {
+        Id = "prologue-bridge",
+        Name = "Prologue Bridge",
+        Difficulty = Difficulty.Normal,
+        Run = new()
+        {
+          Sid = "Celeste/0-Intro",
+          Mode = AreaMode.Normal,
+          StartRoom = "2",
+          Spawn = new(1167f, 40f),
+          FinishRoom = "3",
+          Finish = new(1967, 16, 16, 24),
+        },
+        Goals = GoalTimes.FromSeconds(bronze: 25, silver: 20, gold: 15, grandmaster: 10),
+      },
+      new Trial
+      {
         Id = "c1n-04",
         Name = "Block Breaker",
         Difficulty = Difficulty.Normal,
@@ -71,6 +103,38 @@ public static class FirstCampaign
           Finish = new(4464, -2848, 40, 16),
         },
         Goals = GoalTimes.FromSeconds(bronze: 8, silver: 6.5, gold: 5, grandmaster: 4.3),
+      },
+      new Trial
+      {
+        Id = "c1n-test",
+        Name = "Feather Test",
+        Difficulty = Difficulty.Normal,
+        Run = new()
+        {
+          Sid = "Celeste/6-Reflection",
+          Mode = AreaMode.Normal,
+          StartRoom = "04",
+          Spawn = new(-833f, -2936f),
+          FinishRoom = "04",
+          Finish = new(-891, -2952, 16, 24),
+        },
+        Goals = GoalTimes.FromSeconds(bronze: 25, silver: 20, gold: 15, grandmaster: 10),
+      },
+      new Trial
+      {
+        Id = "c1n-watchtowertest",
+        Name = "Watch Tower Test",
+        Difficulty = Difficulty.Hard,
+        Run = new()
+        {
+          Sid = "Celeste/3-CelestialResort",
+          Mode = AreaMode.BSide,
+          StartRoom = "back",
+          Spawn = new(-392f, 80f),
+          FinishRoom = "02",
+          Finish = new(1555, 72, 16, 24),
+        },
+        Goals = GoalTimes.FromSeconds(bronze: 25, silver: 20, gold: 15, grandmaster: 10),
       },
       new Trial
       {
