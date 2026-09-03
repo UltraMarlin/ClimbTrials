@@ -16,7 +16,7 @@ public static class RunCommands
   private static Rectangle finish;
 
   [Command("ct_start", "ClimbTrials: start or restart a trial. ct_start [trialId]")]
-  public static void Start(string trialId = "c1-01")
+  public static void Start(string trialId)
   {
     Trial trial = Campaigns.FindTrial(trialId);
     if (trial == null)
