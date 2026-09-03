@@ -1,6 +1,7 @@
 using System.Linq;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Entities;
+using Microsoft.Xna.Framework;
 using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.Runs;
@@ -23,7 +24,7 @@ public static class RunManager
     Everest.Events.Level.OnLoadLevel += OnLoadLevel;
     Everest.Events.Level.OnAfterUpdate += OnAfterUpdate;
     Everest.Events.Level.OnExit += OnExit;
-    Everest.Events.Player.OnDie += OnDie;
+    On.Celeste.Player.Die += OnPlayerDie;
     On.Celeste.SpeedrunTimerDisplay.Render += SuppressVanillaTimer;
     Everest.Events.Player.OnAfterUpdate += OnPlayerAfterUpdate;
   }
@@ -33,7 +34,7 @@ public static class RunManager
     Everest.Events.Level.OnLoadLevel -= OnLoadLevel;
     Everest.Events.Level.OnAfterUpdate -= OnAfterUpdate;
     Everest.Events.Level.OnExit -= OnExit;
-    Everest.Events.Player.OnDie -= OnDie;
+    On.Celeste.Player.Die -= OnPlayerDie;
     On.Celeste.SpeedrunTimerDisplay.Render -= SuppressVanillaTimer;
     Everest.Events.Player.OnAfterUpdate -= OnPlayerAfterUpdate;
   }
@@ -121,7 +122,7 @@ public static class RunManager
 
   private static void OnPlayerAfterUpdate(Player player)
   {
-    if (!awaitingControl || Run == null || player.IsIntroState)
+    if (!awaitingControl || Run == null || player.Dead || player.IsIntroState)
       return;
     awaitingControl = false;
     BeginAttempt(player.SceneAs<Level>());
@@ -163,12 +164,26 @@ public static class RunManager
     return true;
   }
 
-  private static void OnDie(Player player)
+  private static PlayerDeadBody OnPlayerDie(
+    On.Celeste.Player.orig_Die orig,
+    Player self,
+    Vector2 direction,
+    bool evenIfInvincible,
+    bool registerDeathInStats
+  )
   {
-    if (Run == null || Attempt.State is AttemptState.Idle or AttemptState.Finished)
-      return;
-    if (ClimbTrialsModule.Settings.ResetOnDeath)
-      StartRun(Run);
+    PlayerDeadBody body = orig(self, direction, evenIfInvincible, registerDeathInStats);
+    if (
+      body != null
+      && Run != null
+      && Attempt.State is AttemptState.Countdown or AttemptState.Running
+      && ClimbTrialsModule.Settings.ResetOnDeath
+    )
+    {
+      RunDefinition run = Run;
+      body.DeathAction = () => StartRun(run);
+    }
+    return body;
   }
 
   private static void OnExit(
