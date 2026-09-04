@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Entities;
@@ -10,6 +11,8 @@ namespace Celeste.Mod.ClimbTrials.Runs;
 public static class RunManager
 {
   private const string LogTag = "ClimbTrials/Run";
+  private const string ReplayLimitSound = "event:/ui/game/lookout_off";
+  private const string TrialFlagPrefix = "ClimbTrials:trial:";
 
   public static Trial Trial { get; private set; }
   public static RunDefinition Run { get; private set; }
@@ -25,8 +28,6 @@ public static class RunManager
   private static bool awaitingControl;
   private static int loadSeed;
   private static string pendingNotice;
-
-  private const string TrialFlagPrefix = "ClimbTrials:trial:";
 
   public static void Load()
   {
@@ -161,11 +162,28 @@ public static class RunManager
     }
   }
 
+  public static int ReplayLimitSeconds =>
+    Math.Min(
+      Trial?.ReplayLimitSeconds ?? Trial.DefaultReplayLimitSeconds,
+      Trial.DefaultReplayLimitSeconds
+    );
+
   private static void OnAfterUpdate(Level level)
   {
     if (Run == null)
       return;
     Attempt.Tick(Engine.RawDeltaTime);
+    if (
+      Recorder.Recording
+      && !level.Paused
+      && Attempt.State == AttemptState.Running
+      && Attempt.ElapsedTicks >= ReplayLimitSeconds * TimeSpan.TicksPerSecond
+    )
+    {
+      Recorder.StopAtLimit();
+      Audio.Play(ReplayLimitSound);
+      Logger.Log(LogLevel.Info, LogTag, $"recording stopped at {ReplayLimitSeconds} s");
+    }
     if (
       Attempt.State is AttemptState.Countdown or AttemptState.Running
       && ClimbTrialsModule.Settings.Retry.Pressed
@@ -236,6 +254,8 @@ public static class RunManager
       LastFinish = TrialRecords.Record(Trial, Attempt.ElapsedTicks);
       if (LastFinish.IsPersonalBest && recorded != null)
         ReplayStore.Save(recorded);
+      else if (LastFinish.IsPersonalBest)
+        ReplayStore.Delete(Trial.Id);
     }
     Logger.Log(
       LogLevel.Info,

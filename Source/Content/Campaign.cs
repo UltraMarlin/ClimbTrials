@@ -13,11 +13,14 @@ public enum Difficulty
 
 public sealed class Trial
 {
+  public const int DefaultReplayLimitSeconds = 120;
+
   public string Id { get; init; }
   public string Name { get; init; }
   public Difficulty Difficulty { get; init; }
   public RunDefinition Run { get; init; }
   public GoalTimes Goals { get; init; }
+  public int ReplayLimitSeconds { get; init; } = DefaultReplayLimitSeconds;
 
   public string SkullTexture =>
     Difficulty switch

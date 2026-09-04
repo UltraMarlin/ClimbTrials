@@ -6,6 +6,7 @@ namespace Celeste.Mod.ClimbTrials.Replays;
 public static class Recorder
 {
   public static Replay Last { get; private set; }
+  public static bool StoppedAtLimit { get; private set; }
   private static Replay current;
 
   public static bool Recording => current != null;
@@ -22,6 +23,7 @@ public static class Recorder
 
   public static void Begin(string trialId, int loadSeed, int runSeed, Level level)
   {
+    StoppedAtLimit = false;
     if (ModCheck.OthersLoaded)
       return;
     current = new Replay
@@ -57,10 +59,17 @@ public static class Recorder
     return Last;
   }
 
+  public static void StopAtLimit()
+  {
+    current = null;
+    StoppedAtLimit = true;
+  }
+
   public static void Abort()
   {
     current = null;
     Last = null;
+    StoppedAtLimit = false;
   }
 
   private static void OnMInputUpdate(On.Monocle.MInput.orig_Update orig)

@@ -19,3 +19,4 @@ CLIMBTRIALS_REPLAY_PLAYED_DATE=   played on
 CLIMBTRIALS_REPLAY_RECORDED_ON=   recorded on Celeste
 CLIMBTRIALS_NOTICE_SETTINGS=      Settings changed, attempt restarted
 CLIMBTRIALS_RECORDING_OFF=        Recording off, other mods loaded:
+CLIMBTRIALS_REPLAY_LIMIT=         Replays on this trial aren't saved for runs longer than

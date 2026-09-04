@@ -53,4 +53,10 @@ public sealed class Attempt
     TimeSpan t = TimeSpan.FromTicks(ticks);
     return t.ToString(t.TotalHours >= 1 ? "h\\:mm\\:ss\\.fff" : "m\\:ss\\.fff");
   }
+
+  public static string FormatSeconds(int seconds)
+  {
+    TimeSpan t = TimeSpan.FromSeconds(seconds);
+    return t.ToString(t.TotalHours >= 1 ? "h\\:mm\\:ss" : "m\\:ss");
+  }
 }
