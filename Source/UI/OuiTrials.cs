@@ -14,32 +14,52 @@ public class OuiTrials : Oui
 
   private const float OnScreenX = 960f,
     OffScreenX = 2880f;
-  private const float RowHeight = 90f,
-    FirstRowY = 360f,
-    TitleY = 200f,
-    ListPaddingX = 360f;
-  private const float PbScale = 0.85f;
-  private const float PbBaseline = 30f;
-  private const float MedalGap = 34f;
-  private const float MedalIconHeight = 64f;
+  private const float TitleY = 120f;
   private static readonly Color Dim = Color.White * 0.7f;
-  private static readonly Color Highlight = Calc.HexToColor("6ded87");
 
   private readonly Campaign campaign = Campaigns.All[0];
 
-  private readonly bool ShowDeletePbsRow = true;
-  private int DeleteRow => ShowDeletePbsRow ? campaign.Trials.Count : -1;
-  private int RowCount => campaign.Trials.Count + (ShowDeletePbsRow ? 1 : 0);
-  private int selected;
+  private TrialsMenu menu;
   private float x = OffScreenX;
   private float alpha;
-  private bool starting;
   private bool selectedHasReplay;
 
-  private void RefreshReplayHint()
+  private void OnSelect(int index)
   {
-    selectedHasReplay =
-      selected < campaign.Trials.Count && ReplayStore.Exists(campaign.Trials[selected].Id);
+    lastSelected = index;
+    selectedHasReplay = menu?.Current is TrialRow row && ReplayStore.Exists(row.Trial.Id);
+  }
+
+  private TrialsMenu BuildMenu()
+  {
+    TrialsMenu built = new TrialsMenu();
+    for (int i = 0; i < campaign.Trials.Count; i++)
+    {
+      Trial trial = campaign.Trials[i];
+      int index = i;
+      built.Add(
+        new TrialRow(trial)
+          .Enter(() => OnSelect(index))
+          .Pressed(() => Start(trial))
+          .AltPressed(() => WatchPb(trial))
+      );
+    }
+    int deleteIndex = campaign.Trials.Count;
+    built.Add(
+      new TextMenu.Button(Dialog.Clean("climbtrials_trials_delete_pbs"))
+      {
+        ConfirmSfx = "event:/ui/main/button_back",
+      }
+        .Enter(() => OnSelect(deleteIndex))
+        .Pressed(DeleteAll)
+    );
+    built.OnCancel = () =>
+    {
+      built.Focused = false;
+      Audio.Play(SFX.ui_main_button_back);
+      Overworld.Goto<OuiMainMenu>();
+    };
+    return built;
   }
 
   public override IEnumerator Enter(Oui from)
@@ -54,18 +74,26 @@ public class OuiTrials : Oui
       Overworld.Maddy.Hide();
     }
     TrialRecords.EnsureLoaded();
-    selected = lastSelected;
-    starting = false;
-    RefreshReplayHint();
+    int remembered = lastSelected;
+    menu = BuildMenu();
+    menu.Selection = Calc.Clamp(remembered, 0, menu.LastPossibleSelection);
+    menu.Focused = false;
+    Scene.Add(menu);
+    OnSelect(menu.Selection);
     Visible = true;
     for (float ease = 0f; ease < 1f; ease += Engine.DeltaTime * 4f)
     {
       x = OffScreenX - 1920f * Ease.CubeOut(ease);
       alpha = Ease.CubeOut(ease);
+      menu.X = x;
+      menu.Alpha = alpha;
       yield return null;
     }
     x = OnScreenX;
     alpha = 1f;
+    menu.X = x;
+    menu.Alpha = alpha;
+    menu.Focused = true;
     Focused = true;
   }
 
@@ -80,71 +108,48 @@ public class OuiTrials : Oui
   public override IEnumerator Leave(Oui next)
   {
     Focused = false;
+    menu.Focused = false;
     for (float ease = 0f; ease < 1f; ease += Engine.DeltaTime * 4f)
     {
       x = OnScreenX + 1920f * Ease.CubeIn(ease);
       alpha = 1f - Ease.CubeIn(ease);
+      menu.X = x;
+      menu.Alpha = alpha;
       yield return null;
     }
+    menu.RemoveSelf();
+    menu = null;
     Visible = false;
   }
 
-  public override void Update()
+  private void Start(Trial trial)
   {
-    base.Update();
-    if (!Focused || !Selected || starting)
-      return;
+    Audio.Play("event:/ui/main/button_select");
+    Add(new Coroutine(StartRoutine(trial)));
+  }
 
-    if (Input.MenuDown.Pressed && selected < RowCount - 1)
+  private void WatchPb(Trial trial)
+  {
+    Replay replay = ReplayStore.Load(trial.Id);
+    if (replay == null)
     {
-      selected++;
-      Audio.Play("event:/ui/main/rollover_down");
-      RefreshReplayHint();
-    }
-    if (Input.MenuUp.Pressed && selected > 0)
-    {
-      selected--;
-      Audio.Play("event:/ui/main/rollover_up");
-      RefreshReplayHint();
-    }
-    lastSelected = selected;
-
-    if (Input.MenuJournal.Pressed && selected < campaign.Trials.Count)
-    {
-      Replay replay = ReplayStore.Load(campaign.Trials[selected].Id);
-      if (replay == null)
-      {
-        Audio.Play("event:/ui/main/button_invalid");
-        return;
-      }
-      Audio.Play("event:/ui/main/button_select");
-      starting = true;
-      Add(new Coroutine(StartRoutine(campaign.Trials[selected], replay)));
+      Audio.Play("event:/ui/main/button_invalid");
       return;
     }
+    Audio.Play("event:/ui/main/button_select");
+    Add(new Coroutine(StartRoutine(trial, replay)));
+  }
 
-    if (Input.MenuCancel.Pressed)
-    {
-      Audio.Play(SFX.ui_main_button_back);
-      Overworld.Goto<OuiMainMenu>();
-    }
-    else if (Input.MenuConfirm.Pressed && selected == DeleteRow)
-    {
-      Audio.Play("event:/ui/main/button_back");
-      TrialRecords.Clear();
-      ReplayStore.DeleteAll();
-      RefreshReplayHint();
-    }
-    else if (Input.MenuConfirm.Pressed)
-    {
-      Audio.Play("event:/ui/main/button_select");
-      starting = true;
-      Add(new Coroutine(StartRoutine(campaign.Trials[selected])));
-    }
+  private void DeleteAll()
+  {
+    TrialRecords.Clear();
+    ReplayStore.DeleteAll();
+    OnSelect(menu.Selection);
   }
 
   private IEnumerator StartRoutine(Trial trial, Replay replay = null)
   {
+    menu.Focused = false;
     Focused = false;
     AreaData area = AreaData.Get(trial.Run.Sid);
     area.Wipe(Overworld, false, null);
@@ -157,40 +162,16 @@ public class OuiTrials : Oui
       RunManager.StartTrial(trial);
   }
 
-  private void RenderFooter()
-  {
-    if (!RunManager.RecordingEnabled)
-      ActiveFont.DrawOutline(
-        Dialog.Clean("climbtrials_recording_off") + " " + string.Join(", ", ModCheck.Others()),
-        new Vector2(x, 1060f),
-        new Vector2(0.5f, 0.5f),
-        Vector2.One * 0.5f,
-        Color.White * 0.7f * alpha,
-        2f,
-        Color.Black * alpha
-      );
-    if (!selectedHasReplay)
-      return;
-    ButtonPrompt.Draw(
-      Input.MenuJournal,
-      Dialog.Clean("climbtrials_trials_watch_pb"),
-      new Vector2(x - 200f, ButtonPrompt.RowY),
-      ButtonPrompt.Align.Left,
-      alpha
-    );
-  }
-
   public override void Render()
   {
     if (alpha <= 0f)
       return;
-    Color title = Color.White * alpha;
     ActiveFont.DrawOutline(
       Dialog.Clean("climbtrials_trials_title"),
       new Vector2(x, TitleY),
       new Vector2(0.5f, 0.5f),
       Vector2.One * 1.6f,
-      title,
+      Color.White * alpha,
       2f,
       Color.Black * alpha
     );
@@ -201,78 +182,22 @@ public class OuiTrials : Oui
       Vector2.One * 0.8f,
       Dim * alpha
     );
-
-    for (int i = 0; i < campaign.Trials.Count; i++)
-    {
-      Trial trial = campaign.Trials[i];
-      float y = FirstRowY + i * RowHeight;
-      bool isSelected = i == selected;
-      float xListStart = ListPaddingX;
-      float xListEnd = 1920f - ListPaddingX;
-
-      GFX.Gui[trial.SkullTexture]
-        .DrawCentered(
-          new Vector2(xListStart + 28f, y),
-          Color.White * alpha,
-          Vector2.One * (isSelected ? 1f : 0.9f)
-        );
-
+    if (selectedHasReplay)
+      ButtonRow.DrawCenter(
+        Dialog.Clean("climbtrials_trials_watch_pb"),
+        Input.MenuJournal,
+        alpha,
+        x
+      );
+    if (!RunManager.RecordingEnabled)
       ActiveFont.DrawOutline(
-        trial.Name,
-        new Vector2(xListStart + 86f, y),
-        new Vector2(0f, 0.5f),
-        Vector2.One * (isSelected ? 1f : 0.9f),
-        (isSelected ? Highlight : Color.White) * alpha,
+        Dialog.Clean("climbtrials_recording_off") + " " + string.Join(", ", ModCheck.Others()),
+        new Vector2(x, ButtonRow.Y + 40f),
+        new Vector2(0.5f, 0.5f),
+        Vector2.One * 0.5f,
+        Color.White * 0.7f * alpha,
         2f,
         Color.Black * alpha
       );
-
-      TrialRecord record = TrialRecords.Get(trial.Id);
-      if (record == null)
-      {
-        ActiveFont.Draw(
-          "new",
-          new Vector2(xListEnd - 4f, y),
-          new Vector2(1f, 0.5f),
-          Vector2.One * (isSelected ? 0.9f : 0.8f),
-          Dim * alpha
-        );
-      }
-      else
-      {
-        string best = Attempt.Format(record.BestTicks);
-        float scale = isSelected ? PbScale + 0.1f : PbScale;
-        float width = TimeText.Width(best, scale);
-        Medal medal = trial.Goals?.MedalFor(record.BestTicks) ?? Medal.None;
-        if (medal != Medal.None)
-          MedalIcon.Draw(
-            new Vector2(xListEnd - width - MedalGap, y),
-            medal,
-            MedalIconHeight,
-            alpha
-          );
-        TimeText.Draw(
-          new Vector2(xListEnd - width, y + PbBaseline),
-          best,
-          scale,
-          Color.White * alpha,
-          Color.LightGray * alpha
-        );
-      }
-    }
-
-    if (!ShowDeletePbsRow)
-      return;
-    bool deleteSelected = selected == DeleteRow;
-    ActiveFont.DrawOutline(
-      Dialog.Clean("climbtrials_trials_delete_pbs"),
-      new Vector2(ListPaddingX + 86f, FirstRowY + DeleteRow * RowHeight + RowHeight / 2f),
-      new Vector2(0f, 0.5f),
-      Vector2.One * (deleteSelected ? 0.9f : 0.8f),
-      (deleteSelected ? Highlight : Dim) * alpha,
-      2f,
-      Color.Black * alpha
-    );
-    RenderFooter();
   }
 }

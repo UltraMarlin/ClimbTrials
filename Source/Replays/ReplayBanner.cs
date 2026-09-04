@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.Runs;
 using Celeste.Mod.ClimbTrials.UI;
@@ -63,29 +64,17 @@ public class ReplayBanner : Entity
 
   private static void RenderPrompts()
   {
-    ButtonPrompt.Draw(
-      Settings.Instance.Cancel,
-      Dialog.Clean("climbtrials_finish_back"),
-      new Vector2(ButtonPrompt.LeftX, ButtonPrompt.RowY),
-      ButtonPrompt.Align.Left,
-      1f
-    );
-    ButtonPrompt.Draw(
-      Settings.Instance.Confirm,
-      Dialog.Clean(Replayer.Paused ? "climbtrials_replay_resume" : "climbtrials_replay_pause"),
-      new Vector2(ButtonPrompt.CenterX, ButtonPrompt.RowY),
-      ButtonPrompt.Align.Center,
-      1f
-    );
-    if (Replayer.Paused)
-      return;
-    ButtonPrompt.Draw(
-      ClimbTrialsModule.Settings.Retry.Binding,
-      Dialog.Clean("climbtrials_replay_play"),
-      new Vector2(ButtonPrompt.RightX, ButtonPrompt.RowY),
-      ButtonPrompt.Align.Right,
-      1f
-    );
+    string pauseKey = Replayer.Paused ? "climbtrials_replay_resume" : "climbtrials_replay_pause";
+    List<(string, VirtualButton)> prompts =
+    [
+      (Dialog.Clean("climbtrials_finish_back"), Input.MenuCancel),
+      (Dialog.Clean(pauseKey), Input.MenuConfirm),
+    ];
+    if (!Replayer.Paused)
+      prompts.Add(
+        (Dialog.Clean("climbtrials_replay_play"), ClimbTrialsModule.Settings.Retry.Button)
+      );
+    ButtonRow.DrawRight(1f, prompts);
   }
 
   private static void Outline(string text, float y, float scale, Color color)

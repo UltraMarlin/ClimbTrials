@@ -1,6 +1,6 @@
 using System;
 using System.Collections;
-using System.Linq;
+using System.Collections.Generic;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Runs;
 using Celeste.Mod.ClimbTrials.UI;
@@ -188,27 +188,13 @@ public class FinishSequence : Entity
   private void RenderPrompts()
   {
     float alpha = Ease.CubeOut(Math.Clamp(promptAge / PromptFadeDuration, 0f, 1f));
-    ButtonPrompt.Draw(
-      Input.MenuCancel,
-      Dialog.Clean("climbtrials_finish_back"),
-      new Vector2(ButtonPrompt.LeftX, ButtonPrompt.RowY),
-      ButtonPrompt.Align.Left,
-      alpha
-    );
-    ButtonPrompt.Draw(
-      Input.MenuConfirm,
-      Dialog.Clean("climbtrials_finish_retry"),
-      new Vector2(ButtonPrompt.RightX, ButtonPrompt.RowY),
-      ButtonPrompt.Align.Right,
-      alpha
-    );
+    List<(string, VirtualButton)> prompts =
+    [
+      (Dialog.Clean("climbtrials_finish_back"), Input.MenuCancel),
+      (Dialog.Clean("climbtrials_finish_retry"), Input.MenuConfirm),
+    ];
     if (RunManager.LastReplay != null)
-      ButtonPrompt.Draw(
-        Input.MenuJournal,
-        Dialog.Clean("climbtrials_finish_watch"),
-        new Vector2(ButtonPrompt.CenterX, ButtonPrompt.RowY),
-        ButtonPrompt.Align.Center,
-        alpha
-      );
+      prompts.Add((Dialog.Clean("climbtrials_finish_watch"), Input.MenuJournal));
+    ButtonRow.DrawRight(alpha, prompts);
   }
 }
