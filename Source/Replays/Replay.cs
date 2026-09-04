@@ -1,15 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using Microsoft.Xna.Framework;
 
 namespace Celeste.Mod.ClimbTrials.Replays;
 
 public sealed class Replay
 {
-  public const int FormatVersion = 2;
+  public const int FormatVersion = 3;
   public const int ButtonCount = 15;
   public const int MaxFrames = 2_000_000;
+  public const int FrameBytes = 55;
   private const string Magic = "CTRP";
 
   public string TrialId;
@@ -68,24 +70,9 @@ public sealed class Replay
     w.Write(Ticks);
     w.Write(AchievedAtUtc.Ticks);
     w.Write(Frames.Count);
-    foreach (InputFrame f in Frames)
-    {
-      w.Write((ushort)f.Held);
-      w.Write((ushort)f.Pressed);
-      w.Write((ushort)f.Released);
-      w.Write(f.GrabToggle);
-      w.Write(f.HasPlayer);
-      w.Write(f.MoveX);
-      w.Write(f.MoveY);
-      w.Write(f.GliderMoveY);
-      WriteVector(w, f.Aim);
-      WriteVector(w, f.Feather);
-      WriteVector(w, f.Position);
-      WriteVector(w, f.Speed);
-      w.Write(f.State);
-      w.Write(f.Dashes);
-      w.Write(f.Stamina);
-    }
+    byte[] packed = PackFrames();
+    w.Write(packed.Length);
+    w.Write(packed);
   }
 
   public static Replay Read(BinaryReader r)
@@ -129,30 +116,103 @@ public sealed class Replay
     int count = r.ReadInt32();
     if (count < 0 || count > MaxFrames)
       throw new InvalidDataException($"replay has {count} frames");
-    replay.Frames = new List<InputFrame>(count);
-    for (int i = 0; i < count; i++)
-    {
-      InputFrame f = new()
-      {
-        Held = (Actions)r.ReadUInt16(),
-        Pressed = (Actions)r.ReadUInt16(),
-        Released = (Actions)r.ReadUInt16(),
-        GrabToggle = r.ReadBoolean(),
-        HasPlayer = r.ReadBoolean(),
-        MoveX = r.ReadSByte(),
-        MoveY = r.ReadSByte(),
-        GliderMoveY = r.ReadSByte(),
-      };
-      f.Aim = ReadVector(r);
-      f.Feather = ReadVector(r);
-      f.Position = ReadVector(r);
-      f.Speed = ReadVector(r);
-      f.State = r.ReadInt32();
-      f.Dashes = r.ReadInt32();
-      f.Stamina = r.ReadSingle();
-      replay.Frames.Add(f);
-    }
+    int packedLength = r.ReadInt32();
+    if (packedLength < 0 || packedLength > (long)MaxFrames * FrameBytes)
+      throw new InvalidDataException($"replay frame block is {packedLength} bytes");
+    byte[] packed = r.ReadBytes(packedLength);
+    if (packed.Length != packedLength)
+      throw new InvalidDataException("replay file is truncated");
+    replay.Frames = UnpackFrames(packed, count);
     return replay;
+  }
+
+  private byte[] PackFrames()
+  {
+    using MemoryStream output = new();
+    using (BrotliStream brotli = new(output, CompressionLevel.Optimal, leaveOpen: true))
+    using (BinaryWriter w = new(brotli))
+    {
+      WriteColumns(w, Frames);
+    }
+    return output.ToArray();
+  }
+
+  private static List<InputFrame> UnpackFrames(byte[] packed, int count)
+  {
+    using MemoryStream input = new(packed);
+    using BrotliStream brotli = new(input, CompressionMode.Decompress);
+    using BinaryReader r = new(brotli);
+    return ReadColumns(r, count);
+  }
+
+  public static void WriteColumns(BinaryWriter w, List<InputFrame> frames)
+  {
+    foreach (InputFrame f in frames)
+      w.Write((ushort)f.Held);
+    foreach (InputFrame f in frames)
+      w.Write((ushort)f.Pressed);
+    foreach (InputFrame f in frames)
+      w.Write((ushort)f.Released);
+    foreach (InputFrame f in frames)
+      w.Write(f.GrabToggle);
+    foreach (InputFrame f in frames)
+      w.Write(f.HasPlayer);
+    foreach (InputFrame f in frames)
+      w.Write(f.MoveX);
+    foreach (InputFrame f in frames)
+      w.Write(f.MoveY);
+    foreach (InputFrame f in frames)
+      w.Write(f.GliderMoveY);
+    foreach (InputFrame f in frames)
+      WriteVector(w, f.Aim);
+    foreach (InputFrame f in frames)
+      WriteVector(w, f.Feather);
+    foreach (InputFrame f in frames)
+      WriteVector(w, f.Position);
+    foreach (InputFrame f in frames)
+      WriteVector(w, f.Speed);
+    foreach (InputFrame f in frames)
+      w.Write(f.State);
+    foreach (InputFrame f in frames)
+      w.Write(f.Dashes);
+    foreach (InputFrame f in frames)
+      w.Write(f.Stamina);
+  }
+
+  public static List<InputFrame> ReadColumns(BinaryReader r, int count)
+  {
+    InputFrame[] frames = new InputFrame[count];
+    for (int i = 0; i < count; i++)
+      frames[i].Held = (Actions)r.ReadUInt16();
+    for (int i = 0; i < count; i++)
+      frames[i].Pressed = (Actions)r.ReadUInt16();
+    for (int i = 0; i < count; i++)
+      frames[i].Released = (Actions)r.ReadUInt16();
+    for (int i = 0; i < count; i++)
+      frames[i].GrabToggle = r.ReadBoolean();
+    for (int i = 0; i < count; i++)
+      frames[i].HasPlayer = r.ReadBoolean();
+    for (int i = 0; i < count; i++)
+      frames[i].MoveX = r.ReadSByte();
+    for (int i = 0; i < count; i++)
+      frames[i].MoveY = r.ReadSByte();
+    for (int i = 0; i < count; i++)
+      frames[i].GliderMoveY = r.ReadSByte();
+    for (int i = 0; i < count; i++)
+      frames[i].Aim = ReadVector(r);
+    for (int i = 0; i < count; i++)
+      frames[i].Feather = ReadVector(r);
+    for (int i = 0; i < count; i++)
+      frames[i].Position = ReadVector(r);
+    for (int i = 0; i < count; i++)
+      frames[i].Speed = ReadVector(r);
+    for (int i = 0; i < count; i++)
+      frames[i].State = r.ReadInt32();
+    for (int i = 0; i < count; i++)
+      frames[i].Dashes = r.ReadInt32();
+    for (int i = 0; i < count; i++)
+      frames[i].Stamina = r.ReadSingle();
+    return [.. frames];
   }
 
   private static void WriteVector(BinaryWriter w, Vector2 v)
