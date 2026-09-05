@@ -10,6 +10,13 @@ public enum CountdownMode
   Off,
 }
 
+public enum GoalIndicatorMode
+{
+  Subtle,
+  Strong,
+  Off,
+}
+
 public class ClimbTrialsModuleSettings : EverestModuleSettings
 {
   [SettingRange(min: 1, max: 5)]
@@ -17,6 +24,7 @@ public class ClimbTrialsModuleSettings : EverestModuleSettings
   public CountdownMode CountdownMode { get; set; } = CountdownMode.Fast;
   public bool ResetOnDeath { get; set; } = false;
   public bool ShowTimerWhileRunning { get; set; } = true;
+  public GoalIndicatorMode GoalIndicator { get; set; } = GoalIndicatorMode.Subtle;
 
   [DefaultButtonBinding(0, Keys.F7)]
   public ButtonBinding Retry { get; set; }

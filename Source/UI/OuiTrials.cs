@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.Runs;
@@ -23,6 +24,7 @@ public class OuiTrials : Oui
   private float x = OffScreenX;
   private float alpha;
   private bool selectedHasReplay;
+  private readonly List<TrialRow> rows = [];
 
   private void OnSelect(int index)
   {
@@ -33,16 +35,17 @@ public class OuiTrials : Oui
   private TrialsMenu BuildMenu()
   {
     TrialsMenu built = new TrialsMenu();
+    rows.Clear();
     for (int i = 0; i < campaign.Trials.Count; i++)
     {
       Trial trial = campaign.Trials[i];
       int index = i;
-      built.Add(
-        new TrialRow(trial)
-          .Enter(() => OnSelect(index))
-          .Pressed(() => Start(trial))
-          .AltPressed(() => WatchPb(trial))
-      );
+      TrialRow row = new(trial);
+      row.Enter(() => OnSelect(index)).Pressed(() => Start(trial)).AltPressed(() => WatchPb(trial));
+      built.Add(row);
+      row.AddDescription(built, TrialText.Description(trial.Run));
+      built.Items[built.Items.IndexOf(row) + 1].IncludeWidthInMeasurement = false;
+      rows.Add(row);
     }
     int deleteIndex = campaign.Trials.Count;
     built.Add(
@@ -76,10 +79,11 @@ public class OuiTrials : Oui
     TrialRecords.EnsureLoaded();
     int remembered = lastSelected;
     menu = BuildMenu();
-    menu.Selection = Calc.Clamp(remembered, 0, menu.LastPossibleSelection);
+    menu.Selection =
+      remembered < rows.Count ? menu.Items.IndexOf(rows[remembered]) : menu.LastPossibleSelection;
     menu.Focused = false;
     Scene.Add(menu);
-    OnSelect(menu.Selection);
+    menu.Current?.OnEnter?.Invoke();
     Visible = true;
     for (float ease = 0f; ease < 1f; ease += Engine.DeltaTime * 4f)
     {

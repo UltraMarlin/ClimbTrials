@@ -1,0 +1,97 @@
+using System;
+using Celeste.Mod.ClimbTrials.Runs;
+using Microsoft.Xna.Framework;
+using Monocle;
+
+namespace Celeste.Mod.ClimbTrials.Entities;
+
+public class TrialCheckpoint : Entity
+{
+  private const string ContainerTexture = "objects/touchswitch/container";
+  private const string IconTexture = "objects/touchswitch/icon";
+  private const string TouchSound = "event:/game/general/touchswitch_any";
+  private static readonly Color IdleColor = Calc.HexToColor("6ded87");
+  private static readonly Color TakenColor = Calc.HexToColor("6ded87") * 0.3f;
+
+  public readonly int Index;
+  private readonly CheckpointDef definition;
+  private readonly MTexture border = GFX.Game[ContainerTexture];
+  private readonly Sprite icon = new(GFX.Game, IconTexture);
+  private readonly Wiggler wiggler;
+  private Vector2 pulse = Vector2.One;
+  private float timer;
+  private float ease;
+  private bool taken;
+
+  // Based on vanilla TouchSwitch.cs
+  public TrialCheckpoint(int index, CheckpointDef definition)
+    : base(definition.Position)
+  {
+    Index = index;
+    this.definition = definition;
+    Depth = 2000;
+    Collider = new Hitbox(16f, 16f, -8f, -8f);
+    Add(new PlayerCollider(OnPlayer, null, new Hitbox(30f, 30f, -15f, -15f)));
+    Add(icon);
+    icon.Add("idle", "", 0f, default(int));
+    icon.Add("spin", "", 0.1f, new Chooser<string>("spin", 1f), 0, 1, 2, 3, 4, 5);
+    icon.CenterOrigin();
+    Add(wiggler = Wiggler.Create(0.5f, 4f, v => pulse = Vector2.One * (1f + v * 0.25f)));
+    taken = RunManager.Progress.IsTaken(index);
+    if (taken)
+    {
+      icon.Color = TakenColor;
+      icon.Play("idle");
+      icon.Rate = 0.1f;
+      ease = 1f;
+    }
+    else
+    {
+      icon.Color = IdleColor;
+      icon.Play("spin");
+    }
+  }
+
+  private void OnPlayer(Player player)
+  {
+    if (taken || RunManager.Attempt.State != AttemptState.Running)
+      return;
+    if (!RunManager.Progress.TakeCheckpoint(Index))
+      return;
+    taken = true;
+    SceneAs<Level>().Session.RespawnPoint = definition.SpawnPoint;
+    wiggler.Start();
+    icon.Rate = 4f;
+    Audio.Play(TouchSound, Position);
+  }
+
+  public override void Update()
+  {
+    if (RunManager.Run == null)
+    {
+      RemoveSelf();
+      return;
+    }
+    timer += Engine.DeltaTime * 8f;
+    ease = Calc.Approach(ease, taken ? 1f : 0f, Engine.DeltaTime * 2f);
+    float pulseAlpha = 0.5f + ((float)Math.Sin(timer) + 1f) / 2f * (1f - ease) * 0.5f + 0.5f * ease;
+    icon.Color = Color.Lerp(IdleColor, TakenColor, ease) * pulseAlpha;
+    if (taken && icon.Rate > 0.1f)
+    {
+      icon.Rate -= 2f * Engine.DeltaTime;
+      if (icon.Rate <= 0.1f)
+      {
+        icon.Rate = 0.1f;
+        icon.Play("idle");
+      }
+    }
+    base.Update();
+  }
+
+  public override void Render()
+  {
+    border.DrawCentered(Position + new Vector2(0f, -1f), Color.Black);
+    border.DrawCentered(Position, icon.Color, pulse);
+    base.Render();
+  }
+}

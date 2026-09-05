@@ -26,6 +26,93 @@ public static class FirstCampaign
       },
       new Trial
       {
+        Id = "c1n-01b",
+        Name = "City Crossing Checkpoints",
+        Difficulty = Difficulty.Normal,
+        Run = new()
+        {
+          Sid = "Celeste/1-ForsakenCity",
+          Mode = AreaMode.Normal,
+          StartRoom = "6b",
+          Spawn = new(2283f, -1232f),
+          FinishRoom = "6a",
+          Finish = new(1864, -1168, 16, 24),
+          Checkpoints = [new("6a", new(1700f, -1052f))],
+        },
+        Goals = GoalTimes.FromSeconds(bronze: 10, silver: 8, gold: 7, grandmaster: 5),
+      },
+      new Trial
+      {
+        Id = "c1n-01c",
+        Name = "City Crossing Checkpoints + Berries",
+        Difficulty = Difficulty.Normal,
+        Run = new()
+        {
+          Sid = "Celeste/1-ForsakenCity",
+          Mode = AreaMode.Normal,
+          StartRoom = "6b",
+          Spawn = new(2283f, -1232f),
+          FinishRoom = "6a",
+          Finish = new(1864, -1168, 16, 24),
+          Checkpoints = [new("6a", new(1700f, -1052f))],
+          RequiredStrawberries = 2,
+        },
+        Goals = GoalTimes.FromSeconds(bronze: 10, silver: 8, gold: 7, grandmaster: 5),
+      },
+      new Trial
+      {
+        Id = "c1n-01d",
+        Name = "City Crossing Dashless",
+        Difficulty = Difficulty.Normal,
+        Run = new()
+        {
+          Sid = "Celeste/1-ForsakenCity",
+          Mode = AreaMode.Normal,
+          StartRoom = "6b",
+          Spawn = new(2283f, -1232f),
+          FinishRoom = "6a",
+          Finish = new(1864, -1168, 16, 24),
+          Dashes = 0,
+        },
+        Goals = GoalTimes.FromSeconds(bronze: 10, silver: 8, gold: 7, grandmaster: 5),
+      },
+      new Trial
+      {
+        Id = "c1n-01e",
+        Name = "City Crossing Grabless + Dashless",
+        Difficulty = Difficulty.Normal,
+        Run = new()
+        {
+          Sid = "Celeste/1-ForsakenCity",
+          Mode = AreaMode.Normal,
+          StartRoom = "6b",
+          Spawn = new(2283f, -1232f),
+          FinishRoom = "6a",
+          Finish = new(1864, -1168, 16, 24),
+          Dashes = 0,
+          Grabless = true,
+        },
+        Goals = GoalTimes.FromSeconds(bronze: 10, silver: 8, gold: 7, grandmaster: 5),
+      },
+      new Trial
+      {
+        Id = "c1n-01f",
+        Name = "City Crossing 2 Dashes",
+        Difficulty = Difficulty.Normal,
+        Run = new()
+        {
+          Sid = "Celeste/1-ForsakenCity",
+          Mode = AreaMode.Normal,
+          StartRoom = "6b",
+          Spawn = new(2283f, -1232f),
+          FinishRoom = "6a",
+          Finish = new(1864, -1168, 16, 24),
+          Dashes = 2,
+        },
+        Goals = GoalTimes.FromSeconds(bronze: 10, silver: 8, gold: 7, grandmaster: 5),
+      },
+      new Trial
+      {
         Id = "c1n-02",
         Name = "Resort Mess",
         Difficulty = Difficulty.Normal,

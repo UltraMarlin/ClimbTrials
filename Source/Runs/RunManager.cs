@@ -17,6 +17,7 @@ public static class RunManager
   public static Trial Trial { get; private set; }
   public static RunDefinition Run { get; private set; }
   public static Attempt Attempt { get; } = new();
+  public static RunProgress Progress { get; } = new();
   public static FinishResult LastFinish { get; private set; }
   public static Replay Replay { get; private set; }
   public static bool Replaying => Replay != null;
@@ -35,6 +36,7 @@ public static class RunManager
     Everest.Events.Level.OnAfterUpdate += OnAfterUpdate;
     Everest.Events.Level.OnExit += OnExit;
     On.Celeste.Player.Die += OnPlayerDie;
+    On.Celeste.Strawberry.OnCollect += OnStrawberryCollect;
     On.Celeste.SpeedrunTimerDisplay.Render += SuppressVanillaTimer;
     Everest.Events.Player.OnAfterUpdate += OnPlayerAfterUpdate;
   }
@@ -45,6 +47,7 @@ public static class RunManager
     Everest.Events.Level.OnAfterUpdate -= OnAfterUpdate;
     Everest.Events.Level.OnExit -= OnExit;
     On.Celeste.Player.Die -= OnPlayerDie;
+    On.Celeste.Strawberry.OnCollect -= OnStrawberryCollect;
     On.Celeste.SpeedrunTimerDisplay.Render -= SuppressVanillaTimer;
     Everest.Events.Player.OnAfterUpdate -= OnPlayerAfterUpdate;
   }
@@ -60,18 +63,37 @@ public static class RunManager
     Run = run;
     LastFinish = null;
     Attempt.Reset();
+    Progress.Reset();
     ClearReplayState();
     Replay = replay;
     Countdown.SetWorldAudioPaused(false);
 
     SaveData.Start(new SaveData { Name = "ClimbTrials" }, -1);
+    SaveData.Instance.Assists.NoGrabbing = run.Grabless;
     Session session = new(run.Area)
     {
       Level = run.StartRoom,
       RespawnPoint = run.Spawn,
       FirstLevel = false,
     };
+    if (run.Dashes is int dashes)
+    {
+      PlayerInventory inventory = session.Inventory;
+      inventory.Dashes = dashes;
+      session.Inventory = inventory;
+    }
     session.SetFlag(TrialFlagPrefix + Trial?.Id);
+    foreach (CheckpointDef checkpoint in run.Checkpoints)
+    {
+      string actual = session.MapData.GetAt(checkpoint.Position)?.Name;
+      if (actual != checkpoint.Room)
+        Logger.Log(
+          LogLevel.Warn,
+          LogTag,
+          $"checkpoint at {checkpoint.Position} says room '{checkpoint.Room}' "
+            + $"but lies in '{actual ?? "no room"}'"
+        );
+    }
     SaveData.Instance.StartSession(session);
     awaitingControl = true;
 
@@ -113,10 +135,13 @@ public static class RunManager
 
   public static void Stop()
   {
+    if (Run != null && SaveData.Instance?.FileSlot == -1)
+      SaveData.Instance.Assists.NoGrabbing = false;
     Trial = null;
     Run = null;
     LastFinish = null;
     Attempt.Reset();
+    Progress.Reset();
     ClearReplayState();
     Countdown.SetWorldAudioPaused(false);
   }
@@ -138,8 +163,11 @@ public static class RunManager
     if (level.Tracker.GetEntity<RunTimerDisplay>() == null)
       level.Add(new RunTimerDisplay());
 
-    if (Trial?.Goals != null && level.Tracker.GetEntity<GoalListDisplay>() == null)
+    if (Trial != null && level.Tracker.GetEntity<GoalListDisplay>() == null)
       level.Add(new GoalListDisplay());
+
+    if (!Replaying && level.Tracker.GetEntity<GoalIndicator>() == null)
+      level.Add(new GoalIndicator());
 
     if (Replaying && level.Tracker.GetEntity<ReplayBanner>() == null)
       level.Add(new ReplayBanner());
@@ -155,6 +183,10 @@ public static class RunManager
       notice.Show(pendingNotice);
       pendingNotice = null;
     }
+
+    for (int i = 0; i < Run.Checkpoints.Count; i++)
+      if (Run.Checkpoints[i].Room == room)
+        level.Add(new TrialCheckpoint(i, Run.Checkpoints[i]));
 
     if (room == Run.FinishRoom)
     {
@@ -237,7 +269,7 @@ public static class RunManager
 
   public static bool Finish()
   {
-    if (Attempt.State != AttemptState.Running)
+    if (Attempt.State != AttemptState.Running || !Progress.Met(Run))
       return false;
     Attempt.Finish();
     Determinism.End();
@@ -286,6 +318,17 @@ public static class RunManager
       body.DeathAction = () => StartRun(run);
     }
     return body;
+  }
+
+  private static void OnStrawberryCollect(
+    On.Celeste.Strawberry.orig_OnCollect orig,
+    Strawberry self
+  )
+  {
+    orig(self);
+    if (Run == null || Attempt.State != AttemptState.Running || self.Golden || self.Moon)
+      return;
+    Progress.AddStrawberry();
   }
 
   private static void OnExit(
