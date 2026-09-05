@@ -12,24 +12,24 @@ namespace Celeste.Mod.ClimbTrials.Entities;
 public class FinishSequence : Entity
 {
   private const float FreezeDelay = 0.5f;
-  private const float TimeFadeDuration = 0.2f;
+  private const float TimeFadeDuration = 0.1f;
   private const float NoPanelPromptDelay = 0.4f;
   private const float PromptFadeDuration = 0.3f;
   private const float TimeBaselineY = 470f;
   private const float TimeScale = 2.8f;
   private const float DeltaBaselineY = 542f;
   private const float DeltaScale = 1.4f;
-  private const float MedalsVisualDelay = 0.35f;
+  private const float MedalsVisualDelay = 0.36f;
   private const float MedalStagger = 0.3f;
-  private const float MedalPopDuration = 2f;
+  private const float MedalPopDuration = 0.56f;
   private const float MedalY = 640f;
   private const float MedalHeight = 256f;
   private const float MedalSpacing = 110f;
-  private const string BronzeMedalSound = "event:/ui/main/postcard_ch3_out";
-  private const string SilverMedalSound = "event:/ui/main/postcard_ch1_out";
-  private const string GoldMedalSound = "event:/ui/main/postcard_ch4_out";
-  private const string MasterMedalSound = "event:/ui/main/postcard_csides_out";
-  private const string PbSound = "event:/ui/game/increment_strawberry";
+  private const string BronzeMedalSound = "event:/game/07_summit/gem_unlock_1";
+  private const string SilverMedalSound = "event:/game/07_summit/gem_unlock_3";
+  private const string GoldMedalSound = "event:/game/07_summit/gem_unlock_5";
+  private const string MasterMedalSound = "event:/game/07_summit/gem_unlock_6";
+  private const string PbSound = "event:/ui/postgame/strawberry_total";
 
   private static readonly Color DeltaColor = Calc.HexToColor("6ded87");
 
@@ -75,7 +75,7 @@ public class FinishSequence : Entity
           yield return MedalsVisualDelay;
           medalAges[i] = 0f;
         }
-        yield return MedalPopDuration;
+        yield return MedalPopDuration / 2;
       }
     }
     else
@@ -122,7 +122,7 @@ public class FinishSequence : Entity
     }
 
     if (Input.MenuCancel.Pressed)
-      UI.PauseMenu.ReturnToTrials();
+      PauseMenu.ReturnToTrials();
   }
 
   public override void Render()
@@ -169,7 +169,7 @@ public class FinishSequence : Entity
       if (medalAges[i] < 0f)
         continue;
       float t = Math.Clamp(medalAges[i] / MedalPopDuration, 0f, 1f);
-      float pop = 1f + 0.6f * (1f - Ease.CubeOut(t));
+      float pop = 1f + 0.6f * (1f - Ease.BackIn(t));
       Vector2 center = new(firstX + i * MedalSpacing, MedalY);
       MedalIcon.Draw(center, medals[i], MedalHeight * pop);
     }
