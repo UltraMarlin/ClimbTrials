@@ -13,7 +13,7 @@ public class ReplayBanner : Entity
   private const float TitleY = 48f;
   private const float TimeBaselineY = 128f;
   private const float InfoY = 138f;
-  private const float TimeScale = 0.8f;
+  private static readonly TimeStyle TimeStyle = TimeText.Hud.At(0.8f);
   private static readonly Color TitleColor = Calc.HexToColor("ffd54f");
   private static readonly Color DesyncColor = Calc.HexToColor("f0777a");
   private static readonly Color Dim = Color.White * 0.7f;
@@ -38,7 +38,7 @@ public class ReplayBanner : Entity
 
     string titleKey =
       Replayer.Desynced ? "climbtrials_replay_desynced"
-      : Replayer.Paused ? "climbtrials_replay_paused"
+      : Replayer.State == ReplayState.Paused ? "climbtrials_replay_paused"
       : "climbtrials_replay_title";
     Outline(Dialog.Clean(titleKey), TitleY, 1.1f, Replayer.Desynced ? DesyncColor : TitleColor);
 
@@ -49,31 +49,34 @@ public class ReplayBanner : Entity
     Outline(info, InfoY, 0.5f, Dim);
 
     string time = Attempt.Format(replay.Ticks);
-    float width = TimeText.Width(time, TimeScale);
+    float width = TimeText.Width(time, TimeStyle);
     TimeText.Draw(
       new Vector2(960f - width / 2f, TimeBaselineY),
       time,
-      TimeScale,
+      TimeStyle,
       Color.White,
       Color.LightGray
     );
 
-    if (Replayer.Feeding)
+    if (Replayer.State != ReplayState.Idle)
       RenderPrompts();
   }
 
   private static void RenderPrompts()
   {
-    string pauseKey = Replayer.Paused ? "climbtrials_replay_resume" : "climbtrials_replay_pause";
+    string pauseKey =
+      Replayer.State == ReplayState.Paused
+        ? "climbtrials_replay_resume"
+        : "climbtrials_replay_pause";
     List<(string, VirtualButton)> prompts =
     [
       (Dialog.Clean("climbtrials_finish_back"), Input.MenuCancel),
-      (Dialog.Clean(pauseKey), Input.MenuConfirm),
     ];
-    if (!Replayer.Paused)
-      prompts.Add(
-        (Dialog.Clean("climbtrials_replay_play"), ClimbTrialsModule.Settings.Retry.Button)
-      );
+
+    prompts.Add((Dialog.Clean("climbtrials_replay_restart"), Input.MenuJournal));
+    prompts.Add((Dialog.Clean("climbtrials_replay_play"), ClimbTrialsModule.Settings.Retry.Button));
+    if (Replayer.State != ReplayState.Finished)
+      prompts.Add((Dialog.Clean(pauseKey), Input.MenuConfirm));
     ButtonRow.DrawRight(1f, prompts);
   }
 

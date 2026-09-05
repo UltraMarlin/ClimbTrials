@@ -49,6 +49,7 @@ public class ClimbTrialsModule : EverestModule
 
   public override void Unload()
   {
+    RunManager.Stop();
     MainMenuEntry.Unload();
     PauseMenu.Unload();
     RunManager.Unload();

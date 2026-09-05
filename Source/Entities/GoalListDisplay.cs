@@ -16,11 +16,19 @@ public class GoalListDisplay : Entity
   private const float IconX = 36f;
   private const float TimeX = 64f;
   private const float TimeScale = 0.7f;
+  private const float ReachedAlpha = 0.6f;
+  private static readonly TimeStyle TimeStyle = TimeText.Hud.At(TimeScale);
   private const float IconHeight = 48f;
   private const string CheckpointIcon = "ClimbTrials/Checkpoint_Icon";
   private const string StrawberryIcon = "collectables/strawberry";
 
-  private readonly record struct Row(Medal Medal, long Ticks, bool IsPb);
+  private readonly record struct Row(
+    Medal Medal,
+    long Ticks,
+    bool IsPb,
+    Medal TextMedal,
+    bool Reached
+  );
 
   public GoalListDisplay()
   {
@@ -30,21 +38,25 @@ public class GoalListDisplay : Entity
   private static List<Row> Rows(Trial trial)
   {
     GoalTimes goals = trial.Goals;
+    TrialRecord record = TrialRecords.Get(trial.Id);
+    long best = record?.BestTicks ?? long.MaxValue;
     List<Row> rows =
     [
-      new Row(Medal.Bronze, goals.BronzeTicks, false),
-      new Row(Medal.Silver, goals.SilverTicks, false),
-      new Row(Medal.Gold, goals.GoldTicks, false),
+      Goal(Medal.Bronze, goals.BronzeTicks, best),
+      Goal(Medal.Silver, goals.SilverTicks, best),
+      Goal(Medal.Gold, goals.GoldTicks, best),
     ];
-    TrialRecord record = TrialRecords.Get(trial.Id);
     if (record != null)
     {
-      if (record.BestTicks <= goals.GoldTicks)
-        rows.Add(new Row(Medal.Grandmaster, goals.GrandmasterTicks, false));
-      rows.Add(new Row(Medal.None, record.BestTicks, true));
+      if (best <= goals.GoldTicks)
+        rows.Add(Goal(Medal.Grandmaster, goals.GrandmasterTicks, best));
+      rows.Add(new Row(Medal.None, best, true, goals.MedalFor(best), false));
     }
     return rows.OrderBy(r => r.Ticks).ThenBy(r => r.IsPb).ToList();
   }
+
+  private static Row Goal(Medal medal, long ticks, long best) =>
+    new(medal, ticks, false, medal, best <= ticks);
 
   public override void Render()
   {
@@ -80,6 +92,7 @@ public class GoalListDisplay : Entity
     foreach (Row row in Rows(trial))
     {
       Vector2 iconCenter = new(IconX, y + RowHeight / 2f);
+      float alpha = row.Reached ? ReachedAlpha : 1f;
       if (row.IsPb)
         ActiveFont.DrawOutline(
           "PB",
@@ -91,13 +104,13 @@ public class GoalListDisplay : Entity
           Color.Black
         );
       else
-        MedalIcon.Draw(iconCenter, row.Medal, IconHeight);
+        MedalIcon.Draw(iconCenter, row.Medal, IconHeight, alpha);
       TimeText.Draw(
         new Vector2(TimeX, y + RowHeight),
         Attempt.Format(row.Ticks),
-        TimeScale,
-        Color.White,
-        Color.LightGray
+        TimeStyle,
+        MedalIcon.TextColor(row.TextMedal) * alpha,
+        MedalIcon.SeparatorColor(row.TextMedal) * alpha
       );
       y += RowHeight;
     }

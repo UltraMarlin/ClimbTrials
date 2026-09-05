@@ -1,4 +1,3 @@
-using System.Collections;
 using Celeste.Mod.ClimbTrials.Runs;
 
 namespace Celeste.Mod.ClimbTrials.Replays;
@@ -10,14 +9,12 @@ public static class RunGuards
   public static void Load()
   {
     On.Celeste.UserIO.SaveHandler += OnSaveHandler;
-    On.Celeste.UserIO.SaveHandlerLegacy += OnSaveHandlerLegacy;
     On.Celeste.FinalBoss.Added += OnFinalBossAdded;
   }
 
   public static void Unload()
   {
     On.Celeste.UserIO.SaveHandler -= OnSaveHandler;
-    On.Celeste.UserIO.SaveHandlerLegacy -= OnSaveHandlerLegacy;
     On.Celeste.FinalBoss.Added -= OnFinalBossAdded;
   }
 
@@ -27,7 +24,7 @@ public static class RunGuards
     bool settings
   )
   {
-    if (Replayer.Feeding && settings)
+    if (Replayer.Silenced && settings)
     {
       Replayer.UnpinSettings();
       orig(file, settings);
@@ -37,18 +34,6 @@ public static class RunGuards
     orig(file, settings);
     if (settings)
       AfterSettingsSave();
-  }
-
-  private static IEnumerator OnSaveHandlerLegacy(
-    On.Celeste.UserIO.orig_SaveHandlerLegacy orig,
-    bool file,
-    bool settings
-  )
-  {
-    IEnumerator routine = orig(file, settings);
-    if (settings)
-      AfterSettingsSave();
-    return routine;
   }
 
   private static void AfterSettingsSave()

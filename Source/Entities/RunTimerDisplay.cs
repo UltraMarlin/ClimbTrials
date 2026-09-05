@@ -40,7 +40,7 @@ public class RunTimerDisplay : Entity
     Attempt attempt = RunManager.Attempt;
 
     string text = Attempt.Format(attempt.ElapsedTicks);
-    float textWidth = TimeText.Width(text);
+    float textWidth = TimeText.Width(text, TimeText.Hud);
 
     MTexture bg = GFX.Gui["strawberryCountBG"];
     float extra = System.Math.Max(0f, textWidth + TextMarginLeft + 8f - bg.Width);
@@ -51,7 +51,7 @@ public class RunTimerDisplay : Entity
     TimeText.Draw(
       new Vector2(TextMarginLeft, TimerY + Baseline),
       text,
-      1f,
+      TimeText.Hud,
       done ? DoneColor1 : RunColor1,
       done ? DoneColor2 : RunColor2
     );

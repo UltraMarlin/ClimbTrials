@@ -13,12 +13,14 @@ public class FinishSequence : Entity
 {
   private const float FreezeDelay = 0.5f;
   private const float TimeFadeDuration = 0.1f;
-  private const float NoPanelPromptDelay = 0.4f;
   private const float PromptFadeDuration = 0.3f;
   private const float TimeBaselineY = 470f;
-  private const float TimeScale = 2.8f;
-  private const float DeltaBaselineY = 542f;
-  private const float DeltaScale = 1.4f;
+  private const float DeltaBaselineY = 500f;
+  private const float DeltaStagger = 0.1f;
+  private const float BoxPaddingX = 80f;
+  private const float BoxPaddingTop = 16f;
+  private const float BoxPaddingBottom = 20f;
+  private const float BoxAlpha = 0.7f;
   private const float MedalsVisualDelay = 0.36f;
   private const float MedalStagger = 0.3f;
   private const float MedalPopDuration = 0.56f;
@@ -36,6 +38,8 @@ public class FinishSequence : Entity
   private readonly FinishResult result;
   private readonly Medal[] medals;
   private readonly float[] medalAges;
+
+  private readonly bool watcher;
   private Level level;
   private float timeAge = -1f;
   private float promptAge = -1f;
@@ -43,6 +47,7 @@ public class FinishSequence : Entity
   public FinishSequence(FinishResult result)
   {
     this.result = result;
+    watcher = RunManager.Replaying;
     medals = [.. result.UnlockedMedals()];
     medalAges = new float[medals.Length];
     Array.Fill(medalAges, -1f);
@@ -60,6 +65,8 @@ public class FinishSequence : Entity
   {
     yield return FreezeDelay;
     level.Frozen = true;
+    if (watcher)
+      yield break;
     if (result.IsPersonalBest)
     {
       Audio.Play(PbSound);
@@ -78,10 +85,6 @@ public class FinishSequence : Entity
         yield return MedalPopDuration / 2;
       }
     }
-    else
-    {
-      yield return NoPanelPromptDelay;
-    }
     promptAge = 0f;
   }
 
@@ -94,6 +97,8 @@ public class FinishSequence : Entity
       RemoveSelf();
       return;
     }
+    if (watcher)
+      return;
 
     if (timeAge >= 0f)
       timeAge += Engine.RawDeltaTime;
@@ -127,7 +132,7 @@ public class FinishSequence : Entity
 
   public override void Render()
   {
-    if (level.Paused)
+    if (watcher || level.Paused)
       return;
     if (timeAge >= 0f)
       RenderResult();
@@ -136,29 +141,58 @@ public class FinishSequence : Entity
       RenderPrompts();
   }
 
+  private static float Pop(float age) =>
+    1f + 0.6f * (1f - Ease.BackIn(Math.Clamp(age / MedalPopDuration, 0f, 1f)));
+
   private void RenderResult()
   {
-    float alpha = Ease.CubeOut(Math.Clamp(timeAge / TimeFadeDuration, 0f, 1f));
     string time = Attempt.Format(result.Ticks);
-    float width = TimeText.Width(time, TimeScale);
-    TimeText.Draw(
-      new Vector2(960f - width / 2f, TimeBaselineY),
+    string delta = result.PreviousBestTicks is long previous
+      ? "-" + Attempt.Format(previous - result.Ticks)
+      : null;
+    float deltaAge = timeAge - DeltaStagger;
+
+    float boxAlpha = BoxAlpha * Ease.CubeOut(Math.Clamp(timeAge / MedalPopDuration, 0f, 1f));
+    float boxWidth = TimeText.Width(time, TimeText.Large) + 2f * BoxPaddingX;
+    float boxTop = TimeBaselineY - TimeText.Height(TimeText.Large) - BoxPaddingTop;
+    float boxBottom = (delta == null ? TimeBaselineY : DeltaBaselineY) + BoxPaddingBottom;
+    Draw.Rect(960f - boxWidth / 2f, boxTop, boxWidth, boxBottom - boxTop, Color.Black * boxAlpha);
+
+    float alpha = Ease.CubeOut(Math.Clamp(timeAge / TimeFadeDuration, 0f, 1f));
+    DrawAnimated(
       time,
-      TimeScale,
+      TimeText.Large,
+      TimeBaselineY,
+      timeAge,
       Color.White * alpha,
       Color.LightGray * alpha
     );
-    if (result.PreviousBestTicks is not long previous)
+
+    if (delta == null || deltaAge < 0f)
       return;
-    string delta = "-" + Attempt.Format(previous - result.Ticks);
-    float deltaWidth = TimeText.Width(delta, DeltaScale);
-    TimeText.Draw(
-      new Vector2(960f - deltaWidth / 2f, DeltaBaselineY),
+    float deltaAlpha = Ease.CubeOut(Math.Clamp(deltaAge / TimeFadeDuration, 0f, 1f));
+    DrawAnimated(
       delta,
-      DeltaScale,
-      DeltaColor * alpha,
-      DeltaColor * 0.7f * alpha
+      TimeText.Hud,
+      DeltaBaselineY,
+      deltaAge,
+      DeltaColor * deltaAlpha,
+      DeltaColor * 0.7f * deltaAlpha
     );
+  }
+
+  private static void DrawAnimated(
+    string text,
+    TimeStyle style,
+    float baselineY,
+    float age,
+    Color digits,
+    Color separators
+  )
+  {
+    TimeStyle popped = style.At(style.Scale * Pop(age));
+    float width = TimeText.Width(text, popped);
+    TimeText.Draw(new Vector2(960f - width / 2f, baselineY), text, popped, digits, separators);
   }
 
   private void RenderMedals()
@@ -168,10 +202,8 @@ public class FinishSequence : Entity
     {
       if (medalAges[i] < 0f)
         continue;
-      float t = Math.Clamp(medalAges[i] / MedalPopDuration, 0f, 1f);
-      float pop = 1f + 0.6f * (1f - Ease.BackIn(t));
       Vector2 center = new(firstX + i * MedalSpacing, MedalY);
-      MedalIcon.Draw(center, medals[i], MedalHeight * pop);
+      MedalIcon.Draw(center, medals[i], MedalHeight * Pop(medalAges[i]));
     }
   }
 

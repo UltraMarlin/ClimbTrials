@@ -8,11 +8,18 @@ public static class Determinism
 {
   public const ulong FrameBase = 1UL << 40;
 
-  private static bool pending;
-  private static bool active;
-  private static bool pushed;
+  private enum SeedingState
+  {
+    Off,
+    WaitingForLoader,
+    SeedingFrames,
+  }
+
+  private static SeedingState state;
+  private static LevelLoader seededLoader;
   private static bool loadingInline;
   private static Random random;
+  private static Random pushedRandom;
   private static ulong frame;
   private static ulong savedFrameCounter;
 
@@ -28,26 +35,23 @@ public static class Determinism
     On.Celeste.RunThread.Start -= OnRunThreadStart;
   }
 
-  public static LevelLoader CreateLoader(int loadSeed, Session session, Vector2 spawn)
+  public static LevelLoader CreateSeededLoader(int loadSeed, Session session, Vector2 spawn)
   {
+    random = new Random(loadSeed);
+    frame = FrameBase;
     Calc.PushRandom(new Random(loadSeed));
     loadingInline = true;
     try
     {
-      return new LevelLoader(session, spawn);
+      seededLoader = new LevelLoader(session, spawn);
     }
     finally
     {
       loadingInline = false;
       Calc.PopRandom();
     }
-  }
-
-  public static void Begin(int loadSeed)
-  {
-    random = new Random(loadSeed);
-    frame = FrameBase;
-    pending = true;
+    state = SeedingState.WaitingForLoader;
+    return seededLoader;
   }
 
   public static void Reseed(int runSeed)
@@ -55,10 +59,17 @@ public static class Determinism
     random = new Random(runSeed);
   }
 
-  public static void End()
+  public static void StopSeeding()
   {
-    pending = false;
-    active = false;
+    state = SeedingState.Off;
+    seededLoader = null;
+    if (pushedRandom == null)
+      return;
+
+    if (Calc.Random == pushedRandom)
+      Calc.PopRandom();
+    pushedRandom = null;
+    Engine.FrameCounter = savedFrameCounter + 1;
   }
 
   private static void OnEngineUpdate(
@@ -67,25 +78,26 @@ public static class Determinism
     GameTime gameTime
   )
   {
-    if (pending)
+    if (state == SeedingState.WaitingForLoader && Engine.Scene == seededLoader)
     {
-      pending = false;
-      active = true;
+      state = SeedingState.SeedingFrames;
+      seededLoader = null;
     }
-    if (active)
+    if (state == SeedingState.SeedingFrames)
     {
-      Calc.PushRandom(random);
+      pushedRandom = random;
+      Calc.PushRandom(pushedRandom);
       savedFrameCounter = Engine.FrameCounter;
       Engine.FrameCounter = frame;
-      pushed = true;
     }
 
     orig(self, gameTime);
 
-    if (!pushed)
+    if (pushedRandom == null)
       return;
-    pushed = false;
-    Calc.PopRandom();
+    if (Calc.Random == pushedRandom)
+      Calc.PopRandom();
+    pushedRandom = null;
     frame = Engine.FrameCounter;
     Engine.FrameCounter = savedFrameCounter + 1;
   }

@@ -3,6 +3,8 @@ using System.Linq;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Entities;
 using Celeste.Mod.ClimbTrials.Replays;
+using Celeste.Mod.ClimbTrials.UI;
+using FMOD.Studio;
 using Microsoft.Xna.Framework;
 using Monocle;
 
@@ -26,9 +28,11 @@ public static class RunManager
     Run != null && Attempt.State is AttemptState.Countdown or AttemptState.Running;
   public static bool RecordingEnabled => !ModCheck.OthersLoaded;
 
+  private static bool awaitingLoad;
   private static bool awaitingControl;
   private static int loadSeed;
   private static string pendingNotice;
+  private static EventInstance finishSnapshot;
 
   public static void Load()
   {
@@ -52,6 +56,11 @@ public static class RunManager
     Everest.Events.Player.OnAfterUpdate -= OnPlayerAfterUpdate;
   }
 
+  private static void SwitchScene(Scene next)
+  {
+    Engine.Scene = next;
+  }
+
   public static void StartTrial(Trial trial)
   {
     Trial = trial;
@@ -60,13 +69,9 @@ public static class RunManager
 
   private static LevelLoader CreateRunLoader(RunDefinition run, Replay replay)
   {
+    ResetRunState();
     Run = run;
-    LastFinish = null;
-    Attempt.Reset();
-    Progress.Reset();
-    ClearReplayState();
     Replay = replay;
-    Countdown.SetWorldAudioPaused(false);
 
     SaveData.Start(new SaveData { Name = "ClimbTrials" }, -1);
     SaveData.Instance.Assists.NoGrabbing = run.Grabless;
@@ -95,17 +100,22 @@ public static class RunManager
         );
     }
     SaveData.Instance.StartSession(session);
-    awaitingControl = true;
+    awaitingLoad = true;
 
     loadSeed = replay?.LoadSeed ?? Calc.Random.Next();
-    Determinism.Begin(loadSeed);
     Logger.Log(LogLevel.Info, LogTag, $"StartRun: trial '{Trial?.Id}', replay {replay != null}");
-    return Determinism.CreateLoader(loadSeed, session, run.Spawn);
+    return Determinism.CreateSeededLoader(loadSeed, session, run.Spawn);
   }
 
   public static void StartRun(RunDefinition run)
   {
-    Engine.Scene = CreateRunLoader(run, null);
+    SwitchScene(CreateRunLoader(run, null));
+  }
+
+  public static void LeaveToTrials()
+  {
+    Stop();
+    SwitchScene(new OverworldLoader(OuiTrials.ReturnStartMode));
   }
 
   public static void StartReplay(Replay replay)
@@ -114,7 +124,7 @@ public static class RunManager
     if (trial == null)
       return;
     Trial = trial;
-    Engine.Scene = CreateRunLoader(trial.Run, replay);
+    SwitchScene(CreateRunLoader(trial.Run, replay));
   }
 
   public static void RestartAttempt(string noticeKey)
@@ -135,21 +145,44 @@ public static class RunManager
 
   public static void Stop()
   {
+    ResetRunState();
     if (Run != null && SaveData.Instance?.FileSlot == -1)
       SaveData.Instance.Assists.NoGrabbing = false;
     Trial = null;
     Run = null;
+    pendingNotice = null;
+  }
+
+  public static void DiscardAttemptAfterDesync()
+  {
+    Attempt.Reset();
+    Determinism.StopSeeding();
+  }
+
+  private static void ResetRunState()
+  {
+    ClearReplayState();
     LastFinish = null;
     Attempt.Reset();
     Progress.Reset();
-    ClearReplayState();
+    awaitingLoad = false;
+    awaitingControl = false;
     Countdown.SetWorldAudioPaused(false);
+    ReleaseFinishSnapshot();
+  }
+
+  private static void ReleaseFinishSnapshot()
+  {
+    if (finishSnapshot == null)
+      return;
+    Audio.ReleaseSnapshot(finishSnapshot);
+    finishSnapshot = null;
   }
 
   private static void ClearReplayState()
   {
     Replay = null;
-    Determinism.End();
+    Determinism.StopSeeding();
     Recorder.Abort();
     Replayer.Clear();
   }
@@ -158,6 +191,11 @@ public static class RunManager
   {
     if (Run == null)
       return;
+    if (isFromLoader && awaitingLoad)
+    {
+      awaitingLoad = false;
+      awaitingControl = true;
+    }
     string room = level.Session.Level;
 
     if (level.Tracker.GetEntity<RunTimerDisplay>() == null)
@@ -217,7 +255,8 @@ public static class RunManager
       Logger.Log(LogLevel.Info, LogTag, $"recording stopped at {ReplayLimitSeconds} s");
     }
     if (
-      Attempt.State is AttemptState.Countdown or AttemptState.Running
+      !Replaying
+      && Attempt.State is AttemptState.Countdown or AttemptState.Running
       && ClimbTrialsModule.Settings.Retry.Pressed
     )
       StartRun(Run);
@@ -272,7 +311,8 @@ public static class RunManager
     if (Attempt.State != AttemptState.Running || !Progress.Met(Run))
       return false;
     Attempt.Finish();
-    Determinism.End();
+    Determinism.StopSeeding();
+    finishSnapshot ??= Audio.CreateSnapshot("snapshot:/pause_menu");
     if (Replay != null)
     {
       bool inSync = Replayer.Finish();

@@ -26,6 +26,6 @@ public class ClimbTrialsModuleSettings : EverestModuleSettings
   public bool ShowTimerWhileRunning { get; set; } = true;
   public GoalIndicatorMode GoalIndicator { get; set; } = GoalIndicatorMode.Subtle;
 
-  [DefaultButtonBinding(0, Keys.F7)]
+  [DefaultButtonBinding(Buttons.Back, Keys.F7)]
   public ButtonBinding Retry { get; set; }
 }

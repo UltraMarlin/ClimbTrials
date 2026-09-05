@@ -31,7 +31,10 @@ public class TrialRow : TextMenu.Item
   public override float LeftWidth() => NameX + ActiveFont.Measure(Trial.Name).X;
 
   public override float RightWidth() =>
-    SlideDistance + MedalIconHeight + MedalGap + TimeText.Width("0:00.000", PbScale);
+    SlideDistance
+    + MedalIconHeight
+    + MedalGap
+    + TimeText.Width("0:00.000", TimeText.Hud.At(PbScale));
 
   public override void Update()
   {
@@ -72,7 +75,7 @@ public class TrialRow : TextMenu.Item
     }
 
     string best = Attempt.Format(record.BestTicks);
-    float width = TimeText.Width(best, PbScale);
+    float width = TimeText.Width(best, TimeText.Hud.At(PbScale));
     Medal medal = Trial.Goals?.MedalFor(record.BestTicks) ?? Medal.None;
     if (medal != Medal.None)
       MedalIcon.Draw(
@@ -84,7 +87,7 @@ public class TrialRow : TextMenu.Item
     TimeText.Draw(
       new Vector2(rightEdge - width, slid.Y + PbBaseline),
       best,
-      PbScale,
+      TimeText.Hud.At(PbScale),
       Color.White * alpha,
       Color.LightGray * alpha
     );

@@ -5,18 +5,27 @@ using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.Replays;
 
+public enum ReplayState
+{
+  Idle,
+  Playing,
+  Paused,
+  Finished,
+}
+
 public static class Replayer
 {
   private const string LogTag = "ClimbTrials/Replay";
   private const string DesyncSound = "event:/ui/main/button_invalid";
   private const string PauseSound = "event:/game/general/cassette_block_switch_1";
   private const string ResumeSound = "event:/game/general/cassette_block_switch_2";
+  private const string RestartSound = "event:/ui/main/button_select";
   private const float WatcherThreshold = 0.2f;
 
-  public static bool Feeding { get; private set; }
-  public static bool Paused { get; private set; }
+  public static ReplayState State { get; private set; }
   public static bool Desynced { get; private set; }
   public static int Frame { get; private set; }
+  public static bool Silenced => State is ReplayState.Playing or ReplayState.Paused;
 
   private static Replay current;
 
@@ -47,7 +56,7 @@ public static class Replayer
 
   public static void Unload()
   {
-    End();
+    Clear();
     On.Monocle.MInput.Update -= OnMInputUpdate;
     On.Monocle.Engine.Update -= OnEngineUpdate;
     On.Celeste.Input.GuiButton_VirtualButton_PrefixMode_string -= OnGuiButton;
@@ -55,10 +64,10 @@ public static class Replayer
 
   public static void Begin(Replay replay, Level level)
   {
+    RestoreInputs();
     current = replay;
     Frame = 0;
     Desynced = false;
-    Paused = false;
 
     savedGrabMode = Settings.Instance.GrabMode;
     savedCrouchDashMode = Settings.Instance.CrouchDashMode;
@@ -82,16 +91,16 @@ public static class Replayer
       savedButtons.Add((buttons[i], buttons[i].Binding));
       buttons[i].Binding = new Binding();
       buttons[i].Nodes.Add(buttonNodes[i]);
-      buttonNodes[i].Clear();
     }
     InputCapture.RestoreButtonStates(replay.Buttons);
+    ClearFed();
     SilenceAxis(Input.MoveX, moveX);
     SilenceAxis(Input.MoveY, moveY);
     SilenceAxis(Input.GliderMoveY, gliderMoveY);
     SilenceStick(Input.Aim, aim);
     SilenceStick(Input.Feather, feather);
 
-    Feeding = true;
+    State = ReplayState.Playing;
     Logger.Log(
       LogLevel.Info,
       LogTag,
@@ -99,12 +108,53 @@ public static class Replayer
     );
   }
 
-  public static void End()
+  public static bool Finish()
   {
-    if (!Feeding)
+    if (current == null)
+      return false;
+
+    int missing = current.Frames.Count - Frame;
+    bool alreadyDesynced = Desynced;
+    RestoreInputs();
+    State = ReplayState.Finished;
+    if (alreadyDesynced)
+      return false;
+
+    if (missing == 0)
+      return true;
+
+    Desync($"finished {missing} frames early");
+    return false;
+  }
+
+  public static void Clear()
+  {
+    RestoreInputs();
+    State = ReplayState.Idle;
+    current = null;
+    Desynced = false;
+  }
+
+  public static void PinSettings()
+  {
+    if (current == null)
       return;
-    Feeding = false;
-    Paused = false;
+    Settings.Instance.GrabMode = current.GrabMode;
+    Settings.Instance.CrouchDashMode = current.CrouchDashMode;
+    Settings.Instance.ScreenShake = current.ScreenShake;
+  }
+
+  public static void UnpinSettings()
+  {
+    Settings.Instance.GrabMode = savedGrabMode;
+    Settings.Instance.CrouchDashMode = savedCrouchDashMode;
+    Settings.Instance.ScreenShake = savedScreenShake;
+  }
+
+  private static void RestoreInputs()
+  {
+    if (!Silenced)
+      return;
 
     foreach ((VirtualButton button, Binding binding) in savedButtons)
     {
@@ -139,44 +189,7 @@ public static class Replayer
     if (savedLanguage != null)
       Dialog.Language = savedLanguage;
     savedLanguage = null;
-  }
-
-  public static bool Finish()
-  {
-    if (current == null)
-      return false;
-    int missing = current.Frames.Count - Frame;
-    bool alreadyDesynced = Desynced;
-    End();
-    if (alreadyDesynced)
-      return false;
-    if (missing == 0)
-      return true;
-    Desync($"finished {missing} frames early");
-    return false;
-  }
-
-  public static void Clear()
-  {
-    End();
-    current = null;
-    Desynced = false;
-  }
-
-  public static void PinSettings()
-  {
-    if (current == null)
-      return;
-    Settings.Instance.GrabMode = current.GrabMode;
-    Settings.Instance.CrouchDashMode = current.CrouchDashMode;
-    Settings.Instance.ScreenShake = current.ScreenShake;
-  }
-
-  public static void UnpinSettings()
-  {
-    Settings.Instance.GrabMode = savedGrabMode;
-    Settings.Instance.CrouchDashMode = savedCrouchDashMode;
-    Settings.Instance.ScreenShake = savedScreenShake;
+    State = ReplayState.Idle;
   }
 
   private static void OnEngineUpdate(
@@ -185,22 +198,35 @@ public static class Replayer
     GameTime gameTime
   )
   {
-    if (!Feeding || !Paused)
+    if (State != ReplayState.Paused)
     {
       orig(self, gameTime);
       return;
     }
-    MInput.Keyboard.Update();
-    MInput.GamePads[Input.Gamepad].Update();
-    HandleWatcherControls();
+
+    if (AssetReloadHelper.IsReloading || Engine.OverloadGameLoop != null)
+    {
+      orig(self, gameTime);
+      return;
+    }
+
+    if (Engine.Instance.IsActive && MInput.Active && !Engine.Commands.Open)
+    {
+      MInput.Keyboard.Update();
+      MInput.GamePads[Input.Gamepad].Update();
+      HandleWatcherControls();
+    }
+
+    if (State == ReplayState.Idle)
+      orig(self, gameTime);
   }
 
   private static void OnMInputUpdate(On.Monocle.MInput.orig_Update orig)
   {
-    if (Feeding && !Desynced && InputCapture.Counts())
+    if (State == ReplayState.Playing && InputCapture.Counts())
       Step();
     orig();
-    if (Feeding)
+    if (State != ReplayState.Idle)
       HandleWatcherControls();
   }
 
@@ -211,7 +237,7 @@ public static class Replayer
     string fallback
   )
   {
-    Binding original = Feeding ? SavedBinding(button) : null;
+    Binding original = Silenced ? SavedBinding(button) : null;
     if (original == null)
       return orig(button, mode, fallback);
     Binding silenced = button.Binding;
@@ -239,20 +265,36 @@ public static class Replayer
 
   private static void HandleWatcherControls()
   {
+    if (Engine.Scene is Level { Paused: true })
+      return;
     if (WatcherPressed(Settings.Instance.Cancel))
     {
-      UI.PauseMenu.ReturnToTrials();
+      RunManager.LeaveToTrials();
       return;
     }
-    if (ClimbTrialsModule.Settings.Retry.Pressed)
+    if (WatcherPressed(ClimbTrialsModule.Settings.Retry.Button.Binding))
     {
       RunManager.StartRun(RunManager.Run);
       return;
     }
-    if (WatcherPressed(Settings.Instance.Confirm))
+    if (WatcherPressed(Settings.Instance.Journal))
     {
-      Paused = !Paused;
-      Audio.Play(Paused ? PauseSound : ResumeSound);
+      Audio.Play(RestartSound);
+      RunManager.StartReplay(current);
+      return;
+    }
+    if (State != ReplayState.Finished && WatcherPressed(Settings.Instance.Confirm))
+    {
+      if (State == ReplayState.Paused)
+      {
+        State = ReplayState.Playing;
+        Audio.Play(PauseSound);
+      }
+      else
+      {
+        State = ReplayState.Paused;
+        Audio.Play(ResumeSound);
+      }
     }
   }
 
@@ -260,31 +302,31 @@ public static class Replayer
   {
     if (Engine.RawDeltaTime != current.RawDeltaTime)
     {
-      Desync($"frame time {Engine.RawDeltaTime}, recorded {current.RawDeltaTime}");
+      StopOnDesync($"frame time {Engine.RawDeltaTime}, recorded {current.RawDeltaTime}");
       return;
     }
     if (Frame >= current.Frames.Count)
     {
-      Desync("ran out of frames before the finish");
+      StopOnDesync("ran out of frames before the finish");
       return;
     }
     InputFrame frame = current.Frames[Frame];
     Player player = (Engine.Scene as Level)?.Tracker.GetEntity<Player>();
     if (frame.HasPlayer != (player != null))
     {
-      Desync($"frame {Frame}: player presence differs");
+      StopOnDesync($"frame {Frame}: player presence differs");
       return;
     }
     if (player != null)
     {
       if (player.Position != frame.Position)
       {
-        Desync($"frame {Frame}: at {player.Position}, recorded {frame.Position}");
+        StopOnDesync($"frame {Frame}: at {player.Position}, recorded {frame.Position}");
         return;
       }
       if (player.Speed != frame.Speed)
       {
-        Desync($"frame {Frame}: speed {player.Speed}, recorded {frame.Speed}");
+        StopOnDesync($"frame {Frame}: speed {player.Speed}, recorded {frame.Speed}");
         return;
       }
       if (
@@ -293,7 +335,7 @@ public static class Replayer
         || player.Stamina != frame.Stamina
       )
       {
-        Desync($"frame {Frame}: state, dashes or stamina differ");
+        StopOnDesync($"frame {Frame}: state, dashes or stamina differ");
         return;
       }
     }
@@ -313,9 +355,26 @@ public static class Replayer
     Frame++;
   }
 
-  private static void Desync(string why)
+  private static void StopOnDesync(string reason)
+  {
+    Desync(reason);
+    RestoreInputs();
+    State = ReplayState.Finished;
+    if (Engine.Scene is Level level)
+      level.Frozen = true;
+    RunManager.DiscardAttemptAfterDesync();
+  }
+
+  private static void Desync(string reason)
   {
     Desynced = true;
+    ClearFed();
+    Audio.Play(DesyncSound);
+    Logger.Log(LogLevel.Warn, LogTag, $"replay desynced: {reason}");
+  }
+
+  private static void ClearFed()
+  {
     foreach (ButtonNode node in buttonNodes)
       node.Clear();
     moveX.Fed = 0f;
@@ -323,8 +382,6 @@ public static class Replayer
     gliderMoveY.Fed = 0f;
     aim.Fed = Vector2.Zero;
     feather.Fed = Vector2.Zero;
-    Audio.Play(DesyncSound);
-    Logger.Log(LogLevel.Warn, LogTag, $"replay desynced: {why}");
   }
 
   private static void SilenceAxis(VirtualIntegerAxis axis, AxisNode node)
