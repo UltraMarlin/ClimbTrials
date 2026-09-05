@@ -9,7 +9,7 @@ namespace Celeste.Mod.ClimbTrials.Entities;
 [Tracked]
 public class GoalIndicator : Entity
 {
-  private const string ArrowTexture = "util/dasharrow/dasharrow00";
+  private const string ArrowTexture = "ClimbTrials/goal_arrow";
   private const float CenterLift = 4f;
   private const float StrongRadiusFar = 48f;
   private const float SubtleRadiusFar = 80f;
@@ -22,13 +22,25 @@ public class GoalIndicator : Entity
   private const float TurnTime = 0.3f;
   private const float FollowTime = 0.2f;
   private const float EdgeMargin = 10f;
-  private static readonly Color ArrowColor = Calc.HexToColor("6ded87");
+  private static readonly Color CheckpointColor = Calc.HexToColor("b2ebbe");
+  private static readonly Color StrawberryColor = Calc.HexToColor("f76f6f");
+  private static readonly Color FinishColor = Calc.HexToColor("f7d472");
+
+  private enum TargetKind
+  {
+    Checkpoint,
+    Strawberry,
+    Finish,
+  }
+
+  private readonly record struct Target(Vector2 Position, TargetKind Kind);
 
   private readonly record struct Berry(EntityID Id, Vector2 World);
 
   private readonly MTexture arrow = GFX.Game[ArrowTexture];
   private readonly List<Berry> berries = [];
   private float angle;
+  private Color color = CheckpointColor;
   private float alpha;
 
   public GoalIndicator()
@@ -65,19 +77,25 @@ public class GoalIndicator : Entity
       return;
     }
 
-    Vector2? target =
+    Target? target =
       ClimbTrialsModule.Settings.GoalIndicator != GoalIndicatorMode.Off
       && player != null
       && !player.Dead
-        ? Target(run, player)
+        ? FindTarget(run, player)
         : null;
     bool appearing = !Visible;
     Visible = target != null;
     if (target == null)
       return;
 
+    color = target.Value.Kind switch
+    {
+      TargetKind.Strawberry => StrawberryColor,
+      TargetKind.Finish => FinishColor,
+      _ => CheckpointColor,
+    };
     Vector2 center = player.Center - Vector2.UnitY * CenterLift;
-    Vector2 toTarget = target.Value - center;
+    Vector2 toTarget = target.Value.Position - center;
     float t = Calc.ClampedMap(toTarget.Length(), FadeNear, FadeFar);
     alpha = t * BaseAlpha();
     float radius = MathHelper.Lerp(RadiusNear, RadiusFar(), t);
@@ -114,29 +132,29 @@ public class GoalIndicator : Entity
       ? StrongRadiusFar
       : SubtleRadiusFar;
 
-  private Vector2? Target(RunDefinition run, Player player)
+  private Target? FindTarget(RunDefinition run, Player player)
   {
     RunProgress progress = RunManager.Progress;
     if (progress.Met(run))
-      return run.FinishCenter;
+      return new Target(run.FinishCenter, TargetKind.Finish);
 
     Vector2 from = player.Center;
-    Vector2? best = null;
+    Target? best = null;
     float bestDistance = float.MaxValue;
 
-    void Consider(Vector2 point)
+    void Consider(Vector2 point, TargetKind kind)
     {
       float d = Vector2.DistanceSquared(from, point);
       if (d < bestDistance)
       {
         bestDistance = d;
-        best = point;
+        best = new Target(point, kind);
       }
     }
 
     for (int i = 0; i < run.Checkpoints.Count; i++)
       if (!progress.IsTaken(i))
-        Consider(run.Checkpoints[i].Position);
+        Consider(run.Checkpoints[i].Position, TargetKind.Checkpoint);
 
     HashSet<EntityID> carried = [];
     foreach (Follower follower in player.Leader.Followers)
@@ -151,7 +169,7 @@ public class GoalIndicator : Entity
       foreach (Berry berry in berries)
       {
         if (!session.Strawberries.Contains(berry.Id) && !carried.Contains(berry.Id))
-          Consider(berry.World);
+          Consider(berry.World, TargetKind.Strawberry);
       }
     }
 
@@ -173,6 +191,6 @@ public class GoalIndicator : Entity
           arrow.DrawCentered(drawAt + new Vector2(i, j), outline, 1f, angle);
       }
     }
-    arrow.DrawCentered(drawAt, ArrowColor * alpha, 1f, angle);
+    arrow.DrawCentered(drawAt, color * alpha, 1f, angle);
   }
 }
