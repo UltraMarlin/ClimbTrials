@@ -26,6 +26,16 @@ public class ClimbTrialsModuleSettings : EverestModuleSettings
   public bool ShowTimerWhileRunning { get; set; } = true;
   public GoalIndicatorMode GoalIndicator { get; set; } = GoalIndicatorMode.Subtle;
 
+  [SettingMaxLength(20)]
+  public string PlayerName { get; set; } = "";
+
+  [SettingIgnore]
+  public string ClientId { get; set; } = "";
+
+  [SettingIgnore]
+  [SettingMaxLength(16)]
+  public string Key { get; set; } = "";
+
   [DefaultButtonBinding(Buttons.Back, Keys.F7)]
   public ButtonBinding Retry { get; set; }
 }

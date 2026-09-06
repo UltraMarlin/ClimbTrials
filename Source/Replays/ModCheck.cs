@@ -3,12 +3,26 @@ using System.Linq;
 
 namespace Celeste.Mod.ClimbTrials.Replays;
 
+public readonly record struct ModuleRef(string Name, string Version)
+{
+  public override string ToString() => $"{Name} {Version}";
+}
+
 public static class ModCheck
 {
-  private static readonly HashSet<string> Allowed = ["Celeste", "Everest", "ClimbTrials"];
+  public const int NamesShown = 3;
 
-  public static List<string> Modules() =>
-    Everest.Modules.Select(m => $"{m.Metadata.Name} {m.Metadata.Version}").ToList();
+  public static readonly IReadOnlySet<string> Allowed = new HashSet<string>
+  {
+    "Celeste",
+    "Everest",
+    "ClimbTrials",
+  };
+
+  public static List<ModuleRef> Modules() =>
+    Everest
+      .Modules.Select(m => new ModuleRef(m.Metadata.Name, m.Metadata.Version.ToString()))
+      .ToList();
 
   public static List<string> Others() =>
     Everest
@@ -17,6 +31,20 @@ public static class ModCheck
       .ToList();
 
   public static bool OthersLoaded => Others().Count > 0;
+
+  public static string Describe(IReadOnlyList<string> names)
+  {
+    if (names.Count <= NamesShown)
+      return string.Join(", ", names);
+    return string.Join(", ", names.Take(NamesShown)) + $" and {names.Count - NamesShown} more";
+  }
+
+  public static string RunWarning() => Warning("climbtrials_recording_mods");
+
+  public static string MenuWarning() => Warning("climbtrials_menu_mods");
+
+  private static string Warning(string leadKey) =>
+    Dialog.Clean(leadKey) + " " + Describe(Others()) + ". ";
 
   public static void LogModules()
   {

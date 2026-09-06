@@ -108,7 +108,7 @@ public static class Replayer
     );
   }
 
-  public static bool Finish()
+  public static bool Finish(long elapsedTicks)
   {
     if (current == null)
       return false;
@@ -120,11 +120,20 @@ public static class Replayer
     if (alreadyDesynced)
       return false;
 
-    if (missing == 0)
-      return true;
-
-    Desync($"finished {missing} frames early");
-    return false;
+    if (missing != 0)
+    {
+      Desync($"finished {missing} frames early");
+      return false;
+    }
+    if (elapsedTicks != current.Ticks)
+    {
+      Desync(
+        $"finished at {Attempt.Format(elapsedTicks)}, "
+          + $"the header says {Attempt.Format(current.Ticks)}"
+      );
+      return false;
+    }
+    return true;
   }
 
   public static void Clear()
@@ -322,11 +331,6 @@ public static class Replayer
       if (player.Position != frame.Position)
       {
         StopOnDesync($"frame {Frame}: at {player.Position}, recorded {frame.Position}");
-        return;
-      }
-      if (player.Speed != frame.Speed)
-      {
-        StopOnDesync($"frame {Frame}: speed {player.Speed}, recorded {frame.Speed}");
         return;
       }
       if (

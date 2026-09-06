@@ -8,17 +8,19 @@ namespace Celeste.Mod.ClimbTrials.Replays;
 
 public sealed class Replay
 {
-  public const int FormatVersion = 3;
+  public const int FormatVersion = 4;
   public const int ButtonCount = 15;
-  public const int MaxFrames = 2_000_000;
-  public const int FrameBytes = 55;
+  public const int MaxFrames = 216_000;
+  public const int MaxModules = 256;
+  public const int MaxAnimations = 255;
+  public const int MaxStringLength = 128;
+  public static int FrameBytes => ReplayColumns.FrameBytes;
   private const string Magic = "CTRP";
 
   public string TrialId;
   public string CelesteVersion;
   public string EverestVersion;
-  public List<string> Modules = [];
-  public bool OtherModsLoaded;
+  public List<ModuleRef> Modules = [];
   public string PlayerName;
   public string Language;
   public GrabModes GrabMode;
@@ -32,12 +34,31 @@ public sealed class Replay
   public int RunSeed;
   public ButtonState[] Buttons = new ButtonState[ButtonCount];
   public long Ticks;
+  public DateTime RunStartedUtc;
   public DateTime AchievedAtUtc;
+  public long WallMilliseconds;
+  public List<string> Animations = [];
   public List<InputFrame> Frames = [];
+
+  public bool IsOwn { get; set; }
 
   public bool MatchesGame() => CelesteVersion == Celeste.Instance.Version.ToString();
 
-  public bool IsOwn => true;
+  public byte AddAnimation(string animation)
+  {
+    if (string.IsNullOrEmpty(animation))
+      return 0;
+    int index = Animations.IndexOf(animation);
+    if (index < 0)
+    {
+      if (Animations.Count >= MaxAnimations)
+        return 0;
+      Animations.Add(animation);
+      index = Animations.Count - 1;
+    }
+    return (byte)(index + 1);
+  }
+
 
   public void Write(BinaryWriter w)
   {
@@ -47,15 +68,17 @@ public sealed class Replay
     w.Write(CelesteVersion);
     w.Write(EverestVersion);
     w.Write(Modules.Count);
-    foreach (string module in Modules)
-      w.Write(module);
-    w.Write(OtherModsLoaded);
+    foreach (ModuleRef module in Modules)
+    {
+      w.Write(module.Name);
+      w.Write(module.Version);
+    }
     w.Write(PlayerName);
     w.Write(Language);
     w.Write((int)GrabMode);
     w.Write((int)CrouchDashMode);
     w.Write((int)ScreenShake);
-    WriteVector(w, LastAim);
+    ReplayColumns.WriteVector(w, LastAim);
     w.Write(TimeActive);
     w.Write(RawTimeActive);
     w.Write(RawDeltaTime);
@@ -68,16 +91,21 @@ public sealed class Replay
       w.Write(b.Repeating);
     }
     w.Write(Ticks);
+    w.Write(RunStartedUtc.Ticks);
     w.Write(AchievedAtUtc.Ticks);
+    w.Write(WallMilliseconds);
+    w.Write(Animations.Count);
+    foreach (string animation in Animations)
+      w.Write(animation);
     w.Write(Frames.Count);
-    byte[] packed = PackFrames();
+    byte[] packed = Pack(writer => WriteColumns(writer, Frames));
     w.Write(packed.Length);
     w.Write(packed);
   }
 
   public static Replay Read(BinaryReader r)
   {
-    if (r.ReadString() != Magic)
+    if (ReadString(r, 4) != Magic)
       throw new InvalidDataException("not a ClimbTrials replay");
     int version = r.ReadInt32();
     if (version != FormatVersion)
@@ -85,20 +113,23 @@ public sealed class Replay
 
     Replay replay = new()
     {
-      TrialId = r.ReadString(),
-      CelesteVersion = r.ReadString(),
-      EverestVersion = r.ReadString(),
+      TrialId = ReadString(r, MaxStringLength),
+      CelesteVersion = ReadString(r, MaxStringLength),
+      EverestVersion = ReadString(r, MaxStringLength),
     };
-    int moduleCount = Math.Min(r.ReadInt32(), 10_000);
+    int moduleCount = ReadCount(r, MaxModules, "modules");
     for (int i = 0; i < moduleCount; i++)
-      replay.Modules.Add(r.ReadString());
-    replay.OtherModsLoaded = r.ReadBoolean();
-    replay.PlayerName = r.ReadString();
-    replay.Language = r.ReadString();
+    {
+      string name = ReadString(r, MaxStringLength);
+      string moduleVersion = ReadString(r, MaxStringLength);
+      replay.Modules.Add(new ModuleRef(name, moduleVersion));
+    }
+    replay.PlayerName = ReadString(r, MaxStringLength);
+    replay.Language = ReadString(r, MaxStringLength);
     replay.GrabMode = (GrabModes)r.ReadInt32();
     replay.CrouchDashMode = (CrouchDashModes)r.ReadInt32();
     replay.ScreenShake = (ScreenshakeAmount)r.ReadInt32();
-    replay.LastAim = ReadVector(r);
+    replay.LastAim = ReplayColumns.ReadVector(r);
     replay.TimeActive = r.ReadSingle();
     replay.RawTimeActive = r.ReadSingle();
     replay.RawDeltaTime = r.ReadSingle();
@@ -111,14 +142,15 @@ public sealed class Replay
       replay.Buttons[i].Repeating = r.ReadBoolean();
     }
     replay.Ticks = r.ReadInt64();
-    replay.AchievedAtUtc = new DateTime(r.ReadInt64(), DateTimeKind.Utc);
+    replay.RunStartedUtc = ReadUtc(r);
+    replay.AchievedAtUtc = ReadUtc(r);
+    replay.WallMilliseconds = r.ReadInt64();
+    int animationCount = ReadCount(r, MaxAnimations, "animations");
+    for (int i = 0; i < animationCount; i++)
+      replay.Animations.Add(ReadString(r, MaxStringLength));
 
-    int count = r.ReadInt32();
-    if (count < 0 || count > MaxFrames)
-      throw new InvalidDataException($"replay has {count} frames");
-    int packedLength = r.ReadInt32();
-    if (packedLength < 0 || packedLength > (long)MaxFrames * FrameBytes)
-      throw new InvalidDataException($"replay frame block is {packedLength} bytes");
+    int count = ReadCount(r, MaxFrames, "frames");
+    int packedLength = ReadCount(r, MaxFrames * FrameBytes, "packed bytes");
     byte[] packed = r.ReadBytes(packedLength);
     if (packed.Length != packedLength)
       throw new InvalidDataException("replay file is truncated");
@@ -126,100 +158,69 @@ public sealed class Replay
     return replay;
   }
 
-  private byte[] PackFrames()
+  private static byte[] Pack(Action<BinaryWriter> write)
   {
     using MemoryStream output = new();
     using (BrotliStream brotli = new(output, CompressionLevel.Optimal, leaveOpen: true))
     using (BinaryWriter w = new(brotli))
     {
-      WriteColumns(w, Frames);
+      write(w);
     }
     return output.ToArray();
   }
 
   private static List<InputFrame> UnpackFrames(byte[] packed, int count)
   {
-    using MemoryStream input = new(packed);
-    using BrotliStream brotli = new(input, CompressionMode.Decompress);
-    using BinaryReader r = new(brotli);
+    byte[] raw = new byte[count * FrameBytes];
+    using (MemoryStream input = new(packed))
+    using (BrotliStream brotli = new(input, CompressionMode.Decompress))
+    {
+      brotli.ReadExactly(raw);
+      if (brotli.ReadByte() != -1)
+        throw new InvalidDataException("frame block is longer than the frame count says");
+    }
+    using MemoryStream frames = new(raw);
+    using BinaryReader r = new(frames);
     return ReadColumns(r, count);
   }
 
   public static void WriteColumns(BinaryWriter w, List<InputFrame> frames)
   {
+    foreach (ReplayColumn column in ReplayColumns.All)
     foreach (InputFrame f in frames)
-      w.Write((ushort)f.Held);
-    foreach (InputFrame f in frames)
-      w.Write((ushort)f.Pressed);
-    foreach (InputFrame f in frames)
-      w.Write((ushort)f.Released);
-    foreach (InputFrame f in frames)
-      w.Write(f.GrabToggle);
-    foreach (InputFrame f in frames)
-      w.Write(f.HasPlayer);
-    foreach (InputFrame f in frames)
-      w.Write(f.MoveX);
-    foreach (InputFrame f in frames)
-      w.Write(f.MoveY);
-    foreach (InputFrame f in frames)
-      w.Write(f.GliderMoveY);
-    foreach (InputFrame f in frames)
-      WriteVector(w, f.Aim);
-    foreach (InputFrame f in frames)
-      WriteVector(w, f.Feather);
-    foreach (InputFrame f in frames)
-      WriteVector(w, f.Position);
-    foreach (InputFrame f in frames)
-      WriteVector(w, f.Speed);
-    foreach (InputFrame f in frames)
-      w.Write(f.State);
-    foreach (InputFrame f in frames)
-      w.Write(f.Dashes);
-    foreach (InputFrame f in frames)
-      w.Write(f.Stamina);
+      column.Write(w, f);
   }
 
   public static List<InputFrame> ReadColumns(BinaryReader r, int count)
   {
     InputFrame[] frames = new InputFrame[count];
-    for (int i = 0; i < count; i++)
-      frames[i].Held = (Actions)r.ReadUInt16();
-    for (int i = 0; i < count; i++)
-      frames[i].Pressed = (Actions)r.ReadUInt16();
-    for (int i = 0; i < count; i++)
-      frames[i].Released = (Actions)r.ReadUInt16();
-    for (int i = 0; i < count; i++)
-      frames[i].GrabToggle = r.ReadBoolean();
-    for (int i = 0; i < count; i++)
-      frames[i].HasPlayer = r.ReadBoolean();
-    for (int i = 0; i < count; i++)
-      frames[i].MoveX = r.ReadSByte();
-    for (int i = 0; i < count; i++)
-      frames[i].MoveY = r.ReadSByte();
-    for (int i = 0; i < count; i++)
-      frames[i].GliderMoveY = r.ReadSByte();
-    for (int i = 0; i < count; i++)
-      frames[i].Aim = ReadVector(r);
-    for (int i = 0; i < count; i++)
-      frames[i].Feather = ReadVector(r);
-    for (int i = 0; i < count; i++)
-      frames[i].Position = ReadVector(r);
-    for (int i = 0; i < count; i++)
-      frames[i].Speed = ReadVector(r);
-    for (int i = 0; i < count; i++)
-      frames[i].State = r.ReadInt32();
-    for (int i = 0; i < count; i++)
-      frames[i].Dashes = r.ReadInt32();
-    for (int i = 0; i < count; i++)
-      frames[i].Stamina = r.ReadSingle();
+    foreach (ReplayColumn column in ReplayColumns.All)
+      for (int i = 0; i < count; i++)
+        column.Read(r, ref frames[i]);
     return [.. frames];
   }
 
-  private static void WriteVector(BinaryWriter w, Vector2 v)
+  private static string ReadString(BinaryReader r, int maxLength)
   {
-    w.Write(v.X);
-    w.Write(v.Y);
+    string s = r.ReadString();
+    if (s.Length > maxLength)
+      throw new InvalidDataException($"a string of {s.Length} chars, the limit is {maxLength}");
+    return s;
   }
 
-  private static Vector2 ReadVector(BinaryReader r) => new(r.ReadSingle(), r.ReadSingle());
+  private static int ReadCount(BinaryReader r, int max, string what)
+  {
+    int count = r.ReadInt32();
+    if (count < 0 || count > max)
+      throw new InvalidDataException($"{count} {what}, the limit is {max}");
+    return count;
+  }
+
+  private static DateTime ReadUtc(BinaryReader r)
+  {
+    long ticks = r.ReadInt64();
+    if (ticks < DateTime.MinValue.Ticks || ticks > DateTime.MaxValue.Ticks)
+      throw new InvalidDataException("timestamp out of range");
+    return new DateTime(ticks, DateTimeKind.Utc);
+  }
 }

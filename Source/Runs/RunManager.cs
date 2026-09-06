@@ -26,7 +26,6 @@ public static class RunManager
   public static Replay LastReplay => Replay ?? Recorder.Last;
   public static bool AttemptInProgress =>
     Run != null && Attempt.State is AttemptState.Countdown or AttemptState.Running;
-  public static bool RecordingEnabled => !ModCheck.OthersLoaded;
 
   private static bool awaitingLoad;
   private static bool awaitingControl;
@@ -232,9 +231,11 @@ public static class RunManager
     }
   }
 
-  public static int ReplayLimitSeconds =>
+  public static int ReplayLimitSeconds => ReplayLimitFor(Trial);
+
+  public static int ReplayLimitFor(Trial trial) =>
     Math.Min(
-      Trial?.ReplayLimitSeconds ?? Trial.DefaultReplayLimitSeconds,
+      trial?.ReplayLimitSeconds ?? Trial.DefaultReplayLimitSeconds,
       Trial.DefaultReplayLimitSeconds
     );
 
@@ -310,17 +311,28 @@ public static class RunManager
   {
     if (Attempt.State != AttemptState.Running || !Progress.Met(Run))
       return false;
+
     Attempt.Finish();
     Determinism.StopSeeding();
     finishSnapshot ??= Audio.CreateSnapshot("snapshot:/pause_menu");
     if (Replay != null)
     {
-      bool inSync = Replayer.Finish();
+      bool inSync = Replayer.Finish(Attempt.ElapsedTicks);
       LastFinish = new FinishResult { Ticks = Attempt.ElapsedTicks };
       Logger.Log(LogLevel.Info, LogTag, $"replay of '{Trial?.Id}' finished, in sync: {inSync}");
       return true;
     }
+
     Replay recorded = Recorder.Finish(Attempt.ElapsedTicks);
+    if (recorded != null && Trial != null)
+    {
+      ValidationResult check = ReplayValidator.Check(
+        recorded,
+        TrialSpec.From(Trial),
+        ModCheck.Allowed
+      );
+      Logger.Log(LogLevel.Info, LogTag, $"replay check: {check.Describe()}");
+    }
     if (Trial != null)
     {
       LastFinish = TrialRecords.Record(Trial, Attempt.ElapsedTicks);

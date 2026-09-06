@@ -42,6 +42,7 @@ public static class ReplayStore
       using FileStream stream = File.OpenRead(PathFor(trialId));
       using BinaryReader reader = new(stream);
       Replay replay = Replay.Read(reader);
+      replay.IsOwn = true;
       Logger.Log(
         LogLevel.Info,
         LogTag,
@@ -50,7 +51,7 @@ public static class ReplayStore
       );
       return replay;
     }
-    catch (Exception e) when (e is IOException or InvalidDataException)
+    catch (Exception e)
     {
       Logger.Log(LogLevel.Warn, LogTag, $"deleting unreadable replay for '{trialId}': {e.Message}");
       Delete(trialId);

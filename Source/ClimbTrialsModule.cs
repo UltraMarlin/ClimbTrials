@@ -1,4 +1,5 @@
 ﻿using System;
+using Celeste.Mod.ClimbTrials.Online;
 using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.Runs;
 using Celeste.Mod.ClimbTrials.UI;
@@ -33,6 +34,7 @@ public class ClimbTrialsModule : EverestModule
   public override void Load()
   {
     MainMenuEntry.Load();
+    Identity.CreateClientIdIfMissing();
     PauseMenu.Load();
     RunManager.Load();
     Determinism.Load();

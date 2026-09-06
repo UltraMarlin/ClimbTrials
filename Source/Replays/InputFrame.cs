@@ -24,6 +24,14 @@ public enum Actions : ushort
   MenuJournal = 1 << 14,
 }
 
+[Flags]
+public enum FrameFlags : byte
+{
+  None = 0,
+  FacingLeft = 1 << 0,
+  LevelUpdated = 1 << 1,
+}
+
 public struct ButtonState
 {
   public float Buffer;
@@ -44,8 +52,14 @@ public struct InputFrame
   public Vector2 Aim;
   public Vector2 Feather;
   public Vector2 Position;
-  public Vector2 Speed;
   public int State;
   public int Dashes;
   public float Stamina;
+  public byte AnimId;
+  public byte AnimFrame;
+  public sbyte ScaleX;
+  public sbyte ScaleY;
+  public FrameFlags Flags;
+
+  public bool LevelUpdated => (Flags & FrameFlags.LevelUpdated) != 0;
 }

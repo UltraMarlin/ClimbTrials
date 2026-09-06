@@ -1,3 +1,4 @@
+using System;
 using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.Replays;
@@ -86,7 +87,7 @@ public static class InputCapture
     }
   }
 
-  public static InputFrame Sample()
+  public static InputFrame Sample(Replay replay)
   {
     ReadButtons(out Actions held, out Actions pressed, out Actions released);
     InputFrame frame = new()
@@ -101,15 +102,23 @@ public static class InputCapture
       Aim = Input.Aim.Value,
       Feather = Input.Feather.Value,
     };
+    if (Engine.FreezeTimer <= 0f)
+      frame.Flags |= FrameFlags.LevelUpdated;
     Player player = (Engine.Scene as Level)?.Tracker.GetEntity<Player>();
     if (player == null)
       return frame;
+
     frame.HasPlayer = true;
     frame.Position = player.Position;
-    frame.Speed = player.Speed;
     frame.State = player.StateMachine.State;
     frame.Dashes = player.Dashes;
     frame.Stamina = player.Stamina;
+    frame.AnimId = replay.AddAnimation(player.Sprite.CurrentAnimationID);
+    frame.AnimFrame = (byte)Math.Min(player.Sprite.CurrentAnimationFrame, byte.MaxValue);
+    frame.ScaleX = ReplayColumns.ScaleToSByte(Math.Abs(player.Sprite.Scale.X));
+    frame.ScaleY = ReplayColumns.ScaleToSByte(player.Sprite.Scale.Y);
+    if (player.Facing == Facings.Left)
+      frame.Flags |= FrameFlags.FacingLeft;
     return frame;
   }
 }

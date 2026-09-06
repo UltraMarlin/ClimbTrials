@@ -15,6 +15,7 @@ public class OuiTrials : Oui
 
   private const float OnScreenX = 960f,
     OffScreenX = 2880f;
+  private const float StatusY = 1060f;
   private const float TitleY = 120f;
   private static readonly Color Dim = Color.White * 0.7f;
 
@@ -193,15 +194,15 @@ public class OuiTrials : Oui
         alpha,
         x
       );
-    if (!RunManager.RecordingEnabled)
+    if (ModCheck.OthersLoaded)
       ActiveFont.DrawOutline(
-        Dialog.Clean("climbtrials_recording_off") + " " + string.Join(", ", ModCheck.Others()),
-        new Vector2(x, ButtonRow.Y + 40f),
+        ModCheck.MenuWarning(),
+        new Vector2(x, StatusY),
         new Vector2(0.5f, 0.5f),
-        Vector2.One * 0.5f,
+        Vector2.One * 0.45f,
         Color.White * 0.7f * alpha,
         2f,
-        Color.Black * alpha
+        Color.Black * 0.7f * alpha
       );
   }
 }

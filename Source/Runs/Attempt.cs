@@ -37,7 +37,7 @@ public sealed class Attempt
       ElapsedTicks += SecondsToTicks(rawDeltaSeconds);
   }
 
-  private static long SecondsToTicks(float seconds)
+  public static long SecondsToTicks(float seconds)
   {
     return ((long)(seconds * 1000 + 0.5)) * TimeSpan.TicksPerMillisecond;
   }
