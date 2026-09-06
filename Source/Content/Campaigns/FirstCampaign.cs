@@ -10,7 +10,24 @@ public static class FirstCampaign
     [
       new Trial
       {
-        Id = "c1n-01",
+        Id = "c1-1",
+        Name = "Berry City",
+        Difficulty = Difficulty.Normal,
+        Run = new()
+        {
+          Sid = "Celeste/1-ForsakenCity",
+          Mode = AreaMode.Normal,
+          StartRoom = "1",
+          Spawn = new(19f, 144f),
+          FinishRoom = "5",
+          Finish = new(1220, -896, 16, 24),
+          RequiredStrawberries = 2,
+        },
+        Goals = GoalTimes.FromSeconds(bronze: 54, silver: 48, gold: 44, grandmaster: 40),
+      },
+      new Trial
+      {
+        Id = "c1-2",
         Name = "City Crossing",
         Difficulty = Difficulty.Normal,
         Run = new()
@@ -21,89 +38,56 @@ public static class FirstCampaign
           Spawn = new(2283f, -1232f),
           FinishRoom = "6a",
           Finish = new(1864, -1168, 16, 24),
+          Checkpoints =
+          [
+            new("6b", new(2168f, -1200f), new(2238f, -1264f)),
+            new("6a", new(1700f, -1052f)),
+          ],
         },
-        Goals = GoalTimes.FromSeconds(bronze: 5, silver: 4, gold: 3.2, grandmaster: 3),
+        Goals = GoalTimes.FromSeconds(bronze: 25, silver: 20, gold: 15, grandmaster: 12),
       },
       new Trial
       {
-        Id = "c1n-01b",
-        Name = "City Crossing Checkpoints",
+        Id = "c1-3",
+        Name = "Shrine Checkpoint Frenzy",
         Difficulty = Difficulty.Normal,
         Run = new()
         {
-          Sid = "Celeste/1-ForsakenCity",
+          Sid = "Celeste/4-GoldenRidge",
           Mode = AreaMode.Normal,
-          StartRoom = "6b",
-          Spawn = new(2283f, -1232f),
-          FinishRoom = "6a",
-          Finish = new(1864, -1168, 16, 24),
-          Checkpoints = [new("6a", new(1700f, -1052f))],
+          StartRoom = "b-00",
+          Spawn = new(4416f, -1016f),
+          FinishRoom = "b-00",
+          Finish = new(4408, -1040, 16, 24),
+          Checkpoints =
+          [
+            new("b-00", new(4312f, -1068f)),
+            new("b-00", new(4428f, -1370f)),
+            new("b-00", new(4550f, -1298f)),
+            new("b-00", new(4512f, -1216f)),
+            new("b-00", new(4314f, -1246f)),
+            new("b-00", new(4374f, -1288f)),
+          ],
+          Dashes = 2,
         },
-        Goals = GoalTimes.FromSeconds(bronze: 10, silver: 8, gold: 7, grandmaster: 5),
+        Goals = GoalTimes.FromSeconds(bronze: 26, silver: 22, gold: 20, grandmaster: 18),
       },
       new Trial
       {
-        Id = "c1n-02",
-        Name = "Resort Mess",
+        Id = "c1-4",
+        Name = "Wake Up",
         Difficulty = Difficulty.Normal,
         Run = new()
         {
-          Sid = "Celeste/3-CelestialResort",
+          Sid = "Celeste/2-OldSite",
           Mode = AreaMode.Normal,
-          StartRoom = "09-b",
-          Spawn = new(5070f, -248f),
-          FinishRoom = "09-b",
-          Finish = new(4838, -48, 16, 24),
+          StartRoom = "end_3",
+          Spawn = new(1015f, 1888f),
+          FinishRoom = "end_1",
+          Finish = new(414, 1656, 16, 24),
+          Dashes = 0,
         },
-        Goals = GoalTimes.FromSeconds(bronze: 6, silver: 4, gold: 3, grandmaster: 2.8),
-      },
-      new Trial
-      {
-        Id = "c1n-03",
-        Name = "Epilogue Bridge",
-        Difficulty = Difficulty.Normal,
-        Run = new()
-        {
-          Sid = "Celeste/8-Epilogue",
-          Mode = AreaMode.Normal,
-          StartRoom = "outside",
-          Spawn = new(136f, 40f),
-          FinishRoom = "secret",
-          Finish = new(1320, 34, 16, 24),
-        },
-        Goals = GoalTimes.FromSeconds(bronze: 8, silver: 6.5, gold: 5.7, grandmaster: 5.4),
-      },
-      new Trial
-      {
-        Id = "c1n-04",
-        Name = "Block Breaker",
-        Difficulty = Difficulty.Normal,
-        Run = new()
-        {
-          Sid = "Celeste/6-Reflection",
-          Mode = AreaMode.Normal,
-          StartRoom = "13",
-          Spawn = new(4408f, -3008f),
-          FinishRoom = "13",
-          Finish = new(4464, -2848, 40, 16),
-        },
-        Goals = GoalTimes.FromSeconds(bronze: 8, silver: 6.5, gold: 5, grandmaster: 4.3),
-      },
-      new Trial
-      {
-        Id = "feather-test",
-        Name = "Feather Test",
-        Difficulty = Difficulty.Normal,
-        Run = new()
-        {
-          Sid = "Celeste/6-Reflection",
-          Mode = AreaMode.Normal,
-          StartRoom = "04",
-          Spawn = new(-833f, -2936f),
-          FinishRoom = "04",
-          Finish = new(-891, -2952, 16, 24),
-        },
-        Goals = GoalTimes.FromSeconds(bronze: 25, silver: 20, gold: 15, grandmaster: 10),
+        Goals = GoalTimes.FromSeconds(bronze: 18, silver: 16, gold: 14, grandmaster: 12),
       },
     ],
   };
