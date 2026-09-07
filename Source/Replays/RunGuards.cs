@@ -9,12 +9,16 @@ public static class RunGuards
   public static void Load()
   {
     On.Celeste.UserIO.SaveHandler += OnSaveHandler;
+    On.Celeste.SaveData.SetCheckpoint += OnSetCheckpoint;
+    On.Celeste.Level.AutoSave += OnAutoSave;
     On.Celeste.FinalBoss.Added += OnFinalBossAdded;
   }
 
   public static void Unload()
   {
     On.Celeste.UserIO.SaveHandler -= OnSaveHandler;
+    On.Celeste.SaveData.SetCheckpoint -= OnSetCheckpoint;
+    On.Celeste.Level.AutoSave -= OnAutoSave;
     On.Celeste.FinalBoss.Added -= OnFinalBossAdded;
   }
 
@@ -39,7 +43,26 @@ public static class RunGuards
   private static void AfterSettingsSave()
   {
     if (RunManager.AttemptInProgress && !RunManager.Replaying)
-      RunManager.RestartAttempt("climbtrials_notice_settings");
+      RunManager.RestartAttemptAfterSave("climbtrials_notice_settings");
+  }
+
+  private static bool OnSetCheckpoint(
+    On.Celeste.SaveData.orig_SetCheckpoint orig,
+    SaveData self,
+    AreaKey area,
+    string level
+  )
+  {
+    if (RunManager.Run != null)
+      return false;
+    return orig(self, area, level);
+  }
+
+  private static void OnAutoSave(On.Celeste.Level.orig_AutoSave orig, Level self)
+  {
+    if (RunManager.Run != null)
+      return;
+    orig(self);
   }
 
   // Unsure if this ever ends up mattering, but added just in case.

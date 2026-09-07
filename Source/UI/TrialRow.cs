@@ -58,7 +58,7 @@ public class TrialRow : TextMenu.Item
       Vector2.One,
       nameColor * alpha,
       2f,
-      Color.Black * alpha
+      TimeText.StrokeFor(nameColor * alpha)
     );
 
     TrialRecord record = TrialRecords.Get(Trial.Id);

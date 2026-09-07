@@ -8,7 +8,7 @@ namespace Celeste.Mod.ClimbTrials.Replays;
 
 public sealed class Replay
 {
-  public const int FormatVersion = 4;
+  public const int FormatVersion = 5;
   public const int ButtonCount = 15;
   public const int MaxFrames = 216_000;
   public const int MaxModules = 256;
@@ -26,6 +26,7 @@ public sealed class Replay
   public GrabModes GrabMode;
   public CrouchDashModes CrouchDashMode;
   public ScreenshakeAmount ScreenShake;
+  public bool ModOptionsInPauseMenu;
   public Vector2 LastAim;
   public float TimeActive;
   public float RawTimeActive;
@@ -59,7 +60,6 @@ public sealed class Replay
     return (byte)(index + 1);
   }
 
-
   public void Write(BinaryWriter w)
   {
     w.Write(Magic);
@@ -78,6 +78,7 @@ public sealed class Replay
     w.Write((int)GrabMode);
     w.Write((int)CrouchDashMode);
     w.Write((int)ScreenShake);
+    w.Write(ModOptionsInPauseMenu);
     ReplayColumns.WriteVector(w, LastAim);
     w.Write(TimeActive);
     w.Write(RawTimeActive);
@@ -129,6 +130,7 @@ public sealed class Replay
     replay.GrabMode = (GrabModes)r.ReadInt32();
     replay.CrouchDashMode = (CrouchDashModes)r.ReadInt32();
     replay.ScreenShake = (ScreenshakeAmount)r.ReadInt32();
+    replay.ModOptionsInPauseMenu = r.ReadBoolean();
     replay.LastAim = ReplayColumns.ReadVector(r);
     replay.TimeActive = r.ReadSingle();
     replay.RawTimeActive = r.ReadSingle();

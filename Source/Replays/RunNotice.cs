@@ -3,6 +3,7 @@ using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.Runs;
 using Microsoft.Xna.Framework;
 using Monocle;
+using Celeste.Mod.ClimbTrials.UI;
 
 namespace Celeste.Mod.ClimbTrials.Entities;
 
@@ -56,7 +57,7 @@ public class RunNotice : Entity
         Vector2.One * 0.8f,
         NoticeColor * alpha,
         2f,
-        Color.Black * alpha
+        TimeText.StrokeFor(NoticeColor * alpha)
       );
     }
     string status = StatusText();
@@ -69,7 +70,7 @@ public class RunNotice : Entity
       Vector2.One * 0.45f,
       Color.White * 0.7f,
       2f,
-      Color.Black * 0.7f
+      TimeText.StrokeFor(Color.White * 0.7f)
     );
   }
 

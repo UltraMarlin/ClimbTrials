@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using Microsoft.Xna.Framework;
 using Monocle;
+using Celeste.Mod.ClimbTrials.UI;
 
 namespace Celeste.Mod.ClimbTrials.Entities;
 
@@ -96,7 +97,7 @@ public class Countdown : Entity
       Vector2.One * scale,
       showingGo ? GoColor : Color.White,
       4f,
-      Color.Black
+      TimeText.StrokeFor(showingGo ? GoColor : Color.White)
     );
   }
 

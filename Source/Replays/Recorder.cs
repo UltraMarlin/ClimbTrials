@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using Celeste.Mod.Core;
 using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.Replays;
@@ -37,6 +38,7 @@ public static class Recorder
       GrabMode = Settings.Instance.GrabMode,
       CrouchDashMode = Settings.Instance.CrouchDashMode,
       ScreenShake = Settings.Instance.ScreenShake,
+      ModOptionsInPauseMenu = CoreModule.Settings.ShowModOptionsInGame,
       LastAim = Input.LastAim,
       TimeActive = level.TimeActive,
       RawTimeActive = level.RawTimeActive,

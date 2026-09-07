@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 
@@ -19,7 +20,19 @@ public sealed class RunDefinition
 
   public IReadOnlyList<CheckpointDef> Checkpoints { get; init; } = [];
   public int RequiredStrawberries { get; init; }
-  public int? Dashes { get; init; }
+
+  public int? Dashes
+  {
+    get => dashes;
+    init
+    {
+      if (value is < 0 or > 2)
+        throw new ArgumentOutOfRangeException(nameof(Dashes), value, "trial dashes must be 0 to 2");
+      dashes = value;
+    }
+  }
+
+  private readonly int? dashes;
   public bool Grabless { get; init; }
 
   public AreaKey Area => AreaData.Get(Sid).ToKey(Mode);

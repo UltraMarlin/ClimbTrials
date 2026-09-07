@@ -58,6 +58,8 @@ public static class TimeText
     return numberHeight * style.Scale;
   }
 
+  public static Color StrokeFor(Color color) => Color.Black * (color.A / 255f);
+
   public static void Draw(
     Vector2 baseline,
     string text,
@@ -89,7 +91,7 @@ public static class TimeText
         Vector2.One * charScale * style.Scale,
         separator ? separators : digits,
         style.Stroke,
-        Color.Black
+        StrokeFor(separator ? separators : digits)
       );
       x += w;
     }

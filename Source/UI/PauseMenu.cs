@@ -1,4 +1,5 @@
 using System.Linq;
+using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.Runs;
 using Monocle;
 
@@ -31,9 +32,27 @@ public static class PauseMenu
     );
 
     int restartIndex = Replace(menu, "menu_pause_restartarea", restart);
-    if (Replace(menu, "menu_pause_return", back) >= 0)
-      return;
-    menu.Insert(restartIndex + 1, back);
+    if (Replace(menu, "menu_pause_return", back) < 0)
+      menu.Insert(restartIndex + 1, back);
+
+    if (Replayer.Silenced)
+      LockRows(menu, Dialog.Clean("menu_pause_resume"), Dialog.Clean("menu_pause_retry"));
+    else if (RunManager.Replaying)
+      LockRows(menu, Dialog.Clean("menu_pause_resume"), Dialog.Clean("climbtrials_pause_return"));
+  }
+
+  private static void LockRows(TextMenu menu, params string[] exemptLabels)
+  {
+    foreach (TextMenu.Button button in menu.Items.OfType<TextMenu.Button>())
+      if (!exemptLabels.Contains(button.Label))
+        Lock(button);
+  }
+
+  private static void Lock(TextMenu.Button button)
+  {
+    button.OnPressed = null;
+    if (!Replayer.Silenced)
+      button.Disabled = true;
   }
 
   private static int Replace(TextMenu menu, string vanillaKey, TextMenu.Item replacement)
@@ -81,7 +100,10 @@ public static class PauseMenu
 
       int index = menu.Items.IndexOf(yes);
       menu.Remove(yes);
-      menu.Insert(index, new TextMenu.Button(yes.Label).Pressed(RestartTrial));
+      TextMenu.Button restart = new(yes.Label);
+      restart.Pressed(RestartTrial);
+      Lock(restart);
+      menu.Insert(index, restart);
     };
   }
 }

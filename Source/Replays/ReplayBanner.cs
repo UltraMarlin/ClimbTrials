@@ -89,7 +89,7 @@ public class ReplayBanner : Entity
       Vector2.One * scale,
       color,
       2f,
-      Color.Black
+      TimeText.StrokeFor(color)
     );
   }
 }

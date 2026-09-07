@@ -178,7 +178,7 @@ public class OuiTrials : Oui
       Vector2.One * 1.6f,
       Color.White * alpha,
       2f,
-      Color.Black * alpha
+      TimeText.StrokeFor(Color.White * alpha)
     );
     ActiveFont.Draw(
       campaign.Name,
@@ -202,7 +202,7 @@ public class OuiTrials : Oui
         Vector2.One * 0.45f,
         Color.White * 0.7f * alpha,
         2f,
-        Color.Black * 0.7f * alpha
+        TimeText.StrokeFor(Color.White * 0.7f * alpha)
       );
   }
 }

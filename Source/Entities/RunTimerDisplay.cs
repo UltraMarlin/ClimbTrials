@@ -26,7 +26,7 @@ public class RunTimerDisplay : Entity
   public static bool ShouldShow =>
     RunManager.Attempt.State switch
     {
-      AttemptState.Idle => false,
+      AttemptState.Idle => RunManager.Run != null,
       AttemptState.Running => RunManager.Replaying
         || ClimbTrialsModule.Settings.ShowTimerWhileRunning,
       _ => true,

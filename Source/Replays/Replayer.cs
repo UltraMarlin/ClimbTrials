@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Celeste.Mod.ClimbTrials.Runs;
+using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
 using Monocle;
 
@@ -51,6 +52,7 @@ public static class Replayer
       buttonNodes[i] = new ButtonNode();
     On.Monocle.MInput.Update += OnMInputUpdate;
     On.Monocle.Engine.Update += OnEngineUpdate;
+    On.Celeste.Level.Pause += OnLevelPause;
     On.Celeste.Input.GuiButton_VirtualButton_PrefixMode_string += OnGuiButton;
   }
 
@@ -59,6 +61,7 @@ public static class Replayer
     Clear();
     On.Monocle.MInput.Update -= OnMInputUpdate;
     On.Monocle.Engine.Update -= OnEngineUpdate;
+    On.Celeste.Level.Pause -= OnLevelPause;
     On.Celeste.Input.GuiButton_VirtualButton_PrefixMode_string -= OnGuiButton;
   }
 
@@ -158,6 +161,31 @@ public static class Replayer
     Settings.Instance.GrabMode = savedGrabMode;
     Settings.Instance.CrouchDashMode = savedCrouchDashMode;
     Settings.Instance.ScreenShake = savedScreenShake;
+  }
+
+  private static void OnLevelPause(
+    On.Celeste.Level.orig_Pause orig,
+    Level self,
+    int startIndex,
+    bool minimal,
+    bool quickReset
+  )
+  {
+    if (current == null)
+    {
+      orig(self, startIndex, minimal, quickReset);
+      return;
+    }
+    bool watcherValue = CoreModule.Settings.ShowModOptionsInGame;
+    CoreModule.Settings.ShowModOptionsInGame = current.ModOptionsInPauseMenu;
+    try
+    {
+      orig(self, startIndex, minimal, quickReset);
+    }
+    finally
+    {
+      CoreModule.Settings.ShowModOptionsInGame = watcherValue;
+    }
   }
 
   private static void RestoreInputs()

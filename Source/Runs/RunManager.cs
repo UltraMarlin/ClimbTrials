@@ -31,16 +31,20 @@ public static class RunManager
   private static bool awaitingControl;
   private static int loadSeed;
   private static string pendingNotice;
+  private static string pendingRestart;
   private static EventInstance finishSnapshot;
 
   public static void Load()
   {
     Everest.Events.Level.OnLoadLevel += OnLoadLevel;
     Everest.Events.Level.OnAfterUpdate += OnAfterUpdate;
+    Everest.Events.Level.OnPause += OnPause;
     Everest.Events.Level.OnExit += OnExit;
     On.Celeste.Player.Die += OnPlayerDie;
+    On.Celeste.SaveData.AssistModeChecks += OnAssistModeChecks;
     On.Celeste.Strawberry.OnCollect += OnStrawberryCollect;
     On.Celeste.SpeedrunTimerDisplay.Render += SuppressVanillaTimer;
+    On.Celeste.TotalStrawberriesDisplay.Render += SuppressVanillaBerryCounter;
     Everest.Events.Player.OnAfterUpdate += OnPlayerAfterUpdate;
   }
 
@@ -48,10 +52,13 @@ public static class RunManager
   {
     Everest.Events.Level.OnLoadLevel -= OnLoadLevel;
     Everest.Events.Level.OnAfterUpdate -= OnAfterUpdate;
+    Everest.Events.Level.OnPause -= OnPause;
     Everest.Events.Level.OnExit -= OnExit;
     On.Celeste.Player.Die -= OnPlayerDie;
+    On.Celeste.SaveData.AssistModeChecks -= OnAssistModeChecks;
     On.Celeste.Strawberry.OnCollect -= OnStrawberryCollect;
     On.Celeste.SpeedrunTimerDisplay.Render -= SuppressVanillaTimer;
+    On.Celeste.TotalStrawberriesDisplay.Render -= SuppressVanillaBerryCounter;
     Everest.Events.Player.OnAfterUpdate -= OnPlayerAfterUpdate;
   }
 
@@ -73,7 +80,7 @@ public static class RunManager
     Replay = replay;
 
     SaveData.Start(new SaveData { Name = "ClimbTrials" }, -1);
-    SaveData.Instance.Assists.NoGrabbing = run.Grabless;
+    ApplyAssists(SaveData.Instance);
     Session session = new(run.Area)
     {
       Level = run.StartRoom,
@@ -132,6 +139,32 @@ public static class RunManager
     StartRun(Run);
   }
 
+  public static void RestartAttemptAfterSave(string noticeKey)
+  {
+    pendingRestart = noticeKey;
+  }
+
+  private static void RunPendingRestart()
+  {
+    if (pendingRestart == null || Run == null)
+      return;
+
+    if (Replaying)
+    {
+      pendingRestart = null;
+      return;
+    }
+
+    string notice = pendingRestart;
+    pendingRestart = null;
+    RestartAttempt(notice);
+  }
+
+  private static void OnPause(Level level, int startIndex, bool minimal, bool quickReset)
+  {
+    RunPendingRestart();
+  }
+
   public static LevelLoader RestartFromSession(Session session)
   {
     string flag = session.Flags.FirstOrDefault(f => f.StartsWith(TrialFlagPrefix));
@@ -166,6 +199,7 @@ public static class RunManager
     Progress.Reset();
     awaitingLoad = false;
     awaitingControl = false;
+    pendingRestart = null;
     Countdown.SetWorldAudioPaused(false);
     ReleaseFinishSnapshot();
   }
@@ -243,6 +277,9 @@ public static class RunManager
   {
     if (Run == null)
       return;
+
+    if (pendingRestart != null && !level.Paused)
+      RunPendingRestart();
     Attempt.Tick(Engine.RawDeltaTime);
     if (
       Recorder.Recording
@@ -307,6 +344,16 @@ public static class RunManager
     orig(self);
   }
 
+  private static void SuppressVanillaBerryCounter(
+    On.Celeste.TotalStrawberriesDisplay.orig_Render orig,
+    TotalStrawberriesDisplay self
+  )
+  {
+    if (Run != null)
+      return;
+    orig(self);
+  }
+
   public static bool Finish()
   {
     if (Attempt.State != AttemptState.Running || !Progress.Met(Run))
@@ -347,6 +394,22 @@ public static class RunManager
       $"run '{Trial?.Id}' finished in {Attempt.Format(Attempt.ElapsedTicks)}"
     );
     return true;
+  }
+
+  private static void ApplyAssists(SaveData saveData)
+  {
+    if (Run == null || saveData.FileSlot != -1)
+      return;
+    saveData.Assists.NoGrabbing = Run.Grabless;
+  }
+
+  private static void OnAssistModeChecks(
+    On.Celeste.SaveData.orig_AssistModeChecks orig,
+    SaveData self
+  )
+  {
+    orig(self);
+    ApplyAssists(self);
   }
 
   private static PlayerDeadBody OnPlayerDie(
