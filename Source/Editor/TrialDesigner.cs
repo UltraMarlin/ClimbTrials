@@ -72,7 +72,11 @@ public class TrialDesigner : Entity
   private static Vector2 Snap(Vector2 world) =>
     new(System.MathF.Round(world.X / Grid) * Grid, System.MathF.Round(world.Y / Grid) * Grid);
 
-  private Vector2 MouseWorld() => Snap(SceneAs<Level>().ScreenToWorld(MInput.Mouse.Position));
+  private static float SnapDown(float value) => System.MathF.Floor(value / Grid) * Grid;
+
+  private Vector2 RawMouseWorld() => SceneAs<Level>().ScreenToWorld(MInput.Mouse.Position);
+
+  private Vector2 MouseWorld() => Snap(RawMouseWorld());
 
   public override void Update()
   {
@@ -105,11 +109,12 @@ public class TrialDesigner : Entity
         Begin(Mode.Idle);
         break;
       case Mode.DrawingFinish:
+        Vector2 raw = RawMouseWorld();
         if (MInput.Mouse.PressedLeftButton)
-          dragStart = at;
+          dragStart = raw;
         if (dragStart is Vector2 start && MInput.Mouse.ReleasedLeftButton)
         {
-          Rectangle rect = RectBetween(start, at);
+          Rectangle rect = SquaresBetween(start, raw);
           TrialDraft.Finish = new TrialDraft.PlacedFinish(room, rect);
           Begin(Mode.Idle);
         }
@@ -117,13 +122,13 @@ public class TrialDesigner : Entity
     }
   }
 
-  private static Rectangle RectBetween(Vector2 a, Vector2 b)
+  private static Rectangle SquaresBetween(Vector2 a, Vector2 b)
   {
-    int x = (int)System.Math.Min(a.X, b.X);
-    int y = (int)System.Math.Min(a.Y, b.Y);
-    int width = (int)System.Math.Max(System.Math.Abs(a.X - b.X), Grid);
-    int height = (int)System.Math.Max(System.Math.Abs(a.Y - b.Y), Grid);
-    return new Rectangle(x, y, width, height);
+    float left = SnapDown(System.Math.Min(a.X, b.X));
+    float top = SnapDown(System.Math.Min(a.Y, b.Y));
+    float right = SnapDown(System.Math.Max(a.X, b.X)) + Grid;
+    float bottom = SnapDown(System.Math.Max(a.Y, b.Y)) + Grid;
+    return new Rectangle((int)left, (int)top, (int)(right - left), (int)(bottom - top));
   }
 
   private static Rectangle SpawnBox(Vector2 spawn) =>
@@ -153,10 +158,11 @@ public class TrialDesigner : Entity
         TrialCheckpoint.DrawPreview(at, 1f);
         break;
       case Mode.DrawingFinish when dragStart is Vector2 start:
-        Draw.HollowRect(RectBetween(start, at), FinishColor);
+        Draw.HollowRect(SquaresBetween(start, RawMouseWorld()), FinishColor);
         break;
       case Mode.DrawingFinish:
-        Draw.HollowRect(new Rectangle((int)at.X, (int)at.Y, (int)Grid, (int)Grid), FinishColor);
+        Vector2 raw = RawMouseWorld();
+        Draw.HollowRect(SquaresBetween(raw, raw), FinishColor);
         break;
     }
   }
