@@ -18,6 +18,10 @@ public class ReplayBanner : Entity
   private static readonly Color DesyncColor = Calc.HexToColor("f0777a");
   private static readonly Color Dim = Color.White * 0.7f;
 
+  private const float PlayingAlpha = 0.3f;
+  private const float FadeTime = 0.15f;
+  private float alpha = TargetAlpha();
+
   public ReplayBanner()
   {
     Tag = Tags.HUD | Tags.Persistent | Tags.TransitionUpdate | Tags.FrozenUpdate;
@@ -30,8 +34,11 @@ public class ReplayBanner : Entity
       RemoveSelf();
   }
 
+  private static float TargetAlpha() => Replayer.State == ReplayState.Playing ? PlayingAlpha : 1f;
+
   public override void Render()
   {
+    alpha = Calc.Approach(alpha, TargetAlpha(), Engine.RawDeltaTime / FadeTime);
     Replay replay = RunManager.Replay;
     if (replay == null || SceneAs<Level>().Paused)
       return;
@@ -40,13 +47,14 @@ public class ReplayBanner : Entity
       Replayer.Desynced ? "climbtrials_replay_desynced"
       : Replayer.State == ReplayState.Paused ? "climbtrials_replay_paused"
       : "climbtrials_replay_title";
-    Outline(Dialog.Clean(titleKey), TitleY, 1.1f, Replayer.Desynced ? DesyncColor : TitleColor);
+    Color titleColor = (Replayer.Desynced ? DesyncColor : TitleColor) * alpha;
+    Outline(Dialog.Clean(titleKey), TitleY, 1.1f, titleColor);
 
     string info =
       $"{replay.PlayerName},  {Dialog.Clean("climbtrials_replay_played_date")} {replay.AchievedAtUtc.ToLocalTime():yyyy-MM-dd}";
     if (!replay.MatchesGame())
       info += $",  {Dialog.Clean("climbtrials_replay_recorded_on")} {replay.CelesteVersion}";
-    Outline(info, InfoY, 0.5f, Dim);
+    Outline(info, InfoY, 0.5f, Dim * alpha);
 
     string time = Attempt.Format(replay.Ticks);
     float width = TimeText.Width(time, TimeStyle);
@@ -54,15 +62,15 @@ public class ReplayBanner : Entity
       new Vector2(960f - width / 2f, TimeBaselineY),
       time,
       TimeStyle,
-      Color.White,
-      Color.LightGray
+      Color.White * alpha,
+      Color.LightGray * alpha
     );
 
     if (Replayer.State != ReplayState.Idle)
-      RenderPrompts();
+      RenderPrompts(alpha);
   }
 
-  private static void RenderPrompts()
+  private static void RenderPrompts(float alpha)
   {
     string pauseKey =
       Replayer.State == ReplayState.Paused
@@ -77,7 +85,7 @@ public class ReplayBanner : Entity
     prompts.Add((Dialog.Clean("climbtrials_replay_play"), ClimbTrialsModule.Settings.Retry.Button));
     if (Replayer.State != ReplayState.Finished)
       prompts.Add((Dialog.Clean(pauseKey), Input.MenuConfirm));
-    ButtonRow.DrawRight(1f, prompts);
+    ButtonRow.DrawRight(alpha, prompts);
   }
 
   private static void Outline(string text, float y, float scale, Color color)

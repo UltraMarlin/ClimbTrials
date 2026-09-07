@@ -17,6 +17,12 @@ public enum GoalIndicatorMode
   Off,
 }
 
+public enum GoalIndicatorTargets
+{
+  Nearest,
+  EachCondition,
+}
+
 public class ClimbTrialsModuleSettings : EverestModuleSettings
 {
   [SettingRange(min: 1, max: 5)]
@@ -25,6 +31,8 @@ public class ClimbTrialsModuleSettings : EverestModuleSettings
   public bool ResetOnDeath { get; set; } = false;
   public bool ShowTimerWhileRunning { get; set; } = true;
   public GoalIndicatorMode GoalIndicator { get; set; } = GoalIndicatorMode.Subtle;
+  public GoalIndicatorTargets GoalIndicatorTargets { get; set; } =
+    GoalIndicatorTargets.EachCondition;
 
   [SettingMaxLength(20)]
   public string PlayerName { get; set; } = "";

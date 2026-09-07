@@ -14,6 +14,7 @@ public class GoalIndicator : Entity
   private const float StrongRadiusFar = 48f;
   private const float SubtleRadiusFar = 80f;
   private const float RadiusNear = 20f;
+  private const float RingGap = 12f;
   private const float FadeFar = 120f;
   private const float FadeNear = 20f;
   private const float StrongAlpha = 1f;
@@ -33,21 +34,33 @@ public class GoalIndicator : Entity
     Finish,
   }
 
+  private static readonly TargetKind[] Rings = [TargetKind.Checkpoint, TargetKind.Strawberry];
+
   private readonly record struct Target(Vector2 Position, TargetKind Kind);
 
   private readonly record struct Berry(EntityID Id, Vector2 World);
 
-  private readonly MTexture arrow = GFX.Game[ArrowTexture];
+  private sealed class Arrow
+  {
+    public bool Visible;
+    public float Angle;
+    public float Alpha;
+    public Color Color = CheckpointColor;
+    public Vector2 Position;
+  }
+
+  private readonly MTexture texture = GFX.Game[ArrowTexture];
   private readonly List<Berry> berries = [];
-  private float angle;
-  private Color color = CheckpointColor;
-  private float alpha;
+  private readonly Arrow[] arrows = new Arrow[Rings.Length];
+  private readonly Target?[] targets = new Target?[Rings.Length];
 
   public GoalIndicator()
   {
     Tag = Tags.Persistent | Tags.TransitionUpdate | Tags.FrozenUpdate;
     Depth = Depths.Top;
     Visible = false;
+    for (int ring = 0; ring < arrows.Length; ring++)
+      arrows[ring] = new Arrow();
   }
 
   public override void Added(Scene scene)
@@ -77,40 +90,63 @@ public class GoalIndicator : Entity
       return;
     }
 
-    Target? target =
+    Array.Fill(targets, null);
+    bool active =
       ClimbTrialsModule.Settings.GoalIndicator != GoalIndicatorMode.Off
       && player != null
-      && !player.Dead
-        ? FindTarget(run, player)
-        : null;
-    bool appearing = !Visible;
-    Visible = target != null;
-    if (target == null)
-      return;
+      && !player.Dead;
+    if (active)
+      FillTargets(run, player);
 
-    color = target.Value.Kind switch
+    Arrow shown = Array.Find(arrows, a => a.Visible);
+    int shownCount = Array.FindAll(targets, t => t != null).Length;
+    int shownIndex = 0;
+    Visible = false;
+    for (int ring = 0; ring < arrows.Length; ring++)
+    {
+      Arrow arrow = arrows[ring];
+      bool appearing = !arrow.Visible;
+      arrow.Visible = targets[ring] != null;
+      if (targets[ring] is not Target target)
+        continue;
+      Visible = true;
+      if (appearing && shown != null)
+      {
+        arrow.Angle = shown.Angle;
+        arrow.Position = shown.Position;
+        appearing = false;
+      }
+      float offset = (shownIndex - (shownCount - 1) / 2f) * RingGap;
+      shownIndex++;
+      Steer(arrow, target, player, offset, appearing);
+    }
+  }
+
+  private void Steer(Arrow arrow, Target target, Player player, float offset, bool appearing)
+  {
+    arrow.Color = target.Kind switch
     {
       TargetKind.Strawberry => StrawberryColor,
       TargetKind.Finish => FinishColor,
       _ => CheckpointColor,
     };
     Vector2 center = player.Center - Vector2.UnitY * CenterLift;
-    Vector2 toTarget = target.Value.Position - center;
+    Vector2 toTarget = target.Position - center;
     float t = Calc.ClampedMap(toTarget.Length(), FadeNear, FadeFar);
-    alpha = t * BaseAlpha();
-    float radius = MathHelper.Lerp(RadiusNear, RadiusFar(), t);
+    arrow.Alpha = t * BaseAlpha();
+    float radius = MathHelper.Lerp(RadiusNear, RadiusFar(), t) + offset;
     if (appearing)
     {
-      angle = toTarget.Angle();
-      Position = ClampToCamera(center + Calc.AngleToVector(angle, radius));
+      arrow.Angle = toTarget.Angle();
+      arrow.Position = ClampToCamera(center + Calc.AngleToVector(arrow.Angle, radius));
       return;
     }
 
     float turn = 1f - (float)Math.Pow(0.01, Engine.DeltaTime / TurnTime);
-    angle = Calc.AngleLerp(angle, toTarget.Angle(), turn);
-    Vector2 wanted = center + Calc.AngleToVector(angle, radius);
+    arrow.Angle = Calc.AngleLerp(arrow.Angle, toTarget.Angle(), turn);
+    Vector2 wanted = center + Calc.AngleToVector(arrow.Angle, radius);
     float follow = 1f - (float)Math.Pow(0.01, Engine.DeltaTime / FollowTime);
-    Position = ClampToCamera(Vector2.Lerp(Position, wanted, follow));
+    arrow.Position = ClampToCamera(Vector2.Lerp(arrow.Position, wanted, follow));
   }
 
   private Vector2 ClampToCamera(Vector2 position)
@@ -132,12 +168,25 @@ public class GoalIndicator : Entity
       ? StrongRadiusFar
       : SubtleRadiusFar;
 
-  private Target? FindTarget(RunDefinition run, Player player)
+  private void FillTargets(RunDefinition run, Player player)
   {
     RunProgress progress = RunManager.Progress;
     if (progress.Met(run))
-      return new Target(run.FinishCenter, TargetKind.Finish);
+    {
+      targets[0] = new Target(run.FinishCenter, TargetKind.Finish);
+      return;
+    }
+    if (ClimbTrialsModule.Settings.GoalIndicatorTargets == GoalIndicatorTargets.Nearest)
+    {
+      targets[0] = Nearest(run, player, progress, null);
+      return;
+    }
+    for (int ring = 0; ring < Rings.Length; ring++)
+      targets[ring] = Nearest(run, player, progress, Rings[ring]);
+  }
 
+  private Target? Nearest(RunDefinition run, Player player, RunProgress progress, TargetKind? only)
+  {
     Vector2 from = player.Center;
     Target? best = null;
     float bestDistance = float.MaxValue;
@@ -152,24 +201,28 @@ public class GoalIndicator : Entity
       }
     }
 
-    for (int i = 0; i < run.Checkpoints.Count; i++)
-      if (!progress.IsTaken(i))
-        Consider(run.Checkpoints[i].Position, TargetKind.Checkpoint);
+    if (only is null or TargetKind.Checkpoint)
+      for (int i = 0; i < run.Checkpoints.Count; i++)
+        if (!progress.IsTaken(i))
+          Consider(run.Checkpoints[i].Position, TargetKind.Checkpoint);
 
-    HashSet<EntityID> carried = [];
-    foreach (Follower follower in player.Leader.Followers)
+    if (only is null or TargetKind.Strawberry)
     {
-      if (follower.Entity is Strawberry berry)
-        carried.Add(berry.ID);
-    }
-
-    if (progress.Strawberries + carried.Count < run.RequiredStrawberries)
-    {
-      Session session = SceneAs<Level>().Session;
-      foreach (Berry berry in berries)
+      HashSet<EntityID> carried = [];
+      foreach (Follower follower in player.Leader.Followers)
       {
-        if (!session.Strawberries.Contains(berry.Id) && !carried.Contains(berry.Id))
-          Consider(berry.World, TargetKind.Strawberry);
+        if (follower.Entity is Strawberry berry)
+          carried.Add(berry.ID);
+      }
+
+      if (progress.Strawberries + carried.Count < run.RequiredStrawberries)
+      {
+        Session session = SceneAs<Level>().Session;
+        foreach (Berry berry in berries)
+        {
+          if (!session.Strawberries.Contains(berry.Id) && !carried.Contains(berry.Id))
+            Consider(berry.World, TargetKind.Strawberry);
+        }
       }
     }
 
@@ -178,19 +231,21 @@ public class GoalIndicator : Entity
 
   public override void Render()
   {
-    if (alpha < MinAlpha)
-      return;
-
-    Vector2 drawAt = Position.Round();
-    Color outline = Color.Black * alpha;
-    for (int i = -1; i <= 1; i++)
+    foreach (Arrow arrow in arrows)
     {
-      for (int j = -1; j <= 1; j++)
+      if (!arrow.Visible || arrow.Alpha < MinAlpha)
+        continue;
+      Vector2 drawAt = arrow.Position.Round();
+      Color outline = Color.Black * arrow.Alpha;
+      for (int i = -1; i <= 1; i++)
       {
-        if (i != 0 || j != 0)
-          arrow.DrawCentered(drawAt + new Vector2(i, j), outline, 1f, angle);
+        for (int j = -1; j <= 1; j++)
+        {
+          if (i != 0 || j != 0)
+            texture.DrawCentered(drawAt + new Vector2(i, j), outline, 1f, arrow.Angle);
+        }
       }
+      texture.DrawCentered(drawAt, arrow.Color * arrow.Alpha, 1f, arrow.Angle);
     }
-    arrow.DrawCentered(drawAt, color * alpha, 1f, angle);
   }
 }

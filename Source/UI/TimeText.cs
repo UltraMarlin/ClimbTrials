@@ -58,7 +58,11 @@ public static class TimeText
     return numberHeight * style.Scale;
   }
 
-  public static Color StrokeFor(Color color) => Color.Black * (color.A / 255f);
+  public static Color StrokeFor(Color color)
+  {
+    float alpha = color.A / 255f;
+    return Color.Black * (alpha * alpha);
+  }
 
   public static void Draw(
     Vector2 baseline,

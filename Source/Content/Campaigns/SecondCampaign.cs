@@ -82,6 +82,22 @@ public static class SecondCampaign
         },
         Goals = GoalTimes.FromSeconds(bronze: 45, silver: 40, gold: 35, grandmaster: 30),
       },
+      new Trial
+      {
+        Id = "c2-4",
+        Name = "Secret",
+        Difficulty = Difficulty.Hard,
+        Run = new()
+        {
+          Sid = "Celeste/6-Reflection",
+          Mode = AreaMode.Normal,
+          StartRoom = "b-00",
+          Spawn = new(9440f, -2784f),
+          FinishRoom = "b-00c",
+          Finish = new(9296, -3256, 24, 40),
+        },
+        Goals = GoalTimes.FromSeconds(bronze: 15, silver: 12, gold: 10, grandmaster: 8),
+      },
     ],
   };
 }

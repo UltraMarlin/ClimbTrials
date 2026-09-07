@@ -235,6 +235,9 @@ public static class RunManager
     if (level.Tracker.GetEntity<RunTimerDisplay>() == null)
       level.Add(new RunTimerDisplay());
 
+    if (Trial != null && level.Tracker.GetEntity<RunInfoDisplay>() == null)
+      level.Add(new RunInfoDisplay());
+
     if (Trial != null && level.Tracker.GetEntity<GoalListDisplay>() == null)
       level.Add(new GoalListDisplay());
 
@@ -260,10 +263,8 @@ public static class RunManager
       if (Run.Checkpoints[i].Room == room)
         level.Add(new TrialCheckpoint(i, Run.Checkpoints[i]));
 
-    if (room == Run.FinishRoom)
-    {
+    if (room == Run.FinishRoom && level.Tracker.GetEntity<FinishZone>() == null)
       level.Add(new FinishZone(Run.Finish));
-    }
   }
 
   public static int ReplayLimitSeconds => ReplayLimitFor(Trial);

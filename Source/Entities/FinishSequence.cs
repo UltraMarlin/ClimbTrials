@@ -35,9 +35,30 @@ public class FinishSequence : Entity
 
   private static readonly Color DeltaColor = Calc.HexToColor("6ded87");
 
+  private const float GamePixel = 6f;
+  private const float SparkSpeedMin = 70f;
+  private const float SparkLifeMin = 0.4f;
+  private const float SparkSlowdown = 0.06f;
+  private const float SparkFadeShare = 0.25f;
+  private const float SparkBlinkInterval = 0.2f;
+  private const float SparkLargeShare = 0.3f;
+
+  private struct Spark
+  {
+    public Vector2 Position;
+    public Vector2 Speed;
+    public float Life;
+    public float StartLife;
+    public Color Color;
+    public bool Blink;
+    public int Size;
+  }
+
   private readonly FinishResult result;
   private readonly Medal[] medals;
   private readonly float[] medalAges;
+
+  private readonly List<Spark>[] bursts;
 
   private readonly bool watcher;
   private Level level;
@@ -51,6 +72,9 @@ public class FinishSequence : Entity
     medals = [.. result.UnlockedMedals()];
     medalAges = new float[medals.Length];
     Array.Fill(medalAges, -1f);
+    bursts = new List<Spark>[medals.Length];
+    for (int i = 0; i < bursts.Length; i++)
+      bursts[i] = [];
     Tag = Tags.HUD | Tags.FrozenUpdate | Tags.Persistent;
     Add(new Coroutine(Routine()));
   }
@@ -104,8 +128,15 @@ public class FinishSequence : Entity
       timeAge += Engine.RawDeltaTime;
 
     for (int i = 0; i < medalAges.Length; i++)
-      if (medalAges[i] >= 0f)
-        medalAges[i] += Engine.RawDeltaTime;
+    {
+      if (medalAges[i] < 0f)
+        continue;
+      float before = medalAges[i];
+      medalAges[i] += Engine.RawDeltaTime;
+      if (before < MedalPopDuration && medalAges[i] >= MedalPopDuration)
+        Burst(i);
+      UpdateSparks(bursts[i]);
+    }
 
     if (promptAge >= 0f)
       promptAge += Engine.RawDeltaTime;
@@ -197,13 +228,81 @@ public class FinishSequence : Entity
 
   private void RenderMedals()
   {
-    float firstX = 960f - (medals.Length - 1) * MedalSpacing / 2f;
     for (int i = 0; i < medals.Length; i++)
     {
       if (medalAges[i] < 0f)
         continue;
-      Vector2 center = new(firstX + i * MedalSpacing, MedalY);
-      MedalIcon.Draw(center, medals[i], MedalHeight * Pop(medalAges[i]));
+      RenderSparks(bursts[i]);
+      MedalIcon.Draw(MedalCenter(i), medals[i], MedalHeight * Pop(medalAges[i]));
+    }
+  }
+
+  private Vector2 MedalCenter(int i)
+  {
+    float firstX = 960f - (medals.Length - 1) * MedalSpacing / 2f;
+    return new Vector2(firstX + i * MedalSpacing, MedalY);
+  }
+
+  private void Burst(int i)
+  {
+    Medal medal = medals[i];
+    MedalIcon.Burst burst = MedalIcon.BurstFor(medal);
+    Vector2 center = MedalCenter(i) / GamePixel;
+    Color tint = MedalIcon.Tint(medal);
+    Color shine = MedalIcon.Shine(medal);
+    for (int n = 0; n < burst.Count; n++)
+      bursts[i].Add(NewSpark(center, burst, Calc.Random.Choose(tint, shine), false));
+    for (int n = 0; n < burst.ShineCount; n++)
+      bursts[i].Add(NewSpark(center, burst, shine, true));
+  }
+
+  private static Spark NewSpark(Vector2 center, MedalIcon.Burst burst, Color color, bool blink)
+  {
+    float life = Calc.Random.Range(SparkLifeMin, burst.LifeMax);
+    float speed = Calc.Random.Range(SparkSpeedMin, burst.SpeedMax);
+    return new Spark
+    {
+      Position = center,
+      Speed = Calc.AngleToVector(Calc.Random.NextAngle(), speed),
+      Life = life,
+      StartLife = life,
+      Color = color,
+      Blink = blink,
+      Size = Calc.Random.Chance(SparkLargeShare) ? 2 : 1,
+    };
+  }
+
+  private static void UpdateSparks(List<Spark> sparks)
+  {
+    float dt = Engine.RawDeltaTime;
+    float decay = (float)Math.Pow(SparkSlowdown, dt);
+    for (int n = sparks.Count - 1; n >= 0; n--)
+    {
+      Spark spark = sparks[n];
+      spark.Life -= dt;
+      if (spark.Life <= 0f)
+      {
+        sparks.RemoveAt(n);
+        continue;
+      }
+      spark.Speed *= decay;
+      spark.Position += spark.Speed * dt;
+      sparks[n] = spark;
+    }
+  }
+
+  private static void RenderSparks(List<Spark> sparks)
+  {
+    foreach (Spark spark in sparks)
+    {
+      float remaining = spark.Life / spark.StartLife;
+      float alpha = Math.Min(1f, remaining / SparkFadeShare);
+      bool white = spark.Blink && Calc.BetweenInterval(spark.Life, SparkBlinkInterval);
+      Color color = (white ? Color.White : spark.Color) * alpha;
+      float x = MathF.Floor(spark.Position.X) * GamePixel;
+      float y = MathF.Floor(spark.Position.Y) * GamePixel;
+      float size = spark.Size * GamePixel;
+      Draw.Rect(x, y, size, size, color);
     }
   }
 

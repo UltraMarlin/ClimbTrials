@@ -1,25 +1,37 @@
-using System;
 using Celeste.Mod.ClimbTrials.Runs;
 using Microsoft.Xna.Framework;
 using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.Entities;
 
+[Tracked]
 public class FinishZone : Entity
 {
-  private const int Cell = 4;
   private const string FinishSound = "event:/game/07_summit/checkpoint_confetti";
-  private readonly int width,
-    height;
+  private readonly Rectangle worldRect;
+  private FinishZoneDisplay display;
 
   public FinishZone(Rectangle worldRect)
   {
+    this.worldRect = worldRect;
     Position = new Vector2(worldRect.X, worldRect.Y);
-    width = worldRect.Width;
-    height = worldRect.Height;
-    Collider = new Hitbox(width, height, 0f, 0f);
+    Collider = new Hitbox(worldRect.Width, worldRect.Height, 0f, 0f);
     Add(new PlayerCollider(OnPlayer));
     Depth = Depths.Top;
+    Visible = false;
+  }
+
+  public override void Added(Scene scene)
+  {
+    base.Added(scene);
+    display = new FinishZoneDisplay(worldRect);
+    scene.Add(display);
+  }
+
+  public override void Removed(Scene scene)
+  {
+    base.Removed(scene);
+    display?.RemoveSelf();
   }
 
   private void OnPlayer(Player player)
@@ -40,22 +52,5 @@ public class FinishZone : Entity
     base.Update();
     if (RunManager.Run == null)
       RemoveSelf();
-  }
-
-  public override void Render()
-  {
-    base.Render();
-    bool finished = RunManager.Attempt.State == AttemptState.Finished;
-    Color light = (finished ? Color.Gold : Color.White) * 0.75f;
-    Color dark = Color.Black * 0.75f;
-    for (int y = 0; y < height; y += Cell)
-    for (int x = 0; x < width; x += Cell)
-      Draw.Rect(
-        X + x,
-        Y + y,
-        Math.Min(Cell, width - x),
-        Math.Min(Cell, height - y),
-        ((x / Cell + y / Cell) % 2 == 0) ? light : dark
-      );
   }
 }
