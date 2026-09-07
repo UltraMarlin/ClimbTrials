@@ -20,7 +20,7 @@ public class GoalListDisplay : Entity
   private const float IconX = 36f;
   private const float TimeX = 64f;
   private const float TimeScale = 0.7f;
-  private const float ReachedAlpha = 0.5f;
+  private const float ReachedAlpha = 0.25f;
   private static readonly TimeStyle TimeStyle = TimeText.Hud.At(TimeScale);
   private const float IconHeight = 48f;
   private const string CheckpointIcon = "ClimbTrials/Checkpoint_Icon";

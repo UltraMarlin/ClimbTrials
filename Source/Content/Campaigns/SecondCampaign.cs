@@ -80,7 +80,7 @@ public static class SecondCampaign
           RequiredStrawberries = 2,
           Dashes = 1,
         },
-        Goals = GoalTimes.FromSeconds(bronze: 35, silver: 30, gold: 25, grandmaster: 20),
+        Goals = GoalTimes.FromSeconds(bronze: 45, silver: 40, gold: 35, grandmaster: 30),
       },
     ],
   };

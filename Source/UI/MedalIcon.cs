@@ -12,10 +12,10 @@ public static class MedalIcon
   public static Color Tint(Medal medal) =>
     medal switch
     {
-      Medal.Bronze => Calc.HexToColor("cd7532"),
-      Medal.Silver => Calc.HexToColor("d3d9ef"),
-      Medal.Gold => Calc.HexToColor("ead70a"),
-      Medal.Grandmaster => Calc.HexToColor("ff56c8"),
+      Medal.Bronze => Calc.HexToColor("ab5e24"),
+      Medal.Silver => Calc.HexToColor("85aabf"),
+      Medal.Gold => Calc.HexToColor("facb32"),
+      Medal.Grandmaster => Calc.HexToColor("ff54b5"),
       _ => Color.White,
     };
 
