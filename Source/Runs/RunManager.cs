@@ -62,7 +62,7 @@ public static class RunManager
     Everest.Events.Player.OnAfterUpdate -= OnPlayerAfterUpdate;
   }
 
-  private static void SwitchScene(Scene next)
+  public static void SwitchScene(Scene next)
   {
     Engine.Scene = next;
   }

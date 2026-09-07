@@ -88,6 +88,15 @@ public class TrialCheckpoint : Entity
     base.Update();
   }
 
+  public static void DrawPreview(Vector2 position, float alpha)
+  {
+    MTexture border = GFX.Game[ContainerTexture];
+    MTexture icon = GFX.Game.GetAtlasSubtextures(IconTexture)[0];
+    border.DrawCentered(position + new Vector2(0f, -1f), Color.Black * alpha);
+    border.DrawCentered(position, IdleColor * alpha);
+    icon.DrawCentered(position, IdleColor * alpha);
+  }
+
   public override void Render()
   {
     border.DrawCentered(Position + new Vector2(0f, -1f), Color.Black);

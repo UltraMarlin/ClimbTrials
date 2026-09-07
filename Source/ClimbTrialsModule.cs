@@ -3,6 +3,7 @@ using Celeste.Mod.ClimbTrials.Online;
 using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.Runs;
 using Celeste.Mod.ClimbTrials.UI;
+using Celeste.Mod.ClimbTrials.Editor;
 
 namespace Celeste.Mod.ClimbTrials;
 
@@ -41,6 +42,7 @@ public class ClimbTrialsModule : EverestModule
     Recorder.Load();
     Replayer.Load();
     RunGuards.Load();
+    TrialDesigner.Load();
     ModCheck.LogModules();
   }
 
@@ -59,5 +61,6 @@ public class ClimbTrialsModule : EverestModule
     Recorder.Unload();
     Replayer.Unload();
     RunGuards.Unload();
+    TrialDesigner.Unload();
   }
 }
