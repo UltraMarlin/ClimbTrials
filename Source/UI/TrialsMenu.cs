@@ -6,9 +6,14 @@ namespace Celeste.Mod.ClimbTrials.UI;
 
 public class TrialsMenu : TextMenu
 {
-  public const float ListTop = 240f;
+  public const float ListMinWidth = 1200f;
   public const float ListBottom = 960f;
   public static readonly Color Highlight = Calc.HexToColor("6ded87");
+
+  public float ListTop = 240f;
+
+  public Action OnSwitchLeft;
+  public Action OnSwitchRight;
 
   public TrialsMenu()
   {
@@ -16,6 +21,7 @@ public class TrialsMenu : TextMenu
     InnerContent = InnerContentMode.TwoColumn;
     Justify = new Vector2(0.5f, 0f);
     HighlightColor = Highlight;
+    MinWidth = ListMinWidth;
   }
 
   private float TargetY
@@ -67,7 +73,7 @@ public class TrialsMenu : TextMenu
     Alpha = menuAlpha;
   }
 
-  private static float EdgeFade(float y, float height)
+  private float EdgeFade(float y, float height)
   {
     float inside = Math.Min(y - ListTop, ListBottom - y);
     return Calc.Clamp(inside / (height * 0.5f), 0f, 1f);

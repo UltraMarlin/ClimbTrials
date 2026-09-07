@@ -4,12 +4,31 @@ using Celeste.Mod.ClimbTrials.Content;
 
 namespace Celeste.Mod.ClimbTrials.Runs;
 
+public readonly record struct CampaignRecord(Medal Medal, long? TotalTicks);
+
 public static class TrialRecords
 {
   private const int Slot = -1;
 
   public static TrialRecord Get(string trialId) =>
     ClimbTrialsModule.SaveData?.PersonalBests.GetValueOrDefault(trialId);
+
+  public static CampaignRecord Get(Campaign campaign)
+  {
+    long total = 0;
+    Medal medal = Medal.Grandmaster;
+    foreach (Trial trial in campaign.Trials)
+    {
+      TrialRecord record = Get(trial.Id);
+      if (record == null)
+        return new CampaignRecord(Medal.None, null);
+      total += record.BestTicks;
+      Medal earned = trial.Goals?.MedalFor(record.BestTicks) ?? Medal.None;
+      if (earned < medal)
+        medal = earned;
+    }
+    return new CampaignRecord(medal, total);
+  }
 
   public static void EnsureLoaded()
   {

@@ -120,6 +120,7 @@ public static class RunManager
 
   public static void LeaveToTrials()
   {
+    OuiTrials.ReturnTrial = Trial;
     Stop();
     SwitchScene(new OverworldLoader(OuiTrials.ReturnStartMode));
   }

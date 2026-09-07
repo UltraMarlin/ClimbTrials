@@ -1,9 +1,10 @@
 ﻿using System;
+using Celeste.Mod.ClimbTrials.Content;
+using Celeste.Mod.ClimbTrials.Editor;
 using Celeste.Mod.ClimbTrials.Online;
 using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.Runs;
 using Celeste.Mod.ClimbTrials.UI;
-using Celeste.Mod.ClimbTrials.Editor;
 
 namespace Celeste.Mod.ClimbTrials;
 
@@ -34,6 +35,7 @@ public class ClimbTrialsModule : EverestModule
 
   public override void Load()
   {
+    Campaigns.Validate();
     MainMenuEntry.Load();
     Identity.CreateClientIdIfMissing();
     PauseMenu.Load();

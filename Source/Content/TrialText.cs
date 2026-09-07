@@ -44,7 +44,7 @@ public static class TrialText
     return string.Join(". ", parts) + ".";
   }
 
-  private static string Count(int n, string zeroKey, string oneKey, string manyKey)
+  public static string Count(int n, string zeroKey, string oneKey, string manyKey)
   {
     if (n == 0 && zeroKey != null)
       return Dialog.Clean(zeroKey);
