@@ -12,10 +12,8 @@ public class RunTimerDisplay : Entity
   private const float TextHeight = 38f,
     TextMarginLeft = 32f,
     Baseline = 44f;
-  private static readonly Color RunColor1 = Color.White;
-  private static readonly Color RunColor2 = Color.LightGray;
-  private static readonly Color DoneColor1 = Calc.HexToColor("fad768");
-  private static readonly Color DoneColor2 = Calc.HexToColor("cfa727");
+  private static readonly Color RunColor = Color.White;
+  private static readonly Color DoneColor = Calc.HexToColor("fad768");
 
   public RunTimerDisplay()
     : base()
@@ -52,8 +50,7 @@ public class RunTimerDisplay : Entity
       new Vector2(TextMarginLeft, TimerY + Baseline),
       text,
       TimeText.Hud,
-      done ? DoneColor1 : RunColor1,
-      done ? DoneColor2 : RunColor2
+      done ? DoneColor : RunColor
     );
   }
 }

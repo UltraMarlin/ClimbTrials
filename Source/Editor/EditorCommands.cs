@@ -1,4 +1,5 @@
 using Celeste.Mod.ClimbTrials.Content;
+using Celeste.Mod.ClimbTrials.Entities;
 using Celeste.Mod.ClimbTrials.Runs;
 using Monocle;
 
@@ -38,7 +39,7 @@ public static class EditorCommands
     if (TryGetLevel(out Level level))
       Begin(
         TrialDesigner.Get(level).BeginCheckpoint,
-        "left click to place the checkpoint, shift-click to also save the current player position as its spawn"
+        "left click to place the checkpoint, shift-click to save the player position as its spawn, control-click for no spawn"
       );
   }
 
@@ -53,6 +54,55 @@ public static class EditorCommands
     TrialDraft.PlacedCheckpoint removed = TrialDraft.Checkpoints[^1];
     TrialDraft.Checkpoints.RemoveAt(TrialDraft.Checkpoints.Count - 1);
     Engine.Commands.Log($"removed checkpoint {TrialDraft.CheckpointCode(removed)}");
+  }
+
+  [Command(
+    "ct_ignore_berry",
+    "ClimbTrials: hide a room's berries from the goal indicator in the trial draft. ct_ignore_berry [room]"
+  )]
+  public static void DraftIgnoreBerries(string room = null)
+  {
+    if (!TryGetLevel(out Level level))
+      return;
+
+    room ??= level.Session.Level;
+    LevelData data = level.Session.MapData.Get(room);
+    if (data == null)
+    {
+      Engine.Commands.Log($"unknown room '{room}'");
+      return;
+    }
+
+    int found = 0;
+    foreach (EntityData entity in data.Entities)
+    {
+      if (!GoalIndicator.IsTargetBerry(entity))
+        continue;
+      found++;
+      EntityID id = new(room, entity.ID);
+      if (TrialDraft.IgnoredStrawberries.Contains(id))
+      {
+        Engine.Commands.Log($"already listed {TrialDraft.BerryCode(id)}");
+        continue;
+      }
+      TrialDraft.IgnoredStrawberries.Add(id);
+      Engine.Commands.Log($"ignoring {TrialDraft.BerryCode(id)}");
+    }
+    if (found == 0)
+      Engine.Commands.Log($"no berries in room '{room}'");
+  }
+
+  [Command("ct_ignore_berry_rm", "ClimbTrials: remove the last ignored berry from the trial draft")]
+  public static void DraftIgnoreBerryRemove()
+  {
+    if (TrialDraft.IgnoredStrawberries.Count == 0)
+    {
+      Engine.Commands.Log("no ignored berries");
+      return;
+    }
+    EntityID removed = TrialDraft.IgnoredStrawberries[^1];
+    TrialDraft.IgnoredStrawberries.RemoveAt(TrialDraft.IgnoredStrawberries.Count - 1);
+    Engine.Commands.Log($"removed {TrialDraft.BerryCode(removed)}");
   }
 
   [Command("ct_fin", "ClimbTrials: draw the finish in a trial draft")]

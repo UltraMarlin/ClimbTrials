@@ -20,6 +20,7 @@ public class TrialDesigner : Entity
   private const float KeptAlpha = 0.5f;
   private static readonly Color FinishColor = Color.White;
   private static readonly Color SpawnColor = Color.Red;
+  private static readonly Color IgnoreColor = Color.Orange;
 
   private Mode mode;
   private Vector2? dragStart;
@@ -102,9 +103,12 @@ public class TrialDesigner : Entity
       case Mode.PlacingCheckpoint when MInput.Mouse.PressedLeftButton:
         bool shift =
           MInput.Keyboard.Check(Keys.LeftShift) || MInput.Keyboard.Check(Keys.RightShift);
+        bool control =
+          MInput.Keyboard.Check(Keys.LeftControl) || MInput.Keyboard.Check(Keys.RightControl);
         Player player = level.Tracker.GetEntity<Player>();
         Vector2? spawn = shift && player != null ? Snap(player.Position) : null;
-        TrialDraft.PlacedCheckpoint checkpoint = new(room, at, spawn);
+        bool setsSpawn = spawn != null || !control;
+        TrialDraft.PlacedCheckpoint checkpoint = new(room, at, spawn, setsSpawn);
         TrialDraft.Checkpoints.Add(checkpoint);
         Begin(Mode.Idle);
         break;
@@ -134,6 +138,19 @@ public class TrialDesigner : Entity
   private static Rectangle SpawnBox(Vector2 spawn) =>
     new((int)spawn.X - 8, (int)spawn.Y - 16, 16, 16);
 
+  private void DrawIgnoredBerry(EntityID id)
+  {
+    LevelData data = SceneAs<Level>().Session.LevelData;
+    EntityData entity = data.Entities.Find(e => e.ID == id.ID);
+    if (entity == null)
+      return;
+    Vector2 world = entity.Position + data.Position;
+    Color color = IgnoreColor * KeptAlpha;
+    Draw.HollowRect(world.X - 6f, world.Y - 6f, 12f, 12f, color);
+    Draw.Line(world + new Vector2(-6f, -6f), world + new Vector2(6f, 6f), color);
+    Draw.Line(world + new Vector2(-6f, 6f), world + new Vector2(6f, -6f), color);
+  }
+
   public override void Render()
   {
     base.Render();
@@ -143,6 +160,9 @@ public class TrialDesigner : Entity
     foreach (TrialDraft.PlacedCheckpoint checkpoint in TrialDraft.Checkpoints)
       if (checkpoint.Room == room)
         TrialCheckpoint.DrawPreview(checkpoint.Position, KeptAlpha);
+    foreach (EntityID id in TrialDraft.IgnoredStrawberries)
+      if (id.Level == room)
+        DrawIgnoredBerry(id);
     if (TrialDraft.Spawn is Vector2 spawn && TrialDraft.StartRoom == room)
       Draw.HollowRect(SpawnBox(spawn), SpawnColor * KeptAlpha);
     if (mode == Mode.Idle)

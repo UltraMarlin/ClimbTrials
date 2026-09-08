@@ -1,16 +1,11 @@
 using System.Collections.Generic;
 using Celeste.Mod.ClimbTrials.Content;
-using Celeste.Mod.ClimbTrials.Replays;
-using Celeste.Mod.ClimbTrials.Runs;
 using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.UI;
 
 public class OuiCampaigns : ListScreen
 {
-  // TODO: Remove after testing. Or move to commands.
-  public static readonly bool ShowDebugRows = true;
-
   private readonly List<CampaignRow> rows = [];
 
   protected override int ScreenDepth => 1;
@@ -25,19 +20,9 @@ public class OuiCampaigns : ListScreen
       row.Pressed(() => Open(campaign));
       built.Add(row);
       if (!string.IsNullOrEmpty(campaign.Description))
-      {
-        row.AddDescription(built, campaign.Description);
-        built.Items[built.Items.IndexOf(row) + 1].IncludeWidthInMeasurement = false;
-      }
+        RowDescription.Attach(built, row, campaign.Description);
       rows.Add(row);
     }
-    if (ShowDebugRows)
-      built.Add(
-        new TextMenu.Button(Dialog.Clean("climbtrials_trials_delete_pbs"))
-        {
-          ConfirmSfx = "event:/ui/main/button_back",
-        }.Pressed(DeleteAll)
-      );
     built.OnCancel = () =>
     {
       built.Focused = false;
@@ -66,11 +51,5 @@ public class OuiCampaigns : ListScreen
     Audio.Play("event:/ui/main/button_select");
     menu.Focused = false;
     Overworld.Goto<OuiTrials>().Campaign = campaign;
-  }
-
-  private static void DeleteAll()
-  {
-    TrialRecords.Clear();
-    ReplayStore.DeleteAll();
   }
 }

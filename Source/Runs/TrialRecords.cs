@@ -38,11 +38,26 @@ public static class TrialRecords
     module.DeserializeSaveData(Slot, module.ReadSaveData(Slot));
   }
 
-  public static void Clear()
+  public static int Clear()
   {
     EnsureLoaded();
-    ClimbTrialsModule.SaveData.PersonalBests.Clear();
+    Dictionary<string, TrialRecord> bests = ClimbTrialsModule.SaveData.PersonalBests;
+    int count = bests.Count;
+    bests.Clear();
     Write();
+    return count;
+  }
+
+  public static int Remove(IEnumerable<string> trialIds)
+  {
+    EnsureLoaded();
+    Dictionary<string, TrialRecord> bests = ClimbTrialsModule.SaveData.PersonalBests;
+    int removed = 0;
+    foreach (string trialId in trialIds)
+      if (bests.Remove(trialId))
+        removed++;
+    Write();
+    return removed;
   }
 
   public static FinishResult Record(Trial trial, long ticks)

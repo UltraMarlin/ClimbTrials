@@ -422,6 +422,8 @@ public static class RunManager
     bool registerDeathInStats
   )
   {
+    if (Run != null && Attempt.State == AttemptState.Finished)
+      return null;
     PlayerDeadBody body = orig(self, direction, evenIfInvincible, registerDeathInStats);
     if (
       body != null

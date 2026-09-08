@@ -84,8 +84,7 @@ public class CampaignRow : TextMenu.Item
       new Vector2(rightEdge - width, slid.Y + RowLayout.PbBaseline),
       text,
       TimeText.Hud.At(RowLayout.PbScale),
-      MedalIcon.TextColor(record.Medal) * alpha,
-      MedalIcon.SeparatorColor(record.Medal) * alpha
+      MedalIcon.TextColor(record.Medal) * alpha
     );
   }
 }

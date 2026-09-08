@@ -190,26 +190,12 @@ public class FinishSequence : Entity
     Draw.Rect(960f - boxWidth / 2f, boxTop, boxWidth, boxBottom - boxTop, Color.Black * boxAlpha);
 
     float alpha = Ease.CubeOut(Math.Clamp(timeAge / TimeFadeDuration, 0f, 1f));
-    DrawAnimated(
-      time,
-      TimeText.Large,
-      TimeBaselineY,
-      timeAge,
-      Color.White * alpha,
-      Color.LightGray * alpha
-    );
+    DrawAnimated(time, TimeText.Large, TimeBaselineY, timeAge, Color.White * alpha);
 
     if (delta == null || deltaAge < 0f)
       return;
     float deltaAlpha = Ease.CubeOut(Math.Clamp(deltaAge / TimeFadeDuration, 0f, 1f));
-    DrawAnimated(
-      delta,
-      TimeText.Hud,
-      DeltaBaselineY,
-      deltaAge,
-      DeltaColor * deltaAlpha,
-      DeltaColor * 0.7f * deltaAlpha
-    );
+    DrawAnimated(delta, TimeText.Hud, DeltaBaselineY, deltaAge, DeltaColor * deltaAlpha);
   }
 
   private static void DrawAnimated(
@@ -217,13 +203,12 @@ public class FinishSequence : Entity
     TimeStyle style,
     float baselineY,
     float age,
-    Color digits,
-    Color separators
+    Color color
   )
   {
     TimeStyle popped = style.At(style.Scale * Pop(age));
     float width = TimeText.Width(text, popped);
-    TimeText.Draw(new Vector2(960f - width / 2f, baselineY), text, popped, digits, separators);
+    TimeText.Draw(new Vector2(960f - width / 2f, baselineY), text, popped, color);
   }
 
   private void RenderMedals()

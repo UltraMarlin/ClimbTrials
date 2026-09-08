@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Celeste.Mod.ClimbTrials.Runs;
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -63,6 +64,9 @@ public class GoalIndicator : Entity
       arrows[ring] = new Arrow();
   }
 
+  public static bool IsTargetBerry(EntityData entity) =>
+    entity.Name == "strawberry" && !entity.Bool("moon");
+
   public override void Added(Scene scene)
   {
     base.Added(scene);
@@ -71,10 +75,12 @@ public class GoalIndicator : Entity
     {
       foreach (EntityData entity in room.Entities)
       {
-        if (entity.Name == "strawberry" && !entity.Bool("moon"))
-          berries.Add(
-            new Berry(new EntityID(room.Name, entity.ID), entity.Position + room.Position)
-          );
+        if (!IsTargetBerry(entity))
+          continue;
+        EntityID id = new(room.Name, entity.ID);
+        if (RunManager.Run.IgnoredStrawberries.Contains(id))
+          continue;
+        berries.Add(new Berry(id, entity.Position + room.Position));
       }
     }
   }

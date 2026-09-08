@@ -59,21 +59,23 @@ public static class ReplayStore
     }
   }
 
-  public static void Delete(string trialId)
+  public static bool Delete(string trialId)
   {
     if (!Exists(trialId))
-      return;
+      return false;
     File.Delete(PathFor(trialId));
     Logger.Log(LogLevel.Info, LogTag, $"deleted replay for '{trialId}'");
+    return true;
   }
 
-  public static void DeleteAll()
+  public static int DeleteAll()
   {
     if (!Directory.Exists(Folder))
-      return;
+      return 0;
     string[] files = Directory.GetFiles(Folder, "*.ctreplay");
     foreach (string file in files)
       File.Delete(file);
     Logger.Log(LogLevel.Info, LogTag, $"deleted {files.Length} replay files");
+    return files.Length;
   }
 }

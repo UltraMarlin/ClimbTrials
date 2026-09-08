@@ -62,8 +62,7 @@ public class ReplayBanner : Entity
       new Vector2(960f - width / 2f, TimeBaselineY),
       time,
       TimeStyle,
-      Color.White * alpha,
-      Color.LightGray * alpha
+      Color.White * alpha
     );
 
     if (Replayer.State != ReplayState.Idle)

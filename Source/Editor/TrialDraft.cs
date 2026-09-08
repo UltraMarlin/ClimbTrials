@@ -9,7 +9,12 @@ namespace Celeste.Mod.ClimbTrials.Editor;
 
 public static class TrialDraft
 {
-  public readonly record struct PlacedCheckpoint(string Room, Vector2 Position, Vector2? Spawn);
+  public readonly record struct PlacedCheckpoint(
+    string Room,
+    Vector2 Position,
+    Vector2? Spawn,
+    bool SetsSpawn = true
+  );
 
   public readonly record struct PlacedFinish(string Room, Rectangle Rect);
 
@@ -31,6 +36,7 @@ public static class TrialDraft
   public static Vector2? Spawn;
   public static readonly List<PlacedCheckpoint> Checkpoints = [];
   public static PlacedFinish? Finish;
+  public static readonly List<EntityID> IgnoredStrawberries = [];
 
   public static void Reset()
   {
@@ -48,6 +54,7 @@ public static class TrialDraft
     Spawn = null;
     Checkpoints.Clear();
     Finish = null;
+    IgnoredStrawberries.Clear();
   }
 
   public static void Load(Trial trial)
@@ -73,8 +80,16 @@ public static class TrialDraft
     StartRoom = run.StartRoom;
     Spawn = run.Spawn;
     foreach (CheckpointDef checkpoint in run.Checkpoints)
-      Checkpoints.Add(new PlacedCheckpoint(checkpoint.Room, checkpoint.Position, checkpoint.Spawn));
+      Checkpoints.Add(
+        new PlacedCheckpoint(
+          checkpoint.Room,
+          checkpoint.Position,
+          checkpoint.Spawn,
+          checkpoint.SetsSpawn
+        )
+      );
     Finish = new PlacedFinish(run.FinishRoom, run.Finish);
+    IgnoredStrawberries.AddRange(run.IgnoredStrawberries);
   }
 
   public static void SetSpawn(Level level, Vector2 position)
@@ -88,8 +103,11 @@ public static class TrialDraft
   public static string CheckpointCode(PlacedCheckpoint checkpoint)
   {
     string spawn = checkpoint.Spawn is Vector2 s ? $", {SpawnCode(s)}" : "";
-    return $"new(\"{checkpoint.Room}\", {SpawnCode(checkpoint.Position)}{spawn})";
+    string mode = checkpoint.SetsSpawn ? "" : ", SetsSpawn: false";
+    return $"new(\"{checkpoint.Room}\", {SpawnCode(checkpoint.Position)}{spawn}{mode})";
   }
+
+  public static string BerryCode(EntityID id) => $"new(\"{id.Level}\", {id.ID})";
 
   public static string FinishCode(Rectangle rect) =>
     $"new({rect.X}, {rect.Y}, {rect.Width}, {rect.Height})";
@@ -113,6 +131,10 @@ public static class TrialDraft
       run.Add($"Checkpoints = [ {string.Join(", ", Checkpoints.ConvertAll(CheckpointCode))} ]");
     if (RequiredStrawberries > 0)
       run.Add($"RequiredStrawberries = {RequiredStrawberries}");
+    if (IgnoredStrawberries.Count > 0)
+      run.Add(
+        $"IgnoredStrawberries = [ {string.Join(", ", IgnoredStrawberries.ConvertAll(BerryCode))} ]"
+      );
     if (Dashes is int dashes)
       run.Add($"Dashes = {dashes}");
     if (Grabless)

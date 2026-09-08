@@ -64,13 +64,7 @@ public static class TimeText
     return Color.Black * (alpha * alpha);
   }
 
-  public static void Draw(
-    Vector2 baseline,
-    string text,
-    TimeStyle style,
-    Color digits,
-    Color separators
-  )
+  public static void Draw(Vector2 baseline, string text, TimeStyle style, Color color)
   {
     MeasureFontWidth();
     PixelFont font = Dialog.Languages["english"].Font;
@@ -86,16 +80,15 @@ public static class TimeText
         y -= 5f * style.Scale;
       }
       float w = Advance(c, style) * charScale * style.Scale;
-      bool separator = c is ':' or '.';
       font.DrawOutline(
         faceSize,
         c.ToString(),
         new Vector2(x + w / 2f, y),
         new Vector2(0.5f, 1f),
         Vector2.One * charScale * style.Scale,
-        separator ? separators : digits,
+        color,
         style.Stroke,
-        StrokeFor(separator ? separators : digits)
+        StrokeFor(color)
       );
       x += w;
     }

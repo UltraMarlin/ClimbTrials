@@ -52,8 +52,7 @@ public class OuiTrials : ListScreen
       TrialRow row = new(trial);
       row.Enter(OnSelect).Pressed(() => Start(trial)).AltPressed(() => WatchPb(trial));
       built.Add(row);
-      row.AddDescription(built, TrialText.Description(trial.Run));
-      built.Items[built.Items.IndexOf(row) + 1].IncludeWidthInMeasurement = false;
+      RowDescription.Attach(built, row, TrialText.Description(trial.Run));
       rows.Add(row);
     }
     built.OnSwitchLeft = () => Switch(-1);
@@ -185,9 +184,9 @@ public class OuiTrials : ListScreen
       DrawCampaignHeader(outgoingCampaign, outgoing.X, outgoing.Alpha);
   }
 
-  private static void DrawCampaignHeader(Campaign campaign, float atX, float a)
+  private static void DrawCampaignHeader(Campaign campaign, float atX, float alpha)
   {
-    Color dim = RowLayout.Dim * a;
+    Color dim = RowLayout.Dim * alpha;
     ActiveFont.Draw(
       campaign.Name,
       new Vector2(atX, NameY),
@@ -223,8 +222,7 @@ public class OuiTrials : ListScreen
       new Vector2(left + labelWidth + TotalLabelGap, baseline),
       text,
       TimeText.Hud.At(TotalScale),
-      MedalIcon.TextColor(record.Medal) * a,
-      MedalIcon.SeparatorColor(record.Medal) * a
+      MedalIcon.TextColor(record.Medal) * alpha
     );
   }
 

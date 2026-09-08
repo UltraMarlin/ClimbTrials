@@ -4,9 +4,14 @@ using Microsoft.Xna.Framework;
 
 namespace Celeste.Mod.ClimbTrials.Runs;
 
-public readonly record struct CheckpointDef(string Room, Vector2 Position, Vector2? Spawn = null)
+public readonly record struct CheckpointDef(
+  string Room,
+  Vector2 Position,
+  Vector2? Spawn = null,
+  bool SetsSpawn = true
+)
 {
-  public Vector2 SpawnPoint => Spawn ?? Position + new Vector2(0f, 12f);
+  public Vector2? SpawnPoint => SetsSpawn ? Spawn ?? Position + new Vector2(0f, 12f) : null;
 }
 
 public sealed class RunDefinition
@@ -19,6 +24,8 @@ public sealed class RunDefinition
   public Rectangle Finish { get; init; }
 
   public IReadOnlyList<CheckpointDef> Checkpoints { get; init; } = [];
+
+  public IReadOnlyList<EntityID> IgnoredStrawberries { get; init; } = [];
   public int RequiredStrawberries { get; init; }
 
   public int? Dashes

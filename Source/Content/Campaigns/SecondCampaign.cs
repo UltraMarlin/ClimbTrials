@@ -76,8 +76,9 @@ public static class SecondCampaign
           Spawn = new(6800f, -5152f),
           FinishRoom = "c-07",
           Finish = new(8168, -6104, 24, 64),
-          Checkpoints = [new("c-06b", new(8336f, -5656f))],
+          Checkpoints = [new("c-06b", new(8336f, -5656f), SetsSpawn: false)],
           RequiredStrawberries = 2,
+          IgnoredStrawberries = [new("b-08", 129), new("b-09", 167)],
           Dashes = 1,
         },
         Goals = GoalTimes.FromSeconds(bronze: 45, silver: 40, gold: 35, grandmaster: 30),
@@ -97,6 +98,31 @@ public static class SecondCampaign
           Finish = new(9296, -3256, 24, 40),
         },
         Goals = GoalTimes.FromSeconds(bronze: 15, silver: 12, gold: 10, grandmaster: 8),
+      },
+      new Trial
+      {
+        Id = "c2-5",
+        Name = "Resort",
+        Difficulty = Difficulty.Hard,
+        Run = new()
+        {
+          Sid = "Celeste/3-CelestialResort",
+          Mode = AreaMode.Normal,
+          StartRoom = "s1",
+          Spawn = new(408f, 32f),
+          FinishRoom = "s3",
+          Finish = new(1368, -16, 24, 40),
+          Checkpoints =
+          [
+            new("s3", new(1296f, -64f), new(1296f, 40f)),
+            new("s2", new(944f, -64f)),
+            new("s2", new(800f, -128f), new(800f, -104f)),
+            new("s1", new(532f, -88f), new(536f, -72f)),
+          ],
+          RequiredStrawberries = 1,
+          Grabless = true,
+        },
+        Goals = GoalTimes.FromSeconds(bronze: 25, silver: 20, gold: 15, grandmaster: 12),
       },
     ],
   };

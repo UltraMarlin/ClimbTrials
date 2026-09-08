@@ -5,7 +5,6 @@ CLIMBTRIALS_PAUSE_RETURN=              Return to Trials
 CLIMBTRIALS_RESTART_TITLE=             RESTART TRIAL?
 CLIMBTRIALS_FINISH_RETRY=              Run Again
 CLIMBTRIALS_FINISH_BACK=               Return to Trials
-CLIMBTRIALS_TRIALS_DELETE_PBS=         Delete all PBs
 CLIMBTRIALS_FINISH_WATCH=              Watch Replay
 CLIMBTRIALS_TRIALS_WATCH_PB=           Watch PB
 CLIMBTRIALS_CAMPAIGN_TRIAL=            1 Trial

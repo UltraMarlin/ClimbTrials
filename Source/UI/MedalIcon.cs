@@ -7,7 +7,6 @@ namespace Celeste.Mod.ClimbTrials.UI;
 public static class MedalIcon
 {
   private const float TextBrighten = 0.25f;
-  private const float SeparatorDim = 0.7f;
 
   public static Color Tint(Medal medal) =>
     medal switch
@@ -21,9 +20,6 @@ public static class MedalIcon
 
   public static Color TextColor(Medal medal) =>
     medal == Medal.None ? Color.White : Color.Lerp(Tint(medal), Color.White, TextBrighten);
-
-  public static Color SeparatorColor(Medal medal) =>
-    medal == Medal.None ? Color.LightGray : TextColor(medal) * SeparatorDim;
 
   public readonly record struct Burst(int Count, int ShineCount, float SpeedMax, float LifeMax);
 

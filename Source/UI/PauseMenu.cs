@@ -39,6 +39,11 @@ public static class PauseMenu
       LockRows(menu, Dialog.Clean("menu_pause_resume"), Dialog.Clean("menu_pause_retry"));
     else if (RunManager.Replaying)
       LockRows(menu, Dialog.Clean("menu_pause_resume"), Dialog.Clean("climbtrials_pause_return"));
+    else if (
+      RunManager.Attempt.State == AttemptState.Finished
+      && Find(menu, "menu_pause_retry") is TextMenu.Button retry
+    )
+      Lock(retry);
   }
 
   private static void LockRows(TextMenu menu, params string[] exemptLabels)
@@ -55,12 +60,15 @@ public static class PauseMenu
       button.Disabled = true;
   }
 
+  private static TextMenu.Button Find(TextMenu menu, string vanillaKey)
+  {
+    string label = Dialog.Clean(vanillaKey);
+    return menu.Items.OfType<TextMenu.Button>().FirstOrDefault(b => b.Label == label);
+  }
+
   private static int Replace(TextMenu menu, string vanillaKey, TextMenu.Item replacement)
   {
-    string vanillaLabel = Dialog.Clean(vanillaKey);
-    TextMenu.Button old = menu
-      .Items.OfType<TextMenu.Button>()
-      .FirstOrDefault(b => b.Label == vanillaLabel);
+    TextMenu.Button old = Find(menu, vanillaKey);
     if (old == null)
       return -1;
     int index = menu.Items.IndexOf(old);
@@ -102,7 +110,8 @@ public static class PauseMenu
       menu.Remove(yes);
       TextMenu.Button restart = new(yes.Label);
       restart.Pressed(RestartTrial);
-      Lock(restart);
+      if (Replayer.Silenced)
+        Lock(restart);
       menu.Insert(index, restart);
     };
   }

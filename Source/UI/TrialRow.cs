@@ -78,8 +78,7 @@ public class TrialRow : TextMenu.Item
       new Vector2(rightEdge - width, slid.Y + RowLayout.PbBaseline),
       best,
       TimeText.Hud.At(RowLayout.PbScale),
-      MedalIcon.TextColor(medal) * alpha,
-      MedalIcon.SeparatorColor(medal) * alpha
+      MedalIcon.TextColor(medal) * alpha
     );
   }
 }

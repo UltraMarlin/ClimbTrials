@@ -19,7 +19,7 @@ public class GoalListDisplay : Entity
   private const float DuckAlpha = 0.25f;
   private const float DuckTime = 0.2f;
 
-  private const float ListBoxAlpha = 0.45f;
+  private const float ListBoxAlpha = 0.35f;
   private const float BoxPaddingTop = 14f;
   private const float BoxPaddingRight = 20f;
   private const float BoxPaddingBottom = 14f;
@@ -121,13 +121,7 @@ public class GoalListDisplay : Entity
         );
       else
         MedalIcon.Draw(iconCenter, row.Medal, RunHudLayout.IconHeight, alpha);
-      TimeText.Draw(
-        new Vector2(RunHudLayout.TimeX, y + rowHeight),
-        row.Text,
-        TimeStyle,
-        textColor,
-        MedalIcon.SeparatorColor(row.TextMedal) * alpha
-      );
+      TimeText.Draw(new Vector2(RunHudLayout.TimeX, y + rowHeight), row.Text, TimeStyle, textColor);
       y += rowHeight;
     }
   }

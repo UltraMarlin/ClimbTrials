@@ -59,7 +59,8 @@ public class TrialCheckpoint : Entity
     if (!RunManager.Progress.TakeCheckpoint(Index))
       return;
     taken = true;
-    SceneAs<Level>().Session.RespawnPoint = definition.SpawnPoint;
+    if (definition.SpawnPoint is Vector2 spawn)
+      SceneAs<Level>().Session.RespawnPoint = spawn;
     wiggler.Start();
     icon.Rate = 4f;
     Audio.Play(TouchSound, Position);
