@@ -26,6 +26,8 @@ public static class TimeText
     return time.ToString(time.TotalHours >= 1 ? "h\\:mm\\:ss\\.fff" : "m\\:ss\\.fff");
   }
 
+  public static string FormatDate(DateTime utc) => utc.ToLocalTime().ToString("yyyy-MM-dd");
+
   public static string FormatSeconds(int seconds)
   {
     TimeSpan time = TimeSpan.FromSeconds(seconds);

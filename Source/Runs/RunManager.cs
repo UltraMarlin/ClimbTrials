@@ -24,6 +24,8 @@ public static class RunManager
   public static Replay Replay { get; private set; }
   public static bool Replaying => Replay != null;
   public static Replay LastReplay => Replay ?? Recorder.Last;
+  public static bool Racing { get; private set; }
+  public static Replay RaceReplay { get; private set; }
   public static bool AttemptInProgress =>
     Run != null && Attempt.State is AttemptState.Countdown or AttemptState.Running;
   public static bool OwnsSaveData =>
@@ -79,6 +81,13 @@ public static class RunManager
   {
     Trial = trial;
     StartRun(trial.Run);
+  }
+
+  public static void StartRace(Trial trial, Replay replay)
+  {
+    Racing = true;
+    RaceReplay = replay;
+    StartTrial(trial);
   }
 
   private static LevelLoader CreateRunLoader(
@@ -146,6 +155,7 @@ public static class RunManager
     if (trial == null)
       return;
     Trial = trial;
+    StopRacing();
     SwitchScene(CreateRunLoader(trial.Run, replay));
   }
 
@@ -208,6 +218,13 @@ public static class RunManager
     Trial = null;
     Run = null;
     pendingNotice = null;
+    StopRacing();
+  }
+
+  private static void StopRacing()
+  {
+    Racing = false;
+    RaceReplay = null;
   }
 
   public static void DiscardAttemptAfterDesync()
@@ -291,6 +308,23 @@ public static class RunManager
       pendingNotice = null;
     }
 
+    if (Racing && !Replaying && level.Tracker.GetEntity<RaceGhost>() == null)
+    {
+      if (RaceReplay == null)
+      {
+        Racing = false;
+        notice.Show("climbtrials_race_no_replay");
+      }
+      else
+      {
+        PlayerSpriteMode mode =
+          level.Tracker.GetEntity<Player>()?.Sprite.Mode ?? PlayerSpriteMode.Madeline;
+        RaceGhost ghost = new(RaceReplay, mode);
+        level.Add(ghost);
+        ghost.Sync(Attempt.ElapsedTicks);
+      }
+    }
+
     for (int i = 0; i < Run.Waypoints.Count; i++)
       if (Run.Waypoints[i].Room == room)
         level.Add(new TrialWaypoint(i, Run.Waypoints[i]));
@@ -317,6 +351,13 @@ public static class RunManager
     )
       StopRecording(StopReason.State);
     Attempt.Tick(Engine.RawDeltaTime);
+    if (level.Tracker.GetEntity<RaceGhost>() is RaceGhost ghost)
+    {
+      if (Attempt.State != AttemptState.Finished)
+        ghost.Sync(Attempt.ElapsedTicks);
+      else if (!level.Paused)
+        ghost.Advance(Engine.RawDeltaTime);
+    }
     if (
       Recorder.Recording
       && !level.Paused
@@ -440,6 +481,8 @@ public static class RunManager
         ReplayStore.Save(recorded);
       else if (LastFinish.IsPersonalBest)
         ReplayStore.Delete(Trial.Id);
+      if (LastFinish.IsPersonalBest && RaceReplay?.IsOwn == true)
+        RaceReplay = recorded;
     }
     Logger.Log(
       LogLevel.Info,

@@ -176,6 +176,22 @@ public static class SecondCampaign
         },
         Goals = GoalTimes.FromSeconds(bronze: 10, silver: 8, gold: 6, grandmaster: 5),
       },
+      new Trial
+      {
+        Id = "test-1",
+        Name = "Test",
+        Difficulty = Difficulty.Normal,
+        Run = new()
+        {
+          Sid = "Celeste/8-Epilogue",
+          Mode = AreaMode.Normal,
+          StartRoom = "bridge",
+          Spawn = new(200f, 40f),
+          FinishRoom = "bridge",
+          Finish = new(304, 24, 16, 16),
+        },
+        Goals = GoalTimes.FromSeconds(bronze: 25, silver: 20, gold: 15, grandmaster: 10),
+      },
     ],
   };
 }

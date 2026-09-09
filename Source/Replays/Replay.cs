@@ -64,6 +64,9 @@ public sealed class Replay
     return (byte)(index + 1);
   }
 
+  public string AnimationAt(byte id) =>
+    id == 0 || id > Animations.Count ? null : Animations[id - 1];
+
   public byte[] ToBytes()
   {
     using MemoryStream stream = new();

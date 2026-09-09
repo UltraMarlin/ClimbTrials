@@ -20,6 +20,7 @@ public abstract class ListScreen : Oui
   protected readonly TransientText notice = new();
   protected float x = OnScreenX;
   protected float alpha;
+  private float dim = 1f;
   protected abstract int ScreenDepth { get; }
 
   private static int DepthOf(Oui other) => (other as ListScreen)?.ScreenDepth ?? 0;
@@ -33,6 +34,12 @@ public abstract class ListScreen : Oui
   protected virtual void RenderPrompts() { }
 
   protected virtual void CancelTransitions() { }
+
+  protected void SetDim(float value)
+  {
+    dim = value;
+    menu?.Alpha = alpha * dim;
+  }
 
   public override IEnumerator Enter(Oui from)
   {
@@ -100,27 +107,28 @@ public abstract class ListScreen : Oui
   {
     if (alpha <= 0f)
       return;
+    float totalAlpha = alpha * dim;
     ActiveFont.DrawOutline(
       Dialog.Clean("climbtrials_trials_title"),
       new Vector2(x, TitleY),
       new Vector2(0.5f, 0.5f),
       Vector2.One * 1.6f,
-      Color.White * alpha,
+      Color.White * totalAlpha,
       2f,
-      TimeText.StrokeFor(Color.White * alpha)
+      TimeText.StrokeFor(Color.White * totalAlpha)
     );
     RenderHeader();
     RenderPrompts();
-    notice.Render(new Vector2(x, NoticeY), NoticeScale, Colors.Warning, alpha);
+    notice.Render(new Vector2(x, NoticeY), NoticeScale, Colors.Warning, totalAlpha);
     if (ModCheck.OthersLoaded)
       ActiveFont.DrawOutline(
         ModCheck.MenuWarning(),
         new Vector2(x, StatusY),
         new Vector2(0.5f, 0.5f),
         Vector2.One * 0.45f,
-        Color.White * 0.7f * alpha,
+        Color.White * 0.7f * totalAlpha,
         2f,
-        TimeText.StrokeFor(Color.White * 0.7f * alpha)
+        TimeText.StrokeFor(Color.White * 0.7f * totalAlpha)
       );
   }
 }

@@ -51,7 +51,7 @@ public class ReplayBanner : Entity
     Outline(Dialog.Clean(titleKey), TitleY, 1.1f, titleColor);
 
     string info =
-      $"{replay.PlayerName},  {Dialog.Clean("climbtrials_replay_played_date")} {replay.AchievedAtUtc.ToLocalTime():yyyy-MM-dd}";
+      $"{replay.PlayerName},  {Dialog.Clean("climbtrials_replay_played_date")} {TimeText.FormatDate(replay.AchievedAtUtc)}";
     if (!replay.MatchesGame())
       info += $",  {Dialog.Clean("climbtrials_replay_recorded_on")} {replay.CelesteVersion}";
     Outline(info, InfoY, 0.5f, Dim * alpha);

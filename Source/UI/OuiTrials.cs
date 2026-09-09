@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Celeste.Mod.ClimbTrials.Content;
@@ -23,12 +24,13 @@ public class OuiTrials : ListScreen
   private const float TotalLabelGap = 16f;
   private const float TrialsListTop = 280f;
   private const float ReplayDeletedSeconds = 5f;
+  private const float ListDim = 0.05f;
 
   private int campaignIndex;
   private Campaign outgoingCampaign;
   private TrialsMenu outgoing;
   private Coroutine switching;
-  private bool selectedHasReplay;
+  private TrialModeMenu open;
   private readonly List<TrialRow> rows = [];
 
   protected override int ScreenDepth => 2;
@@ -39,11 +41,6 @@ public class OuiTrials : ListScreen
     set => campaignIndex = Campaigns.IndexOf(value);
   }
 
-  private void OnSelect()
-  {
-    selectedHasReplay = menu?.Current is TrialRow row && ReplayStore.Exists(row.Trial.Id);
-  }
-
   protected override TrialsMenu BuildMenu()
   {
     TrialsMenu built = new() { ListTop = TrialsListTop };
@@ -51,7 +48,7 @@ public class OuiTrials : ListScreen
     foreach (Trial trial in Campaign.Trials)
     {
       TrialRow row = new(trial);
-      row.Enter(OnSelect).Pressed(() => Start(trial)).AltPressed(() => WatchPb(trial));
+      row.Pressed(() => Choose(trial));
       built.Add(row);
       RowDescription.Attach(built, row, TrialText.Description(trial.Run));
       rows.Add(row);
@@ -143,31 +140,82 @@ public class OuiTrials : ListScreen
 
   protected override void CancelTransitions() => FinishSwitch();
 
+  private void Choose(Trial trial)
+  {
+    Audio.Play(SFX.ui_main_button_select);
+    if (ReplayStore.Exists(trial.Id))
+      OpenMenu(trial);
+    else
+      Start(trial);
+  }
+
+  private void OpenMenu(Trial trial)
+  {
+    menu.Focused = false;
+    open = new TrialModeMenu(
+      trial,
+      play: () => CloseThen(() => Start(trial)),
+      watch: () => CloseThen(() => WatchPb(trial)),
+      race: () => CloseThen(() => Race(trial)),
+      closed: OnMenuClosed
+    );
+    Scene.Add(open);
+  }
+
+  private void CloseThen(Action action)
+  {
+    open.Dismiss();
+    action();
+  }
+
+  private void OnMenuClosed()
+  {
+    open = null;
+    SetDim(1f);
+    if (Focused)
+      menu.Focused = true;
+  }
+
+  public override void Update()
+  {
+    base.Update();
+    if (open != null)
+      SetDim(1f - (1f - ListDim) * open.Fade);
+  }
+
   private void Start(Trial trial)
   {
-    Audio.Play("event:/ui/main/button_select");
     Add(new Coroutine(StartRoutine(trial)));
   }
 
   private void WatchPb(Trial trial)
   {
+    if (TryLoadPb(trial, out Replay replay))
+      Add(new Coroutine(StartRoutine(trial, replay)));
+  }
+
+  private void Race(Trial trial)
+  {
+    if (TryLoadPb(trial, out Replay replay))
+      Add(new Coroutine(StartRoutine(trial, replay, race: true)));
+  }
+
+  private bool TryLoadPb(Trial trial, out Replay replay)
+  {
+    replay = null;
     if (!ReplayStore.Exists(trial.Id))
     {
       Audio.Play("event:/ui/main/button_invalid");
-      return;
+      return false;
     }
-    if (!ReplayStore.TryLoad(trial.Id, out Replay replay, out string failure))
-    {
-      string text = Dialog.Get("climbtrials_replay_deleted").Replace("{0}", failure);
-      notice.Show(text, ReplayDeletedSeconds);
-      OnSelect();
-      return;
-    }
-    Audio.Play("event:/ui/main/button_select");
-    Add(new Coroutine(StartRoutine(trial, replay)));
+    if (ReplayStore.TryLoad(trial.Id, out replay, out string failure))
+      return true;
+    string text = Dialog.Get("climbtrials_replay_deleted").Replace("{0}", failure);
+    notice.Show(text, ReplayDeletedSeconds);
+    return false;
   }
 
-  private IEnumerator StartRoutine(Trial trial, Replay replay = null)
+  private IEnumerator StartRoutine(Trial trial, Replay replay = null, bool race = false)
   {
     FinishSwitch();
     menu.Focused = false;
@@ -177,7 +225,9 @@ public class OuiTrials : ListScreen
     Audio.SetMusic(null, true, true);
     Audio.SetAmbience(null, true);
     yield return 0.5f;
-    if (replay != null)
+    if (race)
+      RunManager.StartRace(trial, replay);
+    else if (replay != null)
       RunManager.StartReplay(replay);
     else
       RunManager.StartTrial(trial);
@@ -231,16 +281,5 @@ public class OuiTrials : ListScreen
       TimeText.Hud.At(TotalScale),
       MedalIcon.TextColor(record.Medal) * alpha
     );
-  }
-
-  protected override void RenderPrompts()
-  {
-    if (selectedHasReplay)
-      ButtonRow.DrawCenter(
-        Dialog.Clean("climbtrials_trials_watch_pb"),
-        Input.MenuJournal,
-        alpha,
-        x
-      );
   }
 }
