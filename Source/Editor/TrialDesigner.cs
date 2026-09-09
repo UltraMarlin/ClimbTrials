@@ -34,11 +34,24 @@ public class TrialDesigner : Entity
   public static void Load()
   {
     Everest.Events.Level.OnLoadLevel += OnLoadLevel;
+    On.Celeste.OverworldLoader.ctor += OnOverworldLoad;
   }
 
   public static void Unload()
   {
     Everest.Events.Level.OnLoadLevel -= OnLoadLevel;
+    On.Celeste.OverworldLoader.ctor -= OnOverworldLoad;
+  }
+
+  private static void OnOverworldLoad(
+    On.Celeste.OverworldLoader.orig_ctor orig,
+    OverworldLoader self,
+    Overworld.StartMode startMode,
+    HiresSnow snow
+  )
+  {
+    orig(self, startMode, snow);
+    TrialDraft.Reset();
   }
 
   private static void OnLoadLevel(Level level, Player.IntroTypes playerIntro, bool isFromLoader)
