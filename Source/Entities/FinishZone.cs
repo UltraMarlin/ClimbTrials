@@ -8,6 +8,7 @@ namespace Celeste.Mod.ClimbTrials.Entities;
 public class FinishZone : Entity
 {
   private const string FinishSound = "event:/game/07_summit/checkpoint_confetti";
+  private const float ConfettiLift = 8f;
   private readonly Rectangle worldRect;
   private FinishZoneDisplay display;
 
@@ -39,8 +40,9 @@ public class FinishZone : Entity
     if (!RunManager.Finish())
       return;
     player.StateMachine.State = Player.StDummy;
-    Audio.Play(FinishSound, TopCenter);
-    SummitCheckpoint.ConfettiRenderer confetti = new(TopCenter);
+    Vector2 confettiPosition = player.TopCenter + new Vector2(0f, -ConfettiLift);
+    Audio.Play(FinishSound, confettiPosition);
+    SummitCheckpoint.ConfettiRenderer confetti = new(confettiPosition);
     confetti.Tag |= Tags.FrozenUpdate | Tags.Persistent;
     Scene.Add(confetti);
     if (RunManager.LastFinish != null)
