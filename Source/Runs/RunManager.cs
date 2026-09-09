@@ -31,6 +31,7 @@ public static class RunManager
 
   private static bool awaitingLoad;
   private static bool awaitingControl;
+  private static bool countdownOnControl;
   private static int loadSeed;
   private static string pendingNotice;
   private static string pendingRestart;
@@ -45,6 +46,7 @@ public static class RunManager
     Everest.Events.Level.OnExit += OnExit;
     On.Celeste.Player.Added += OnPlayerAdded;
     On.Celeste.Player.Die += OnPlayerDie;
+    On.Celeste.Level.Reload += OnLevelReload;
     On.Celeste.SaveData.AssistModeChecks += OnAssistModeChecks;
     On.Celeste.Strawberry.OnCollect += OnStrawberryCollect;
     On.Celeste.SpeedrunTimerDisplay.Render += SuppressVanillaTimer;
@@ -60,6 +62,7 @@ public static class RunManager
     Everest.Events.Level.OnExit -= OnExit;
     On.Celeste.Player.Added -= OnPlayerAdded;
     On.Celeste.Player.Die -= OnPlayerDie;
+    On.Celeste.Level.Reload -= OnLevelReload;
     On.Celeste.SaveData.AssistModeChecks -= OnAssistModeChecks;
     On.Celeste.Strawberry.OnCollect -= OnStrawberryCollect;
     On.Celeste.SpeedrunTimerDisplay.Render -= SuppressVanillaTimer;
@@ -78,12 +81,17 @@ public static class RunManager
     StartRun(trial.Run);
   }
 
-  private static LevelLoader CreateRunLoader(RunDefinition run, Replay replay)
+  private static LevelLoader CreateRunLoader(
+    RunDefinition run,
+    Replay replay,
+    bool countdown = true
+  )
   {
     ResetRunState();
     RunBinds.Blank();
     Run = run;
     Replay = replay;
+    countdownOnControl = countdown;
 
     ownSaveData = new SaveData { Name = "ClimbTrials" };
     SaveData.Start(ownSaveData, -1);
@@ -120,9 +128,9 @@ public static class RunManager
     return Determinism.CreateSeededLoader(loadSeed, session, run.Spawn);
   }
 
-  public static void StartRun(RunDefinition run)
+  public static void StartRun(RunDefinition run, bool countdown = true)
   {
-    SwitchScene(CreateRunLoader(run, null));
+    SwitchScene(CreateRunLoader(run, null, countdown));
   }
 
   public static void LeaveToTrials()
@@ -217,6 +225,7 @@ public static class RunManager
     Progress.Reset();
     awaitingLoad = false;
     awaitingControl = false;
+    countdownOnControl = true;
     pendingRestart = null;
     Countdown.SetWorldAudioPaused(false);
     ReleaseFinishSnapshot();
@@ -306,6 +315,8 @@ public static class RunManager
     if (pendingRestart != null && !level.Paused)
       RunPendingRestart();
     DebugUse.ObserveFrame();
+    if (!awaitingLoad)
+      Progress.ObserveRespawn(level.Session.RespawnPoint);
     if (
       !Replaying
       && AttemptInProgress
@@ -358,7 +369,7 @@ public static class RunManager
 
   private static void BeginAttempt(Level level)
   {
-    if (ClimbTrialsModule.Settings.CountdownMode == CountdownMode.Off)
+    if (ClimbTrialsModule.Settings.CountdownMode == CountdownMode.Off || !countdownOnControl)
     {
       OnAttemptStart();
       return;
@@ -469,6 +480,20 @@ public static class RunManager
     ApplyAssists(self);
   }
 
+  private static void OnLevelReload(On.Celeste.Level.orig_Reload orig, Level self)
+  {
+    if (Run != null && !self.Completed)
+      Progress.DropUnkept();
+    orig(self);
+  }
+
+  private static bool NothingPermanentYet(Session session) =>
+    !Progress.RespawnMoved
+    && Progress.Strawberries == 0
+    && session.DoNotLoad.Count == 0
+    && !session.Cassette
+    && !session.HeartGem;
+
   private static PlayerDeadBody OnPlayerDie(
     On.Celeste.Player.orig_Die orig,
     Player self,
@@ -485,11 +510,14 @@ public static class RunManager
       && Run != null
       && !Replaying
       && Attempt.State is AttemptState.Countdown or AttemptState.Running
-      && ClimbTrialsModule.Settings.ResetOnDeath
+      && (
+        ClimbTrialsModule.Settings.ResetOnDeath
+        || NothingPermanentYet(self.SceneAs<Level>().Session)
+      )
     )
     {
       RunDefinition run = Run;
-      body.DeathAction = () => StartRun(run);
+      body.DeathAction = () => StartRun(run, countdown: false);
     }
     return body;
   }

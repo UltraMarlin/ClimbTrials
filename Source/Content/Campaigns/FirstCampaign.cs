@@ -40,7 +40,7 @@ public static class FirstCampaign
           Finish = new(1864, -1168, 16, 24),
           Checkpoints =
           [
-            new("6b", new(2168f, -1200f), new(2238f, -1264f)),
+            new("6b", new(2168f, -1200f), SetsSpawn: false),
             new("6a", new(1700f, -1052f)),
           ],
         },

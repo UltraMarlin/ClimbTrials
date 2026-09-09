@@ -1,26 +1,45 @@
 using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 
 namespace Celeste.Mod.ClimbTrials.Runs;
 
 public sealed class RunProgress
 {
-  private readonly HashSet<int> taken = [];
+  private readonly HashSet<int> touched = [];
+  private readonly HashSet<int> kept = [];
+  private Vector2? respawnSeen;
 
-  public int CheckpointsTaken => taken.Count;
+  public int CheckpointsTaken => touched.Count;
   public int Strawberries { get; private set; }
+  public bool RespawnMoved { get; private set; }
 
-  public bool IsTaken(int index) => taken.Contains(index);
+  public bool IsTaken(int index) => touched.Contains(index);
 
-  public bool TakeCheckpoint(int index) => taken.Add(index);
+  public bool TakeCheckpoint(int index) => touched.Add(index);
 
   public void AddStrawberry() => Strawberries++;
 
   public bool Met(RunDefinition run) =>
     CheckpointsTaken >= run.Checkpoints.Count && Strawberries >= run.RequiredStrawberries;
 
+  public void ObserveRespawn(Vector2? respawnPoint)
+  {
+    if (respawnSeen.HasValue && respawnPoint != respawnSeen)
+    {
+      kept.UnionWith(touched);
+      RespawnMoved = true;
+    }
+    respawnSeen = respawnPoint;
+  }
+
+  public void DropUnkept() => touched.IntersectWith(kept);
+
   public void Reset()
   {
-    taken.Clear();
+    touched.Clear();
+    kept.Clear();
+    respawnSeen = null;
+    RespawnMoved = false;
     Strawberries = 0;
   }
 }
