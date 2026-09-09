@@ -164,6 +164,7 @@ public static class EditorCommands
     Session session = new(area)
     {
       Level = run.StartRoom,
+      RespawnPoint = run.Spawn,
       FirstLevel = false,
       StartedFromBeginning = false,
     };
