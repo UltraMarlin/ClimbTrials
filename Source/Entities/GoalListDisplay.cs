@@ -59,13 +59,13 @@ public class GoalListDisplay : Entity
     {
       if (best <= goals.GoldTicks)
         rows.Add(Goal(Medal.Grandmaster, goals.GrandmasterTicks, best));
-      rows.Add(new Row(Medal.None, best, Attempt.Format(best), true, goals.MedalFor(best), false));
+      rows.Add(new Row(Medal.None, best, TimeText.Format(best), true, goals.MedalFor(best), false));
     }
     return rows.OrderBy(r => r.Ticks).ThenBy(r => r.IsPb).ToList();
   }
 
   private static Row Goal(Medal medal, long ticks, long best) =>
-    new(medal, ticks, Attempt.Format(ticks), false, medal, best <= ticks);
+    new(medal, ticks, TimeText.Format(ticks), false, medal, best <= ticks);
 
   public override void Update()
   {

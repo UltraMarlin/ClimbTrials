@@ -60,7 +60,7 @@ public class TrialRow : TextMenu.Item
       return;
     }
 
-    string best = Attempt.Format(record.BestTicks);
+    string best = TimeText.Format(record.BestTicks);
     float width = TimeText.Width(best, TimeText.Hud.At(RowLayout.PbScale));
     Medal medal = Trial.Goals?.MedalFor(record.BestTicks) ?? Medal.None;
     if (medal != Medal.None)

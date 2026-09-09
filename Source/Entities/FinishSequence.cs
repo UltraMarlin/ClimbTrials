@@ -158,7 +158,7 @@ public class FinishSequence : Entity
     }
 
     if (Input.MenuCancel.Pressed)
-      PauseMenu.ReturnToTrials();
+      RunManager.LeaveToTrials();
   }
 
   public override void Render()
@@ -177,9 +177,9 @@ public class FinishSequence : Entity
 
   private void RenderResult()
   {
-    string time = Attempt.Format(result.Ticks);
+    string time = TimeText.Format(result.Ticks);
     string delta = result.PreviousBestTicks is long previous
-      ? "-" + Attempt.Format(previous - result.Ticks)
+      ? "-" + TimeText.Format(previous - result.Ticks)
       : null;
     float deltaAge = timeAge - DeltaStagger;
 

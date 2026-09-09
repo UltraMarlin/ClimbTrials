@@ -39,12 +39,14 @@ public class RunNotice : Entity
 
   public override void Render()
   {
-    if (SceneAs<Level>().Paused)
+    if (RunManager.Run == null || SceneAs<Level>().Paused)
       return;
+
     notice.Render(new Vector2(960f, NoticeY), NoticeScale, Colors.Warning, 1f);
     string status = StatusText();
     if (status == null)
       return;
+
     ActiveFont.DrawOutline(
       status,
       new Vector2(960f, StatusY),
@@ -64,7 +66,7 @@ public class RunNotice : Entity
     if (Recorder.Stopped == StopReason.Limit)
       return Dialog.Clean("climbtrials_replay_limit")
         + " "
-        + Attempt.FormatSeconds(RunManager.ReplayLimitSeconds);
+        + TimeText.FormatSeconds(RunManager.Trial.ReplayLimitSeconds);
 
     if (Recorder.Stopped == StopReason.Reload)
       return Dialog.Clean("climbtrials_replay_reloaded");

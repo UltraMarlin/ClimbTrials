@@ -22,14 +22,9 @@ public static class TrialText
     List<string> parts = [];
     if (run.HasModifiers)
       parts.Add(Modifiers(run));
-    if (run.Checkpoints.Count > 0)
+    if (run.Waypoints.Count > 0)
       parts.Add(
-        Count(
-          run.Checkpoints.Count,
-          null,
-          "climbtrials_req_checkpoint",
-          "climbtrials_req_checkpoints"
-        )
+        Count(run.Waypoints.Count, null, "climbtrials_req_waypoint", "climbtrials_req_waypoints")
       );
     if (run.RequiredStrawberries > 0)
       parts.Add(

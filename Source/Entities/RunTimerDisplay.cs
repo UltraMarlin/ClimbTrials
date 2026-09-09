@@ -37,7 +37,7 @@ public class RunTimerDisplay : Entity
 
     Attempt attempt = RunManager.Attempt;
 
-    string text = Attempt.Format(attempt.ElapsedTicks);
+    string text = TimeText.Format(attempt.ElapsedTicks);
     float textWidth = TimeText.Width(text, TimeText.Hud);
 
     MTexture bg = GFX.Gui["strawberryCountBG"];

@@ -70,7 +70,7 @@ public class CampaignRow : TextMenu.Item
     if (record.TotalTicks is not long total)
       return;
 
-    string text = Attempt.Format(total);
+    string text = TimeText.Format(total);
     float width = TimeText.Width(text, TimeText.Hud.At(RowLayout.PbScale));
     if (record.Medal != Medal.None)
       MedalIcon.Draw(

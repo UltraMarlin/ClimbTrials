@@ -28,7 +28,7 @@ public static class PauseMenu
       RestartTrial
     );
     TextMenu.Item back = new TextMenu.Button(Dialog.Clean("climbtrials_pause_return")).Pressed(
-      ReturnToTrials
+      RunManager.LeaveToTrials
     );
 
     int restartIndex = Replace(menu, "menu_pause_restartarea", restart);
@@ -85,11 +85,6 @@ public static class PauseMenu
   public static void RestartTrial()
   {
     RunManager.StartRun(RunManager.Run);
-  }
-
-  public static void ReturnToTrials()
-  {
-    RunManager.LeaveToTrials();
   }
 
   private static void OnPause(Level level, int startIndex, bool minimal, bool quickReset)

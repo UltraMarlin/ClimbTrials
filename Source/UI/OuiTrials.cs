@@ -213,7 +213,7 @@ public class OuiTrials : ListScreen
       return;
 
     string label = Dialog.Clean("climbtrials_trials_campaign_total");
-    string text = Attempt.Format(total);
+    string text = TimeText.Format(total);
     float labelWidth = ActiveFont.Measure(label).X * TotalScale;
     float timeWidth = TimeText.Width(text, TimeText.Hud.At(TotalScale));
     float left = atX - (labelWidth + TotalLabelGap + timeWidth) / 2f;

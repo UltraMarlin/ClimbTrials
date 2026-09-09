@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -18,6 +19,18 @@ public static class TimeText
 {
   public static readonly TimeStyle Hud = new(1f, 4f, 2f, 0.7f);
   public static readonly TimeStyle Large = new(2.8f, 0f, 5f, 0.7f);
+
+  public static string Format(long ticks)
+  {
+    TimeSpan time = TimeSpan.FromTicks(ticks);
+    return time.ToString(time.TotalHours >= 1 ? "h\\:mm\\:ss\\.fff" : "m\\:ss\\.fff");
+  }
+
+  public static string FormatSeconds(int seconds)
+  {
+    TimeSpan time = TimeSpan.FromSeconds(seconds);
+    return time.ToString(time.TotalHours >= 1 ? "h\\:mm\\:ss" : "m\\:ss");
+  }
 
   private static float numberWidth;
   private static float spacerWidth;

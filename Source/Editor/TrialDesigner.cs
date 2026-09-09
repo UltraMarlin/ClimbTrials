@@ -12,7 +12,7 @@ public class TrialDesigner : Entity
   {
     Idle,
     PlacingSpawn,
-    PlacingCheckpoint,
+    PlacingWaypoint,
     DrawingFinish,
   }
 
@@ -60,7 +60,7 @@ public class TrialDesigner : Entity
 
   public void BeginSpawn() => Begin(Mode.PlacingSpawn);
 
-  public void BeginCheckpoint() => Begin(Mode.PlacingCheckpoint);
+  public void BeginWaypoint() => Begin(Mode.PlacingWaypoint);
 
   public void BeginFinish() => Begin(Mode.DrawingFinish);
 
@@ -100,7 +100,7 @@ public class TrialDesigner : Entity
         TrialDraft.SetSpawn(level, at);
         Begin(Mode.Idle);
         break;
-      case Mode.PlacingCheckpoint when MInput.Mouse.PressedLeftButton:
+      case Mode.PlacingWaypoint when MInput.Mouse.PressedLeftButton:
         bool shift =
           MInput.Keyboard.Check(Keys.LeftShift) || MInput.Keyboard.Check(Keys.RightShift);
         bool control =
@@ -108,8 +108,8 @@ public class TrialDesigner : Entity
         Player player = level.Tracker.GetEntity<Player>();
         Vector2? spawn = shift && player != null ? Snap(player.Position) : null;
         bool setsSpawn = spawn != null || !control;
-        TrialDraft.PlacedCheckpoint checkpoint = new(room, at, spawn, setsSpawn);
-        TrialDraft.Checkpoints.Add(checkpoint);
+        TrialDraft.PlacedWaypoint waypoint = new(room, at, spawn, setsSpawn);
+        TrialDraft.Waypoints.Add(waypoint);
         Begin(Mode.Idle);
         break;
       case Mode.DrawingFinish:
@@ -157,9 +157,9 @@ public class TrialDesigner : Entity
     string room = SceneAs<Level>().Session.Level;
     if (TrialDraft.Finish is TrialDraft.PlacedFinish finish && finish.Room == room)
       Draw.HollowRect(finish.Rect, FinishColor * KeptAlpha);
-    foreach (TrialDraft.PlacedCheckpoint checkpoint in TrialDraft.Checkpoints)
-      if (checkpoint.Room == room)
-        TrialCheckpoint.DrawPreview(checkpoint.Position, KeptAlpha);
+    foreach (TrialDraft.PlacedWaypoint waypoint in TrialDraft.Waypoints)
+      if (waypoint.Room == room)
+        TrialWaypoint.DrawPreview(waypoint.Position, KeptAlpha);
     foreach (EntityID id in TrialDraft.IgnoredStrawberries)
       if (id.Level == room)
         DrawIgnoredBerry(id);
@@ -174,8 +174,8 @@ public class TrialDesigner : Entity
       case Mode.PlacingSpawn:
         Draw.HollowRect(SpawnBox(at), SpawnColor);
         break;
-      case Mode.PlacingCheckpoint:
-        TrialCheckpoint.DrawPreview(at, 1f);
+      case Mode.PlacingWaypoint:
+        TrialWaypoint.DrawPreview(at, 1f);
         break;
       case Mode.DrawingFinish when dragStart is Vector2 start:
         Draw.HollowRect(SquaresBetween(start, RawMouseWorld()), FinishColor);

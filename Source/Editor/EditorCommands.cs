@@ -1,5 +1,4 @@
 using Celeste.Mod.ClimbTrials.Content;
-using Celeste.Mod.ClimbTrials.Entities;
 using Celeste.Mod.ClimbTrials.Runs;
 using Monocle;
 
@@ -63,27 +62,27 @@ public static class EditorCommands
     Engine.Commands.Log($"spawn facing: {TrialDraft.SpawnFacing?.ToString() ?? "default"}");
   }
 
-  [Command("ct_check", "ClimbTrials: place a checkpoint in a trial draft")]
-  public static void DraftCheckpoint()
+  [Command("ct_waypoint", "ClimbTrials: place a waypoint in a trial draft")]
+  public static void DraftWaypoint()
   {
     if (TryGetLevel(out Level level))
       Begin(
-        TrialDesigner.Get(level).BeginCheckpoint,
-        "left click to place the checkpoint, shift-click to save the player position as its spawn, control-click for no spawn"
+        TrialDesigner.Get(level).BeginWaypoint,
+        "left click to place the waypoint, shift-click to save the player position as its spawn, control-click for no spawn"
       );
   }
 
-  [Command("ct_check_rm", "ClimbTrials: remove the last placed checkpoint")]
-  public static void DraftCheckpointRemove()
+  [Command("ct_waypoint_rm", "ClimbTrials: remove the last placed waypoint")]
+  public static void DraftWaypointRemove()
   {
-    if (TrialDraft.Checkpoints.Count == 0)
+    if (TrialDraft.Waypoints.Count == 0)
     {
-      Engine.Commands.Log("no checkpoints placed");
+      Engine.Commands.Log("no waypoints placed");
       return;
     }
-    TrialDraft.PlacedCheckpoint removed = TrialDraft.Checkpoints[^1];
-    TrialDraft.Checkpoints.RemoveAt(TrialDraft.Checkpoints.Count - 1);
-    Engine.Commands.Log($"removed checkpoint {TrialDraft.CheckpointCode(removed)}");
+    TrialDraft.PlacedWaypoint removed = TrialDraft.Waypoints[^1];
+    TrialDraft.Waypoints.RemoveAt(TrialDraft.Waypoints.Count - 1);
+    Engine.Commands.Log($"removed waypoint {TrialDraft.WaypointCode(removed)}");
   }
 
   [Command(
@@ -106,7 +105,7 @@ public static class EditorCommands
     int found = 0;
     foreach (EntityData entity in data.Entities)
     {
-      if (!GoalIndicator.IsTargetBerry(entity))
+      if (!RunDefinition.IsTargetBerry(entity))
         continue;
       found++;
       EntityID id = new(room, entity.ID);

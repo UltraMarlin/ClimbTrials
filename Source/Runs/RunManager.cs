@@ -109,14 +109,14 @@ public static class RunManager
       session.Inventory = inventory;
     }
     session.SetFlag(TrialFlagPrefix + Trial?.Id);
-    foreach (CheckpointDef checkpoint in run.Checkpoints)
+    foreach (WaypointDef waypoint in run.Waypoints)
     {
-      string actual = session.MapData.GetAt(checkpoint.Position)?.Name;
-      if (actual != checkpoint.Room)
+      string actual = session.MapData.GetAt(waypoint.Position)?.Name;
+      if (actual != waypoint.Room)
         Logger.Log(
           LogLevel.Warn,
           LogTag,
-          $"checkpoint at {checkpoint.Position} says room '{checkpoint.Room}' "
+          $"waypoint at {waypoint.Position} says room '{waypoint.Room}' "
             + $"but lies in '{actual ?? "no room"}'"
         );
     }
@@ -291,21 +291,13 @@ public static class RunManager
       pendingNotice = null;
     }
 
-    for (int i = 0; i < Run.Checkpoints.Count; i++)
-      if (Run.Checkpoints[i].Room == room)
-        level.Add(new TrialCheckpoint(i, Run.Checkpoints[i]));
+    for (int i = 0; i < Run.Waypoints.Count; i++)
+      if (Run.Waypoints[i].Room == room)
+        level.Add(new TrialWaypoint(i, Run.Waypoints[i]));
 
     if (room == Run.FinishRoom && level.Tracker.GetEntity<FinishZone>() == null)
       level.Add(new FinishZone(Run.Finish));
   }
-
-  public static int ReplayLimitSeconds => ReplayLimitFor(Trial);
-
-  public static int ReplayLimitFor(Trial trial) =>
-    Math.Min(
-      trial?.ReplayLimitSeconds ?? Trial.DefaultReplayLimitSeconds,
-      Trial.DefaultReplayLimitSeconds
-    );
 
   private static void OnAfterUpdate(Level level)
   {
@@ -329,7 +321,7 @@ public static class RunManager
       Recorder.Recording
       && !level.Paused
       && Attempt.State == AttemptState.Running
-      && Attempt.ElapsedTicks >= ReplayLimitSeconds * TimeSpan.TicksPerSecond
+      && Attempt.ElapsedTicks >= Trial.ReplayLimitSeconds * TimeSpan.TicksPerSecond
     )
       StopRecording(StopReason.Limit);
     if (
@@ -452,7 +444,7 @@ public static class RunManager
     Logger.Log(
       LogLevel.Info,
       LogTag,
-      $"run '{Trial?.Id}' finished in {Attempt.Format(Attempt.ElapsedTicks)}"
+      $"run '{Trial?.Id}' finished in {TimeText.Format(Attempt.ElapsedTicks)}"
     );
     return true;
   }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Runs;
+using Celeste.Mod.ClimbTrials.UI;
 
 namespace Celeste.Mod.ClimbTrials.Replays;
 
@@ -10,7 +11,7 @@ public sealed record TrialSpec(string Id, float SpawnX, float SpawnY, int Replay
   public static TrialSpec From(Trial trial) =>
     trial == null
       ? null
-      : new(trial.Id, trial.Run.Spawn.X, trial.Run.Spawn.Y, RunManager.ReplayLimitFor(trial));
+      : new(trial.Id, trial.Run.Spawn.X, trial.Run.Spawn.Y, trial.ReplayLimitSeconds);
 }
 
 public sealed class ValidationResult
@@ -66,8 +67,8 @@ public static class ReplayValidator
     long expected = counted * FrameTicks;
     if (Math.Abs(replay.Ticks - expected) > FrameTicks)
       result.Rejections.Add(
-        $"header time {Attempt.Format(replay.Ticks)}, "
-          + $"but {counted} counted frames add up to {Attempt.Format(expected)}"
+        $"header time {TimeText.Format(replay.Ticks)}, "
+          + $"but {counted} counted frames add up to {TimeText.Format(expected)}"
       );
     if (frozen > counted * FrozenFlagAbove)
       result.Flags.Add($"{frozen} of {replay.Frames.Count} frames are frozen");

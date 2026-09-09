@@ -74,8 +74,14 @@ public static class Campaigns
       if (campaign.Trials.Count == 0)
         throw new InvalidOperationException($"ClimbTrials: campaign '{campaign.Id}' has no trials");
       foreach (Trial trial in campaign.Trials)
+      {
         if (!trialIds.Add(trial.Id))
           throw new InvalidOperationException($"ClimbTrials: duplicate trial id '{trial.Id}'");
+        if (trial.ReplayLimitSeconds < 1)
+          throw new InvalidOperationException(
+            $"ClimbTrials: trial '{trial.Id}' has a replay limit below 1 s"
+          );
+      }
     }
   }
 }

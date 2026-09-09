@@ -56,7 +56,7 @@ public class ReplayBanner : Entity
       info += $",  {Dialog.Clean("climbtrials_replay_recorded_on")} {replay.CelesteVersion}";
     Outline(info, InfoY, 0.5f, Dim * alpha);
 
-    string time = Attempt.Format(replay.Ticks);
+    string time = TimeText.Format(replay.Ticks);
     float width = TimeText.Width(time, TimeStyle);
     TimeText.Draw(
       new Vector2(960f - width / 2f, TimeBaselineY),

@@ -9,7 +9,7 @@ namespace Celeste.Mod.ClimbTrials.Editor;
 
 public static class TrialDraft
 {
-  public readonly record struct PlacedCheckpoint(
+  public readonly record struct PlacedWaypoint(
     string Room,
     Vector2 Position,
     Vector2? Spawn,
@@ -35,7 +35,7 @@ public static class TrialDraft
   public static string StartRoom;
   public static Vector2? Spawn;
   public static Facings? SpawnFacing;
-  public static readonly List<PlacedCheckpoint> Checkpoints = [];
+  public static readonly List<PlacedWaypoint> Waypoints = [];
   public static PlacedFinish? Finish;
   public static readonly List<EntityID> IgnoredStrawberries = [];
 
@@ -54,7 +54,7 @@ public static class TrialDraft
     StartRoom = null;
     Spawn = null;
     SpawnFacing = null;
-    Checkpoints.Clear();
+    Waypoints.Clear();
     Finish = null;
     IgnoredStrawberries.Clear();
   }
@@ -82,14 +82,9 @@ public static class TrialDraft
     StartRoom = run.StartRoom;
     Spawn = run.Spawn;
     SpawnFacing = run.SpawnFacing;
-    foreach (CheckpointDef checkpoint in run.Checkpoints)
-      Checkpoints.Add(
-        new PlacedCheckpoint(
-          checkpoint.Room,
-          checkpoint.Position,
-          checkpoint.Spawn,
-          checkpoint.SetsSpawn
-        )
+    foreach (WaypointDef waypoint in run.Waypoints)
+      Waypoints.Add(
+        new PlacedWaypoint(waypoint.Room, waypoint.Position, waypoint.Spawn, waypoint.SetsSpawn)
       );
     Finish = new PlacedFinish(run.FinishRoom, run.Finish);
     IgnoredStrawberries.AddRange(run.IgnoredStrawberries);
@@ -103,11 +98,11 @@ public static class TrialDraft
     Spawn = position;
   }
 
-  public static string CheckpointCode(PlacedCheckpoint checkpoint)
+  public static string WaypointCode(PlacedWaypoint waypoint)
   {
-    string spawn = checkpoint.Spawn is Vector2 s ? $", {SpawnCode(s)}" : "";
-    string mode = checkpoint.SetsSpawn ? "" : ", SetsSpawn: false";
-    return $"new(\"{checkpoint.Room}\", {SpawnCode(checkpoint.Position)}{spawn}{mode})";
+    string spawn = waypoint.Spawn is Vector2 s ? $", {SpawnCode(s)}" : "";
+    string mode = waypoint.SetsSpawn ? "" : ", SetsSpawn: false";
+    return $"new(\"{waypoint.Room}\", {SpawnCode(waypoint.Position)}{spawn}{mode})";
   }
 
   public static string BerryCode(EntityID id) => $"new(\"{id.Level}\", {id.ID})";
@@ -130,8 +125,8 @@ public static class TrialDraft
       $"FinishRoom = \"{finish?.Room}\"",
       $"Finish = {FinishCode(finish?.Rect ?? new Rectangle(0, 0, 16, 24))}",
     ];
-    if (Checkpoints.Count > 0)
-      run.Add($"Checkpoints = [ {string.Join(", ", Checkpoints.ConvertAll(CheckpointCode))} ]");
+    if (Waypoints.Count > 0)
+      run.Add($"Waypoints = [ {string.Join(", ", Waypoints.ConvertAll(WaypointCode))} ]");
     if (RequiredStrawberries > 0)
       run.Add($"RequiredStrawberries = {RequiredStrawberries}");
     if (IgnoredStrawberries.Count > 0)

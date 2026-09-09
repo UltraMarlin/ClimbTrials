@@ -38,7 +38,7 @@ public static class FirstCampaign
           Spawn = new(2283f, -1232f),
           FinishRoom = "6a",
           Finish = new(1864, -1168, 16, 24),
-          Checkpoints =
+          Waypoints =
           [
             new("6b", new(2168f, -1200f), SetsSpawn: false),
             new("6a", new(1700f, -1052f)),
@@ -49,7 +49,7 @@ public static class FirstCampaign
       new Trial
       {
         Id = "c1-3",
-        Name = "Shrine Checkpoint Frenzy",
+        Name = "Shrine Waypoint Frenzy",
         Difficulty = Difficulty.Normal,
         Run = new()
         {
@@ -59,7 +59,7 @@ public static class FirstCampaign
           Spawn = new(4416f, -1016f),
           FinishRoom = "b-00",
           Finish = new(4408, -1040, 16, 24),
-          Checkpoints =
+          Waypoints =
           [
             new("b-00", new(4312f, -1068f)),
             new("b-00", new(4428f, -1370f)),

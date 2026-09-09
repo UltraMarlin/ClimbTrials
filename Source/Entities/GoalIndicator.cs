@@ -24,18 +24,18 @@ public class GoalIndicator : Entity
   private const float TurnTime = 0.3f;
   private const float FollowTime = 0.2f;
   private const float EdgeMargin = 10f;
-  private static readonly Color CheckpointColor = Calc.HexToColor("b2ebbe");
+  private static readonly Color WaypointColor = Calc.HexToColor("b2ebbe");
   private static readonly Color StrawberryColor = Calc.HexToColor("f76f6f");
   private static readonly Color FinishColor = Calc.HexToColor("f7d472");
 
   private enum TargetKind
   {
-    Checkpoint,
+    Waypoint,
     Strawberry,
     Finish,
   }
 
-  private static readonly TargetKind[] Rings = [TargetKind.Checkpoint, TargetKind.Strawberry];
+  private static readonly TargetKind[] Rings = [TargetKind.Waypoint, TargetKind.Strawberry];
 
   private readonly record struct Target(Vector2 Position, TargetKind Kind);
 
@@ -46,7 +46,7 @@ public class GoalIndicator : Entity
     public bool Visible;
     public float Angle;
     public float Alpha;
-    public Color Color = CheckpointColor;
+    public Color Color = WaypointColor;
     public Vector2 Position;
   }
 
@@ -64,9 +64,6 @@ public class GoalIndicator : Entity
       arrows[ring] = new Arrow();
   }
 
-  public static bool IsTargetBerry(EntityData entity) =>
-    entity.Name == "strawberry" && !entity.Bool("moon");
-
   public override void Added(Scene scene)
   {
     base.Added(scene);
@@ -75,7 +72,7 @@ public class GoalIndicator : Entity
     {
       foreach (EntityData entity in room.Entities)
       {
-        if (!IsTargetBerry(entity))
+        if (!RunDefinition.IsTargetBerry(entity))
           continue;
         EntityID id = new(room.Name, entity.ID);
         if (RunManager.Run.IgnoredStrawberries.Contains(id))
@@ -134,7 +131,7 @@ public class GoalIndicator : Entity
     {
       TargetKind.Strawberry => StrawberryColor,
       TargetKind.Finish => FinishColor,
-      _ => CheckpointColor,
+      _ => WaypointColor,
     };
     Vector2 center = player.Center - Vector2.UnitY * CenterLift;
     Vector2 toTarget = target.Position - center;
@@ -207,10 +204,10 @@ public class GoalIndicator : Entity
       }
     }
 
-    if (only is null or TargetKind.Checkpoint)
-      for (int i = 0; i < run.Checkpoints.Count; i++)
+    if (only is null or TargetKind.Waypoint)
+      for (int i = 0; i < run.Waypoints.Count; i++)
         if (!progress.IsTaken(i))
-          Consider(run.Checkpoints[i].Position, TargetKind.Checkpoint);
+          Consider(run.Waypoints[i].Position, TargetKind.Waypoint);
 
     if (only is null or TargetKind.Strawberry)
     {

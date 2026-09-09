@@ -22,7 +22,7 @@ public static class SecondCampaign
           Spawn = new(1728f, 152f),
           FinishRoom = "a-01",
           Finish = new(1752, -328, 24, 16),
-          Checkpoints =
+          Waypoints =
           [
             new("a-01", new(1584f, -24f)),
             new("a-01", new(1664f, -160f)),
@@ -49,7 +49,7 @@ public static class SecondCampaign
           Spawn = new(2144f, 1888f),
           FinishRoom = "end_3",
           Finish = new(1136, 1808, 32, 56),
-          Checkpoints =
+          Waypoints =
           [
             new("end_4", new(1552f, 1752f), new(1552f, 1776f)),
             new("end_4", new(1584f, 1808f), new(1584f, 1832f)),
@@ -77,7 +77,7 @@ public static class SecondCampaign
           Spawn = new(6800f, -5152f),
           FinishRoom = "c-07",
           Finish = new(8168, -6104, 24, 64),
-          Checkpoints = [new("c-06b", new(8336f, -5656f), SetsSpawn: false)],
+          Waypoints = [new("c-06b", new(8336f, -5656f), SetsSpawn: false)],
           RequiredStrawberries = 2,
           IgnoredStrawberries = [new("b-08", 129), new("b-09", 167)],
           Dashes = 1,
@@ -113,7 +113,7 @@ public static class SecondCampaign
           Spawn = new(408f, 32f),
           FinishRoom = "s3",
           Finish = new(1368, -16, 24, 40),
-          Checkpoints =
+          Waypoints =
           [
             new("s3", new(1296f, -64f), new(1296f, 40f)),
             new("s2", new(944f, -64f)),
@@ -139,7 +139,7 @@ public static class SecondCampaign
           Spawn = new(0f, 144f),
           FinishRoom = "02b",
           Finish = new(1080, -528, 32, 24),
-          Checkpoints =
+          Waypoints =
           [
             new("00", new(80f, 24f), SetsSpawn: false),
             new("00", new(176f, 48f), SetsSpawn: false),
@@ -152,6 +152,29 @@ public static class SecondCampaign
           ],
         },
         Goals = GoalTimes.FromSeconds(bronze: 42, silver: 30, gold: 26, grandmaster: 23),
+      },
+      new Trial
+      {
+        Id = "c2-8",
+        Name = "Why do I hear 5B music?",
+        Difficulty = Difficulty.Hard,
+        Run = new()
+        {
+          Sid = "Celeste/5-MirrorTemple",
+          Mode = AreaMode.BSide,
+          StartRoom = "start",
+          Spawn = new(-488f, 104f),
+          FinishRoom = "start",
+          Finish = new(-328, -56, 24, 184),
+          Waypoints =
+          [
+            new("start", new(-512f, -16f), new(-512f, 32f)),
+            new("start", new(-584f, 8f), new(-512f, 32f)),
+            new("start", new(-632f, 80f), new(-536f, 88f)),
+            new("start", new(-440f, 8f), new(-512f, 32f)),
+          ],
+        },
+        Goals = GoalTimes.FromSeconds(bronze: 10, silver: 8, gold: 6, grandmaster: 5),
       },
     ],
   };

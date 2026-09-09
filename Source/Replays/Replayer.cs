@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Celeste.Mod.ClimbTrials.Runs;
+using Celeste.Mod.ClimbTrials.UI;
 using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -131,8 +132,8 @@ public static class Replayer
     if (elapsedTicks != current.Ticks)
     {
       Desync(
-        $"finished at {Attempt.Format(elapsedTicks)}, "
-          + $"the header says {Attempt.Format(current.Ticks)}"
+        $"finished at {TimeText.Format(elapsedTicks)}, "
+          + $"the header says {TimeText.Format(current.Ticks)}"
       );
       return false;
     }

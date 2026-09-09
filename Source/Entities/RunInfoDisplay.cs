@@ -12,7 +12,7 @@ public class RunInfoDisplay : Entity
   private const float ModifierListX = 18f;
   private const float ModifierListGap = 10f;
   private const float ModifierListHeight = 54f;
-  private const string CheckpointIcon = "ClimbTrials/Checkpoint_Icon";
+  private const string WaypointIcon = "ClimbTrials/Waypoint_Icon";
   private const string StrawberryIcon = "collectables/strawberry";
   private static readonly string[] DashIcons =
   [
@@ -45,10 +45,10 @@ public class RunInfoDisplay : Entity
         DrawModifierIcon(GFX.Gui[DashIcons[dashes]], x, y);
       y += ModifierListHeight;
     }
-    if (run.Checkpoints.Count > 0)
+    if (run.Waypoints.Count > 0)
     {
-      DrawIcon(GFX.Gui[CheckpointIcon], y);
-      DrawText($"{progress.CheckpointsTaken}/{run.Checkpoints.Count}", y);
+      DrawIcon(GFX.Gui[WaypointIcon], y);
+      DrawText($"{progress.WaypointsTaken}/{run.Waypoints.Count}", y);
       y += RunHudLayout.RowHeight;
     }
     if (run.RequiredStrawberries > 0)

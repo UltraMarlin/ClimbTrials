@@ -9,18 +9,18 @@ public sealed class RunProgress
   private readonly HashSet<int> kept = [];
   private Vector2? respawnSeen;
 
-  public int CheckpointsTaken => touched.Count;
+  public int WaypointsTaken => touched.Count;
   public int Strawberries { get; private set; }
   public bool RespawnMoved { get; private set; }
 
   public bool IsTaken(int index) => touched.Contains(index);
 
-  public bool TakeCheckpoint(int index) => touched.Add(index);
+  public bool TakeWaypoint(int index) => touched.Add(index);
 
   public void AddStrawberry() => Strawberries++;
 
   public bool Met(RunDefinition run) =>
-    CheckpointsTaken >= run.Checkpoints.Count && Strawberries >= run.RequiredStrawberries;
+    WaypointsTaken >= run.Waypoints.Count && Strawberries >= run.RequiredStrawberries;
 
   public void ObserveRespawn(Vector2? respawnPoint)
   {

@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework;
 
 namespace Celeste.Mod.ClimbTrials.Runs;
 
-public readonly record struct CheckpointDef(
+public readonly record struct WaypointDef(
   string Room,
   Vector2 Position,
   Vector2? Spawn = null,
@@ -24,7 +24,7 @@ public sealed class RunDefinition
   public string FinishRoom { get; init; }
   public Rectangle Finish { get; init; }
 
-  public IReadOnlyList<CheckpointDef> Checkpoints { get; init; } = [];
+  public IReadOnlyList<WaypointDef> Waypoints { get; init; } = [];
 
   public IReadOnlyList<EntityID> IgnoredStrawberries { get; init; } = [];
   public int RequiredStrawberries { get; init; }
@@ -46,4 +46,7 @@ public sealed class RunDefinition
   public AreaKey Area => AreaData.Get(Sid).ToKey(Mode);
   public Vector2 FinishCenter => new(Finish.Center.X, Finish.Center.Y);
   public bool HasModifiers => Dashes != null || Grabless;
+
+  public static bool IsTargetBerry(EntityData entity) =>
+    entity.Name == "strawberry" && !entity.Bool("moon");
 }

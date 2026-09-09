@@ -1,8 +1,8 @@
 using System;
 using System.Collections;
+using Celeste.Mod.ClimbTrials.UI;
 using Microsoft.Xna.Framework;
 using Monocle;
-using Celeste.Mod.ClimbTrials.UI;
 
 namespace Celeste.Mod.ClimbTrials.Entities;
 

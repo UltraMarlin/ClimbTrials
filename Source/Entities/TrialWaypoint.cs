@@ -5,7 +5,7 @@ using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.Entities;
 
-public class TrialCheckpoint : Entity
+public class TrialWaypoint : Entity
 {
   private const string ContainerTexture = "objects/touchswitch/container";
   private const string IconTexture = "objects/touchswitch/icon";
@@ -14,8 +14,7 @@ public class TrialCheckpoint : Entity
   private static readonly Color TakenColor = Calc.HexToColor("6ded87") * 0.3f;
 
   public readonly int Index;
-  private readonly CheckpointDef definition;
-  private readonly MTexture border = GFX.Game[ContainerTexture];
+  private readonly WaypointDef definition;
   private readonly Sprite icon = new(GFX.Game, IconTexture);
   private readonly Wiggler wiggler;
   private Vector2 pulse = Vector2.One;
@@ -24,7 +23,7 @@ public class TrialCheckpoint : Entity
   private bool taken;
 
   // Based on vanilla TouchSwitch.cs
-  public TrialCheckpoint(int index, CheckpointDef definition)
+  public TrialWaypoint(int index, WaypointDef definition)
     : base(definition.Position)
   {
     Index = index;
@@ -33,6 +32,7 @@ public class TrialCheckpoint : Entity
     Collider = new Hitbox(16f, 16f, -8f, -8f);
     Add(new PlayerCollider(OnPlayer, null, new Hitbox(30f, 30f, -15f, -15f)));
     Add(icon);
+    icon.Visible = false;
     icon.Add("idle", "", 0f, default(int));
     icon.Add("spin", "", 0.1f, new Chooser<string>("spin", 1f), 0, 1, 2, 3, 4, 5);
     icon.CenterOrigin();
@@ -56,7 +56,7 @@ public class TrialCheckpoint : Entity
   {
     if (taken || RunManager.Attempt.State != AttemptState.Running)
       return;
-    if (!RunManager.Progress.TakeCheckpoint(Index))
+    if (!RunManager.Progress.TakeWaypoint(Index))
       return;
     taken = true;
     if (definition.SpawnPoint is Vector2 spawn)
@@ -89,19 +89,32 @@ public class TrialCheckpoint : Entity
     base.Update();
   }
 
-  public static void DrawPreview(Vector2 position, float alpha)
+  public static void Draw(
+    Vector2 position,
+    MTexture iconFrame,
+    Color color,
+    float shadowAlpha,
+    Vector2 borderScale
+  )
   {
     MTexture border = GFX.Game[ContainerTexture];
-    MTexture icon = GFX.Game.GetAtlasSubtextures(IconTexture)[0];
-    border.DrawCentered(position + new Vector2(0f, -1f), Color.Black * alpha);
-    border.DrawCentered(position, IdleColor * alpha);
-    icon.DrawCentered(position, IdleColor * alpha);
+    border.DrawCentered(position + new Vector2(0f, -1f), Color.Black * shadowAlpha);
+    border.DrawCentered(position, color, borderScale);
+    iconFrame.DrawCentered(position, color);
   }
+
+  public static void DrawPreview(Vector2 position, float alpha) =>
+    Draw(
+      position,
+      GFX.Game.GetAtlasSubtextures(IconTexture)[0],
+      IdleColor * alpha,
+      alpha,
+      Vector2.One
+    );
 
   public override void Render()
   {
-    border.DrawCentered(Position + new Vector2(0f, -1f), Color.Black);
-    border.DrawCentered(Position, icon.Color, pulse);
+    Draw(Position, icon.Texture, icon.Color, 1f, pulse);
     base.Render();
   }
 }
