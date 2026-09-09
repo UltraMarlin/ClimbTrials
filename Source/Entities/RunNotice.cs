@@ -13,12 +13,22 @@ public class RunNotice : Entity
   private const float NoticeY = 200f;
   private const float NoticeScale = 0.8f;
   private const float StatusY = 1060f;
+  private const int StatusHeight = 80;
+  private const float StatusAlpha = 0.7f;
 
   private readonly TransientText notice = new();
+  private readonly FadeBuffer status;
 
   public RunNotice()
   {
     Tag = Tags.HUD | Tags.Persistent | Tags.TransitionUpdate | Tags.FrozenUpdate;
+    Add(
+      status = new FadeBuffer("climbtrials-run-status", 1920, StatusHeight, DrawStatus)
+      {
+        Origin = new Vector2(0f, StatusY - StatusHeight / 2f),
+        Alpha = StatusAlpha,
+      }
+    );
   }
 
   public void Show(string dialogKey)
@@ -43,18 +53,22 @@ public class RunNotice : Entity
       return;
 
     notice.Render(new Vector2(960f, NoticeY), NoticeScale, Colors.Warning, 1f);
-    string status = StatusText();
-    if (status == null)
-      return;
+    base.Render();
+  }
 
+  private void DrawStatus()
+  {
+    string text = StatusText();
+    if (text == null)
+      return;
     ActiveFont.DrawOutline(
-      status,
+      text,
       new Vector2(960f, StatusY),
       new Vector2(0.5f, 0.5f),
       Vector2.One * 0.45f,
-      Color.White * 0.7f,
+      Color.White,
       2f,
-      TimeText.StrokeFor(Color.White * 0.7f)
+      Color.Black
     );
   }
 

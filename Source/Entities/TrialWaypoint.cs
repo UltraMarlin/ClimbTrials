@@ -1,5 +1,5 @@
-using System;
 using Celeste.Mod.ClimbTrials.Runs;
+using Celeste.Mod.ClimbTrials.UI;
 using Microsoft.Xna.Framework;
 using Monocle;
 
@@ -11,14 +11,16 @@ public class TrialWaypoint : Entity
   private const string IconTexture = "objects/touchswitch/icon";
   private const string TouchSound = "event:/game/general/touchswitch_any";
   private static readonly Color IdleColor = Calc.HexToColor("6ded87");
-  private static readonly Color TakenColor = Calc.HexToColor("6ded87") * 0.3f;
+  private const float TakenAlpha = 0.5f;
+  private const int BufferSize = 32;
 
   public readonly int Index;
   private readonly WaypointDef definition;
   private readonly Sprite icon = new(GFX.Game, IconTexture);
   private readonly Wiggler wiggler;
+  private readonly FadeBuffer layer;
   private Vector2 pulse = Vector2.One;
-  private float timer;
+  private float alpha = 1f;
   private float ease;
   private bool taken;
 
@@ -37,17 +39,22 @@ public class TrialWaypoint : Entity
     icon.Add("spin", "", 0.1f, new Chooser<string>("spin", 1f), 0, 1, 2, 3, 4, 5);
     icon.CenterOrigin();
     Add(wiggler = Wiggler.Create(0.5f, 4f, v => pulse = Vector2.One * (1f + v * 0.25f)));
+    Add(
+      layer = new FadeBuffer("climbtrials-waypoint", BufferSize, BufferSize, DrawOpaque)
+      {
+        Origin = Position - Vector2.One * (BufferSize / 2f),
+      }
+    );
     taken = RunManager.Progress.IsTaken(index);
     if (taken)
     {
-      icon.Color = TakenColor;
+      alpha = TakenAlpha;
       icon.Play("idle");
       icon.Rate = 0.1f;
       ease = 1f;
     }
     else
     {
-      icon.Color = IdleColor;
       icon.Play("spin");
     }
   }
@@ -73,10 +80,8 @@ public class TrialWaypoint : Entity
       RemoveSelf();
       return;
     }
-    timer += Engine.DeltaTime * 8f;
     ease = Calc.Approach(ease, taken ? 1f : 0f, Engine.DeltaTime * 2f);
-    float pulseAlpha = 0.5f + ((float)Math.Sin(timer) + 1f) / 2f * (1f - ease) * 0.5f + 0.5f * ease;
-    icon.Color = Color.Lerp(IdleColor, TakenColor, ease) * pulseAlpha;
+    alpha = MathHelper.Lerp(1f, TakenAlpha, ease);
     if (taken && icon.Rate > 0.1f)
     {
       icon.Rate -= 2f * Engine.DeltaTime;
@@ -112,9 +117,11 @@ public class TrialWaypoint : Entity
       Vector2.One
     );
 
+  private void DrawOpaque() => Draw(Position, icon.Texture, IdleColor, 1f, pulse);
+
   public override void Render()
   {
-    Draw(Position, icon.Texture, icon.Color, 1f, pulse);
+    layer.Alpha = alpha;
     base.Render();
   }
 }

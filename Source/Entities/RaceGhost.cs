@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.Runs;
+using Celeste.Mod.ClimbTrials.UI;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.Entities;
@@ -31,8 +31,8 @@ public class RaceGhost : Entity
   private readonly long ticksPerFrame;
   private readonly PlayerSprite sprite;
   private readonly PlayerHair hair;
+  private readonly FadeBuffer layer;
   private RaceGhostTag nameTag;
-  private VirtualRenderTarget buffer;
   private long ticks;
   private float fadeAlpha = 1f;
   private bool hairSettled;
@@ -50,8 +50,10 @@ public class RaceGhost : Entity
     Add(sprite);
     sprite.Active = false;
     hair.Active = false;
+    sprite.Visible = false;
+    hair.Visible = false;
     sprite.Play(FirstKnownAnimation());
-    Add(new BeforeRenderHook(BeforeRender));
+    Add(layer = new FadeBuffer("climbtrials-ghost", BufferSize, BufferSize, DrawOpaque));
     Visible = shownFrames.Length > 0;
   }
 
@@ -66,46 +68,6 @@ public class RaceGhost : Entity
   {
     base.Removed(scene);
     nameTag?.RemoveSelf();
-    DisposeBuffer();
-  }
-
-  public override void SceneEnd(Scene scene)
-  {
-    base.SceneEnd(scene);
-    DisposeBuffer();
-  }
-
-  private void DisposeBuffer()
-  {
-    buffer?.Dispose();
-    buffer = null;
-  }
-
-  private Vector2 BufferOrigin => (Position - BufferAnchor).Floor();
-
-  private void BeforeRender()
-  {
-    if (!Visible)
-      return;
-
-    buffer ??= VirtualContent.CreateRenderTarget("climbtrials-ghost", BufferSize, BufferSize);
-    Vector2 origin = BufferOrigin;
-    Engine.Graphics.GraphicsDevice.SetRenderTarget(buffer);
-    Engine.Graphics.GraphicsDevice.Clear(Color.Transparent);
-    Draw.SpriteBatch.Begin(
-      SpriteSortMode.Deferred,
-      BlendState.AlphaBlend,
-      SamplerState.PointClamp,
-      DepthStencilState.None,
-      RasterizerState.CullNone,
-      null,
-      Matrix.CreateTranslation(-origin.X, -origin.Y, 0f)
-    );
-    sprite.Color = Color.White;
-    hair.Alpha = 1f;
-    hair.Render();
-    sprite.Render();
-    Draw.SpriteBatch.End();
   }
 
   public void Sync(long elapsedTicks)
@@ -137,6 +99,7 @@ public class RaceGhost : Entity
       return;
     }
     Position = frame.Position;
+    layer.Origin = Position - BufferAnchor;
     float facing = frame.FacingLeft ? -1f : 1f;
     sprite.Scale = new Vector2(
       frame.ScaleX / ReplayColumns.ScaleUnit * facing,
@@ -160,13 +123,21 @@ public class RaceGhost : Entity
       hair.AfterUpdate();
   }
 
+  private void DrawOpaque()
+  {
+    sprite.Color = Color.White;
+    hair.Alpha = 1f;
+    hair.Render();
+    sprite.Render();
+  }
+
   public override void Render()
   {
     Player player = Scene.Tracker.GetEntity<Player>();
     float distance = player == null ? DuckFar : (player.Position - Position).Length();
     Alpha = Calc.ClampedMap(distance, DuckNear, DuckFar, MinAlpha, MaxAlpha) * fadeAlpha;
-    if (buffer != null)
-      Draw.SpriteBatch.Draw((RenderTarget2D)buffer, BufferOrigin, Color.White * Alpha);
+    layer.Alpha = Alpha;
+    base.Render();
   }
 
   private string FirstKnownAnimation()

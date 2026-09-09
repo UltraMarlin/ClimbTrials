@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Celeste.Mod.ClimbTrials.Runs;
+using Celeste.Mod.ClimbTrials.UI;
 using Microsoft.Xna.Framework;
 using Monocle;
 
@@ -48,11 +49,13 @@ public class GoalIndicator : Entity
     public float Alpha;
     public Color Color = WaypointColor;
     public Vector2 Position;
+    public FadeBuffer Layer;
   }
 
   private readonly MTexture texture = GFX.Game[ArrowTexture];
   private readonly List<Berry> berries = [];
   private readonly Arrow[] arrows = new Arrow[Rings.Length];
+  private readonly float arrowHalf;
   private readonly Target?[] targets = new Target?[Rings.Length];
 
   public GoalIndicator()
@@ -60,8 +63,16 @@ public class GoalIndicator : Entity
     Tag = Tags.Persistent | Tags.TransitionUpdate | Tags.FrozenUpdate;
     Depth = Depths.Top;
     Visible = false;
+    float diagonal = new Vector2(texture.Width, texture.Height).Length();
+    int side = (int)Math.Ceiling(diagonal) + 4;
+    arrowHalf = side / 2f;
     for (int ring = 0; ring < arrows.Length; ring++)
-      arrows[ring] = new Arrow();
+    {
+      Arrow arrow = new();
+      arrow.Layer = new FadeBuffer("climbtrials-goal-arrow", side, side, () => DrawArrow(arrow));
+      Add(arrow.Layer);
+      arrows[ring] = arrow;
+    }
   }
 
   public override void Added(Scene scene)
@@ -122,6 +133,11 @@ public class GoalIndicator : Entity
       float offset = (shownIndex - (shownCount - 1) / 2f) * RingGap;
       shownIndex++;
       Steer(arrow, target, player, offset, appearing);
+    }
+    foreach (Arrow arrow in arrows)
+    {
+      arrow.Layer.Visible = arrow.Visible;
+      arrow.Layer.Origin = arrow.Position.Round() - Vector2.One * arrowHalf;
     }
   }
 
@@ -232,23 +248,24 @@ public class GoalIndicator : Entity
     return best;
   }
 
+  private void DrawArrow(Arrow arrow)
+  {
+    Vector2 drawAt = arrow.Position.Round();
+    for (int i = -1; i <= 1; i++)
+    {
+      for (int j = -1; j <= 1; j++)
+      {
+        if (i != 0 || j != 0)
+          texture.DrawCentered(drawAt + new Vector2(i, j), Color.Black, 1f, arrow.Angle);
+      }
+    }
+    texture.DrawCentered(drawAt, arrow.Color, 1f, arrow.Angle);
+  }
+
   public override void Render()
   {
     foreach (Arrow arrow in arrows)
-    {
-      if (!arrow.Visible || arrow.Alpha < MinAlpha)
-        continue;
-      Vector2 drawAt = arrow.Position.Round();
-      Color outline = Color.Black * arrow.Alpha;
-      for (int i = -1; i <= 1; i++)
-      {
-        for (int j = -1; j <= 1; j++)
-        {
-          if (i != 0 || j != 0)
-            texture.DrawCentered(drawAt + new Vector2(i, j), outline, 1f, arrow.Angle);
-        }
-      }
-      texture.DrawCentered(drawAt, arrow.Color * arrow.Alpha, 1f, arrow.Angle);
-    }
+      arrow.Layer.Alpha = arrow.Alpha < MinAlpha ? 0f : arrow.Alpha;
+    base.Render();
   }
 }

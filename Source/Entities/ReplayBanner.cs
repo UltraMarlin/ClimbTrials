@@ -21,10 +21,12 @@ public class ReplayBanner : Entity
   private const float PlayingAlpha = 0.3f;
   private const float FadeTime = 0.15f;
   private float alpha = TargetAlpha();
+  private readonly FadeBuffer layer;
 
   public ReplayBanner()
   {
     Tag = Tags.HUD | Tags.Persistent | Tags.TransitionUpdate | Tags.FrozenUpdate;
+    Add(layer = new FadeBuffer("climbtrials-replay-banner", 1920, 1080, DrawContent));
   }
 
   public override void Update()
@@ -39,34 +41,36 @@ public class ReplayBanner : Entity
   public override void Render()
   {
     alpha = Calc.Approach(alpha, TargetAlpha(), Engine.RawDeltaTime / FadeTime);
+    if (RunManager.Replay == null || SceneAs<Level>().Paused)
+      return;
+    layer.Alpha = alpha;
+    base.Render();
+  }
+
+  private void DrawContent()
+  {
     Replay replay = RunManager.Replay;
-    if (replay == null || SceneAs<Level>().Paused)
+    if (replay == null)
       return;
 
     string titleKey =
       Replayer.Desynced ? "climbtrials_replay_desynced"
       : Replayer.State == ReplayState.Paused ? "climbtrials_replay_paused"
       : "climbtrials_replay_title";
-    Color titleColor = (Replayer.Desynced ? DesyncColor : TitleColor) * alpha;
-    Outline(Dialog.Clean(titleKey), TitleY, 1.1f, titleColor);
+    Outline(Dialog.Clean(titleKey), TitleY, 1.1f, Replayer.Desynced ? DesyncColor : TitleColor);
 
     string info =
       $"{replay.PlayerName},  {Dialog.Clean("climbtrials_replay_played_date")} {TimeText.FormatDate(replay.AchievedAtUtc)}";
     if (!replay.MatchesGame())
       info += $",  {Dialog.Clean("climbtrials_replay_recorded_on")} {replay.CelesteVersion}";
-    Outline(info, InfoY, 0.5f, Dim * alpha);
+    Outline(info, InfoY, 0.5f, Dim);
 
     string time = TimeText.Format(replay.Ticks);
     float width = TimeText.Width(time, TimeStyle);
-    TimeText.Draw(
-      new Vector2(960f - width / 2f, TimeBaselineY),
-      time,
-      TimeStyle,
-      Color.White * alpha
-    );
+    TimeText.Draw(new Vector2(960f - width / 2f, TimeBaselineY), time, TimeStyle, Color.White);
 
     if (Replayer.State != ReplayState.Idle)
-      RenderPrompts(alpha);
+      RenderPrompts(1f);
   }
 
   private static void RenderPrompts(float alpha)

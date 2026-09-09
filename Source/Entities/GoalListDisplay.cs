@@ -12,22 +12,25 @@ namespace Celeste.Mod.ClimbTrials.Entities;
 [Tracked]
 public class GoalListDisplay : Entity
 {
-  private const float ReachedAlpha = 0.25f;
+  private const float ReachedAlpha = 0.2f;
   private static readonly TimeStyle TimeStyle = TimeText.Hud.At(RunHudLayout.TimeScale);
 
   private const float DuckX = 380f;
   private const float DuckFloorY = 760f;
-  private const float DuckAlpha = 0.25f;
+  private const float DuckAlpha = 0.15f;
   private const float DuckTime = 0.2f;
 
-  private const float ListBoxAlpha = 0.35f;
+  private const float ListBoxAlpha = 0.5f;
   private const float BoxPaddingTop = 14f;
   private const float BoxPaddingRight = 20f;
   private const float BoxPaddingBottom = 14f;
 
+  private const int RowPad = 4;
+
   private Trial cachedTrial;
   private long cachedBest;
   private List<Row> rows = [];
+  private readonly List<FadeBuffer> layers = [];
   private float widest;
 
   private float duck = 1f;
@@ -80,26 +83,81 @@ public class GoalListDisplay : Entity
     }
     float target = inTheWay ? DuckAlpha : 1f;
     duck = Calc.Approach(duck, target, Engine.RawDeltaTime / DuckTime);
+    foreach (FadeBuffer layer in layers)
+      layer.Visible = Shown;
+
+    Trial trial = RunManager.Trial;
+    if (trial?.Goals == null)
+      return;
+    long best = TrialRecords.Get(trial.Id)?.BestTicks ?? long.MaxValue;
+    if (trial == cachedTrial && best == cachedBest)
+      return;
+    cachedTrial = trial;
+    cachedBest = best;
+    rows = Rows(trial, best);
+    widest = WidestRow(rows);
+    RebuildLayers();
   }
+
+  private void RebuildLayers()
+  {
+    foreach (FadeBuffer layer in layers)
+      Remove(layer);
+    layers.Clear();
+    int width = (int)Math.Ceiling(widest + BoxPaddingRight);
+    for (int i = 0; i < rows.Count; i++)
+    {
+      int index = i;
+      FadeBuffer layer = new(
+        "climbtrials-goal-row",
+        width,
+        (int)RunHudLayout.RowHeight + 2 * RowPad,
+        () => DrawRow(index)
+      )
+      {
+        Origin = new Vector2(0f, RunHudLayout.ListY + index * RunHudLayout.RowHeight - RowPad),
+      };
+      Add(layer);
+      layers.Add(layer);
+    }
+  }
+
+  private void DrawRow(int index)
+  {
+    Row row = rows[index];
+    float y = RunHudLayout.ListY + index * RunHudLayout.RowHeight;
+    Vector2 iconCenter = new(RunHudLayout.IconX, y + RunHudLayout.RowHeight / 2f);
+    Color textColor = MedalIcon.TextColor(row.TextMedal);
+    if (row.IsPb)
+      ActiveFont.DrawOutline(
+        "PB",
+        iconCenter,
+        new Vector2(0.5f, 0.5f),
+        Vector2.One * 0.5f,
+        textColor,
+        2f,
+        Color.Black
+      );
+    else
+      MedalIcon.Draw(iconCenter, row.Medal, RunHudLayout.IconHeight);
+    TimeText.Draw(
+      new Vector2(RunHudLayout.TimeX, y + RunHudLayout.RowHeight),
+      row.Text,
+      TimeStyle,
+      textColor
+    );
+  }
+
+  private static bool Shown =>
+    RunManager.Trial?.Goals != null
+    && RunManager.Run != null
+    && (!RunManager.Replaying || RunManager.Replay.IsOwn)
+    && RunTimerDisplay.ShouldShow;
 
   public override void Render()
   {
-    Trial trial = RunManager.Trial;
-    if (trial == null || RunManager.Run == null)
+    if (!Shown || rows.Count == 0)
       return;
-    if (RunManager.Replaying && !RunManager.Replay.IsOwn)
-      return;
-    if (trial.Goals == null || !RunTimerDisplay.ShouldShow)
-      return;
-
-    long best = TrialRecords.Get(trial.Id)?.BestTicks ?? long.MaxValue;
-    if (trial != cachedTrial || best != cachedBest)
-    {
-      cachedTrial = trial;
-      cachedBest = best;
-      rows = Rows(trial, best);
-      widest = WidestRow(rows);
-    }
     float rowHeight = RunHudLayout.RowHeight;
     Draw.Rect(
       0f,
@@ -108,28 +166,9 @@ public class GoalListDisplay : Entity
       rows.Count * rowHeight + BoxPaddingTop + BoxPaddingBottom,
       Color.Black * (ListBoxAlpha * duck)
     );
-
-    float y = RunHudLayout.ListY;
-    foreach (Row row in rows)
-    {
-      Vector2 iconCenter = new(RunHudLayout.IconX, y + rowHeight / 2f);
-      float alpha = (row.Reached ? ReachedAlpha : 1f) * duck;
-      Color textColor = MedalIcon.TextColor(row.TextMedal) * alpha;
-      if (row.IsPb)
-        ActiveFont.DrawOutline(
-          "PB",
-          iconCenter,
-          new Vector2(0.5f, 0.5f),
-          Vector2.One * 0.5f,
-          textColor,
-          2f,
-          TimeText.StrokeFor(textColor)
-        );
-      else
-        MedalIcon.Draw(iconCenter, row.Medal, RunHudLayout.IconHeight, alpha);
-      TimeText.Draw(new Vector2(RunHudLayout.TimeX, y + rowHeight), row.Text, TimeStyle, textColor);
-      y += rowHeight;
-    }
+    for (int i = 0; i < layers.Count; i++)
+      layers[i].Alpha = (rows[i].Reached ? ReachedAlpha : 1f) * duck;
+    base.Render();
   }
 
   private static float WidestRow(List<Row> rows)
