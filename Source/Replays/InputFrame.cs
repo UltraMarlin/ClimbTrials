@@ -62,4 +62,5 @@ public struct InputFrame
   public FrameFlags Flags;
 
   public bool LevelUpdated => (Flags & FrameFlags.LevelUpdated) != 0;
+  public bool FacingLeft => (Flags & FrameFlags.FacingLeft) != 0;
 }

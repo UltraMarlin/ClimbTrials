@@ -43,6 +43,7 @@ public static class RunManager
     Everest.Events.Level.OnAfterUpdate += OnAfterUpdate;
     Everest.Events.Level.OnPause += OnPause;
     Everest.Events.Level.OnExit += OnExit;
+    On.Celeste.Player.Added += OnPlayerAdded;
     On.Celeste.Player.Die += OnPlayerDie;
     On.Celeste.SaveData.AssistModeChecks += OnAssistModeChecks;
     On.Celeste.Strawberry.OnCollect += OnStrawberryCollect;
@@ -57,6 +58,7 @@ public static class RunManager
     Everest.Events.Level.OnAfterUpdate -= OnAfterUpdate;
     Everest.Events.Level.OnPause -= OnPause;
     Everest.Events.Level.OnExit -= OnExit;
+    On.Celeste.Player.Added -= OnPlayerAdded;
     On.Celeste.Player.Die -= OnPlayerDie;
     On.Celeste.SaveData.AssistModeChecks -= OnAssistModeChecks;
     On.Celeste.Strawberry.OnCollect -= OnStrawberryCollect;
@@ -332,6 +334,18 @@ public static class RunManager
     Recorder.Stop(reason);
     Audio.Play(ReplayLimitSound);
     Logger.Log(LogLevel.Info, LogTag, $"recording stopped: {reason}, attempt {Attempt.State}");
+  }
+
+  private static void OnPlayerAdded(On.Celeste.Player.orig_Added orig, Player self, Scene scene)
+  {
+    orig(self, scene);
+    if (Run?.SpawnFacing is not Facings facing)
+      return;
+    if (scene is not Level level || level.Session.RespawnPoint != Run.Spawn)
+      return;
+    self.Facing = facing;
+    self.Hair.Facing = facing;
+    self.Hair.Start();
   }
 
   private static void OnPlayerAfterUpdate(Player player)

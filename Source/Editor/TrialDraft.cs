@@ -34,6 +34,7 @@ public static class TrialDraft
   public static AreaMode Mode;
   public static string StartRoom;
   public static Vector2? Spawn;
+  public static Facings? SpawnFacing;
   public static readonly List<PlacedCheckpoint> Checkpoints = [];
   public static PlacedFinish? Finish;
   public static readonly List<EntityID> IgnoredStrawberries = [];
@@ -52,6 +53,7 @@ public static class TrialDraft
     Mode = AreaMode.Normal;
     StartRoom = null;
     Spawn = null;
+    SpawnFacing = null;
     Checkpoints.Clear();
     Finish = null;
     IgnoredStrawberries.Clear();
@@ -79,6 +81,7 @@ public static class TrialDraft
     Mode = run.Mode;
     StartRoom = run.StartRoom;
     Spawn = run.Spawn;
+    SpawnFacing = run.SpawnFacing;
     foreach (CheckpointDef checkpoint in run.Checkpoints)
       Checkpoints.Add(
         new PlacedCheckpoint(
@@ -135,6 +138,8 @@ public static class TrialDraft
       run.Add(
         $"IgnoredStrawberries = [ {string.Join(", ", IgnoredStrawberries.ConvertAll(BerryCode))} ]"
       );
+    if (SpawnFacing is Facings facing)
+      run.Add($"SpawnFacing = Facings.{facing}");
     if (Dashes is int dashes)
       run.Add($"Dashes = {dashes}");
     if (Grabless)

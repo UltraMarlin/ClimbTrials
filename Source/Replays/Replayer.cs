@@ -365,9 +365,10 @@ public static class Replayer
         player.StateMachine.State != frame.State
         || player.Dashes != frame.Dashes
         || player.Stamina != frame.Stamina
+        || (player.Facing == Facings.Left) != frame.FacingLeft
       )
       {
-        StopOnDesync($"frame {Frame}: state, dashes or stamina differ");
+        StopOnDesync($"frame {Frame}: state, dashes, stamina or facing differ");
         return;
       }
     }

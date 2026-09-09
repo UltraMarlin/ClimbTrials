@@ -11,10 +11,16 @@ public static class EditorCommands
 
   [Command(
     "ct_edit",
-    "ClimbTrials: load a trial as draft and teleport to the start room. ct_edit <trialId>"
+    "ClimbTrials: load a trial as draft and teleport to the start room. ct_edit [trialId], default: the loaded trial"
   )]
-  public static void DraftEdit(string trialId)
+  public static void DraftEdit(string trialId = null)
   {
+    trialId ??= RunManager.Trial?.Id;
+    if (trialId == null)
+    {
+      Engine.Commands.Log("no trial loaded. ct_edit <trialId>, or start a trial first");
+      return;
+    }
     Trial trial = Campaigns.FindTrial(trialId);
     if (trial == null)
     {
@@ -31,6 +37,30 @@ public static class EditorCommands
   {
     if (TryGetLevel(out Level level))
       Begin(TrialDesigner.Get(level).BeginSpawn, "left click to place the spawn point");
+  }
+
+  [Command(
+    "ct_spawn_facing",
+    "ClimbTrials: set the direction the player faces at the trial spawn. ct_spawn_facing left|right|default"
+  )]
+  public static void DraftSpawnFacing(string facing = null)
+  {
+    switch (facing?.ToLowerInvariant())
+    {
+      case "left":
+        TrialDraft.SpawnFacing = Facings.Left;
+        break;
+      case "right":
+        TrialDraft.SpawnFacing = Facings.Right;
+        break;
+      case "default":
+        TrialDraft.SpawnFacing = null;
+        break;
+      default:
+        Engine.Commands.Log("usage: ct_spawn_facing left|right|default");
+        return;
+    }
+    Engine.Commands.Log($"spawn facing: {TrialDraft.SpawnFacing?.ToString() ?? "default"}");
   }
 
   [Command("ct_check", "ClimbTrials: place a checkpoint in a trial draft")]

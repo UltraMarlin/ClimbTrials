@@ -20,6 +20,7 @@ public sealed class RunDefinition
   public AreaMode Mode { get; init; } = AreaMode.Normal;
   public string StartRoom { get; init; }
   public Vector2 Spawn { get; init; }
+  public Facings? SpawnFacing { get; init; }
   public string FinishRoom { get; init; }
   public Rectangle Finish { get; init; }
 
