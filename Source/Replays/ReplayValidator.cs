@@ -115,6 +115,9 @@ public static class ReplayValidator
     if (others.Count > 0)
       result.Rejections.Add("mods outside the allowlist: " + string.Join(", ", others));
 
+    if (replay.DebugCauses != DebugCause.None)
+      result.Rejections.Add("debug features used: " + replay.DebugCauses);
+
     return result;
   }
 

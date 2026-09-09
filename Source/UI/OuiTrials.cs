@@ -22,6 +22,7 @@ public class OuiTrials : ListScreen
   private const float TotalScale = 0.6f;
   private const float TotalLabelGap = 16f;
   private const float TrialsListTop = 280f;
+  private const float ReplayDeletedSeconds = 5f;
 
   private int campaignIndex;
   private Campaign outgoingCampaign;
@@ -150,10 +151,16 @@ public class OuiTrials : ListScreen
 
   private void WatchPb(Trial trial)
   {
-    Replay replay = ReplayStore.Load(trial.Id);
-    if (replay == null)
+    if (!ReplayStore.Exists(trial.Id))
     {
       Audio.Play("event:/ui/main/button_invalid");
+      return;
+    }
+    if (!ReplayStore.TryLoad(trial.Id, out Replay replay, out string failure))
+    {
+      string text = Dialog.Get("climbtrials_replay_deleted").Replace("{0}", failure);
+      notice.Show(text, ReplayDeletedSeconds);
+      OnSelect();
       return;
     }
     Audio.Play("event:/ui/main/button_select");

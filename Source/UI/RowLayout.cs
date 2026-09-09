@@ -1,4 +1,5 @@
 using Microsoft.Xna.Framework;
+using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.UI;
 
@@ -15,11 +16,18 @@ public static class RowLayout
   public const float SlideDistance = 32f;
   public const float CountGap = 24f;
   public const float CountScale = 0.8f;
+  public const float WordScale = 0.8f;
+  public const float MarkGap = 12f;
+  public const string Mark = "!";
   public static readonly Color Dim = Color.White * 0.7f;
+
+  public static float MarkWidth => ActiveFont.Measure(Mark).X * PbScale;
 
   public static float RightColumnWidth =>
     SlideDistance
     + MedalIconHeight
     + MedalGap
-    + TimeText.Width("00:00.000", TimeText.Hud.At(PbScale));
+    + TimeText.Width("00:00.000", TimeText.Hud.At(PbScale))
+    + MarkGap
+    + MarkWidth;
 }

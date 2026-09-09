@@ -44,6 +44,7 @@ public class ClimbTrialsModule : EverestModule
     Recorder.Load();
     Replayer.Load();
     RunGuards.Load();
+    DebugUse.Load();
     TrialDesigner.Load();
     ModCheck.LogModules();
   }
@@ -63,6 +64,8 @@ public class ClimbTrialsModule : EverestModule
     Recorder.Unload();
     Replayer.Unload();
     RunGuards.Unload();
+    DebugUse.Unload();
+    RunBinds.Unload();
     TrialDesigner.Unload();
   }
 }

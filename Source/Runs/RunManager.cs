@@ -26,6 +26,8 @@ public static class RunManager
   public static Replay LastReplay => Replay ?? Recorder.Last;
   public static bool AttemptInProgress =>
     Run != null && Attempt.State is AttemptState.Countdown or AttemptState.Running;
+  public static bool OwnsSaveData =>
+    SaveData.Instance != null && ReferenceEquals(SaveData.Instance, ownSaveData);
 
   private static bool awaitingLoad;
   private static bool awaitingControl;
@@ -33,6 +35,7 @@ public static class RunManager
   private static string pendingNotice;
   private static string pendingRestart;
   private static EventInstance finishSnapshot;
+  private static SaveData ownSaveData;
 
   public static void Load()
   {
@@ -76,10 +79,12 @@ public static class RunManager
   private static LevelLoader CreateRunLoader(RunDefinition run, Replay replay)
   {
     ResetRunState();
+    RunBinds.Blank();
     Run = run;
     Replay = replay;
 
-    SaveData.Start(new SaveData { Name = "ClimbTrials" }, -1);
+    ownSaveData = new SaveData { Name = "ClimbTrials" };
+    SaveData.Start(ownSaveData, -1);
     ApplyAssists(SaveData.Instance);
     Session session = new(run.Area)
     {
@@ -145,6 +150,14 @@ public static class RunManager
     pendingRestart = noticeKey;
   }
 
+  public static void ShowNotice(string noticeKey)
+  {
+    if (Engine.Scene is Level level && level.Tracker.GetEntity<RunNotice>() is RunNotice notice)
+      notice.Show(noticeKey);
+    else
+      pendingNotice = noticeKey;
+  }
+
   private static void RunPendingRestart()
   {
     if (pendingRestart == null || Run == null)
@@ -179,6 +192,7 @@ public static class RunManager
   public static void Stop()
   {
     ResetRunState();
+    RunBinds.Restore();
     if (Run != null && SaveData.Instance?.FileSlot == -1)
       SaveData.Instance.Assists.NoGrabbing = false;
     Trial = null;
@@ -195,6 +209,7 @@ public static class RunManager
   private static void ResetRunState()
   {
     ClearReplayState();
+    DebugUse.Reset();
     LastFinish = null;
     Attempt.Reset();
     Progress.Reset();
@@ -229,6 +244,12 @@ public static class RunManager
     {
       awaitingLoad = false;
       awaitingControl = true;
+    }
+    else if (isFromLoader && !Replaying && (AttemptInProgress || awaitingControl))
+    {
+      StopRecording(StopReason.Reload);
+      if (Attempt.State != AttemptState.Running)
+        awaitingControl = true;
     }
     string room = level.Session.Level;
 
@@ -282,6 +303,14 @@ public static class RunManager
 
     if (pendingRestart != null && !level.Paused)
       RunPendingRestart();
+    DebugUse.ObserveFrame();
+    if (
+      !Replaying
+      && AttemptInProgress
+      && Recorder.Stopped == StopReason.None
+      && !SaveData.Instance.Assists.Equals(ExpectedAssists())
+    )
+      StopRecording(StopReason.State);
     Attempt.Tick(Engine.RawDeltaTime);
     if (
       Recorder.Recording
@@ -289,17 +318,20 @@ public static class RunManager
       && Attempt.State == AttemptState.Running
       && Attempt.ElapsedTicks >= ReplayLimitSeconds * TimeSpan.TicksPerSecond
     )
-    {
-      Recorder.StopAtLimit();
-      Audio.Play(ReplayLimitSound);
-      Logger.Log(LogLevel.Info, LogTag, $"recording stopped at {ReplayLimitSeconds} s");
-    }
+      StopRecording(StopReason.Limit);
     if (
       !Replaying
       && Attempt.State is AttemptState.Countdown or AttemptState.Running
       && ClimbTrialsModule.Settings.Retry.Pressed
     )
       StartRun(Run);
+  }
+
+  private static void StopRecording(StopReason reason)
+  {
+    Recorder.Stop(reason);
+    Audio.Play(ReplayLimitSound);
+    Logger.Log(LogLevel.Info, LogTag, $"recording stopped: {reason}, attempt {Attempt.State}");
   }
 
   private static void OnPlayerAfterUpdate(Player player)
@@ -373,6 +405,7 @@ public static class RunManager
     }
 
     Replay recorded = Recorder.Finish(Attempt.ElapsedTicks);
+    bool submittable = false;
     if (recorded != null && Trial != null)
     {
       ValidationResult check = ReplayValidator.Check(
@@ -380,11 +413,12 @@ public static class RunManager
         TrialSpec.From(Trial),
         ModCheck.Allowed
       );
+      submittable = check.Passes;
       Logger.Log(LogLevel.Info, LogTag, $"replay check: {check.Describe()}");
     }
     if (Trial != null)
     {
-      LastFinish = TrialRecords.Record(Trial, Attempt.ElapsedTicks);
+      LastFinish = TrialRecords.Record(Trial, Attempt.ElapsedTicks, submittable);
       if (LastFinish.IsPersonalBest && recorded != null)
         ReplayStore.Save(recorded);
       else if (LastFinish.IsPersonalBest)
@@ -403,6 +437,13 @@ public static class RunManager
     if (Run == null || saveData.FileSlot != -1)
       return;
     saveData.Assists.NoGrabbing = Run.Grabless;
+  }
+
+  private static Assists ExpectedAssists()
+  {
+    Assists expected = Assists.Default;
+    expected.NoGrabbing = Run.Grabless;
+    return expected;
   }
 
   private static void OnAssistModeChecks(

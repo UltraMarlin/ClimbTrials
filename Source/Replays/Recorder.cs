@@ -5,10 +5,18 @@ using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.Replays;
 
+public enum StopReason
+{
+  None,
+  Limit,
+  Reload,
+  State,
+}
+
 public static class Recorder
 {
   public static Replay Last { get; private set; }
-  public static bool StoppedAtLimit { get; private set; }
+  public static StopReason Stopped { get; private set; }
   private static Replay current;
   private static readonly Stopwatch wall = new();
 
@@ -26,7 +34,8 @@ public static class Recorder
 
   public static void Begin(string trialId, int loadSeed, int runSeed, Level level)
   {
-    StoppedAtLimit = false;
+    if (Stopped != StopReason.None)
+      return;
     current = new Replay
     {
       TrialId = trialId,
@@ -39,6 +48,7 @@ public static class Recorder
       CrouchDashMode = Settings.Instance.CrouchDashMode,
       ScreenShake = Settings.Instance.ScreenShake,
       ModOptionsInPauseMenu = CoreModule.Settings.ShowModOptionsInGame,
+      DebugMode = Celeste.PlayMode == Celeste.PlayModes.Debug,
       LastAim = Input.LastAim,
       TimeActive = level.TimeActive,
       RawTimeActive = level.RawTimeActive,
@@ -60,22 +70,23 @@ public static class Recorder
     current.Ticks = ticks;
     current.WallMilliseconds = wall.ElapsedMilliseconds;
     current.AchievedAtUtc = DateTime.UtcNow;
+    current.DebugCauses = DebugUse.Causes;
     Last = current;
     current = null;
     return Last;
   }
 
-  public static void StopAtLimit()
+  public static void Stop(StopReason reason)
   {
     current = null;
-    StoppedAtLimit = true;
+    Stopped = reason;
   }
 
   public static void Abort()
   {
     current = null;
     Last = null;
-    StoppedAtLimit = false;
+    Stopped = StopReason.None;
     wall.Reset();
   }
 

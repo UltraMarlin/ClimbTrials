@@ -7,6 +7,7 @@ public class TrialRecord
 {
   public long BestTicks { get; set; }
   public DateTime AchievedAtUtc { get; set; }
+  public bool Submittable { get; set; } = true;
 }
 
 public class ClimbTrialsModuleSaveData : EverestModuleSaveData

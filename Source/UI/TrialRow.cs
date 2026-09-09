@@ -1,4 +1,5 @@
 using Celeste.Mod.ClimbTrials.Content;
+using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.Runs;
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -52,15 +53,10 @@ public class TrialRow : TextMenu.Item
     );
 
     TrialRecord record = TrialRecords.Get(Trial.Id);
+    float timeRight = rightEdge - RowLayout.MarkGap - RowLayout.MarkWidth;
     if (record == null)
     {
-      ActiveFont.Draw(
-        "new",
-        new Vector2(rightEdge, slid.Y),
-        new Vector2(1f, 0.5f),
-        Vector2.One * 0.8f,
-        RowLayout.Dim * alpha
-      );
+      DrawWord("new", timeRight, slid.Y, alpha);
       return;
     }
 
@@ -69,16 +65,40 @@ public class TrialRow : TextMenu.Item
     Medal medal = Trial.Goals?.MedalFor(record.BestTicks) ?? Medal.None;
     if (medal != Medal.None)
       MedalIcon.Draw(
-        new Vector2(rightEdge - width - RowLayout.MedalGap, slid.Y),
+        new Vector2(timeRight - width - RowLayout.MedalGap, slid.Y),
         medal,
         RowLayout.MedalIconHeight,
         alpha
       );
     TimeText.Draw(
-      new Vector2(rightEdge - width, slid.Y + RowLayout.PbBaseline),
+      new Vector2(timeRight - width, slid.Y + RowLayout.PbBaseline),
       best,
       TimeText.Hud.At(RowLayout.PbScale),
       MedalIcon.TextColor(medal) * alpha
+    );
+
+    if (record.Submittable && ReplayStore.Exists(Trial.Id))
+      return;
+    Color mark = Colors.Warning * alpha;
+    ActiveFont.DrawOutline(
+      RowLayout.Mark,
+      new Vector2(rightEdge, slid.Y + RowLayout.PbBaseline),
+      new Vector2(1f, 1f),
+      Vector2.One * RowLayout.PbScale,
+      mark,
+      2f,
+      TimeText.StrokeFor(mark)
+    );
+  }
+
+  private static void DrawWord(string word, float rightEdge, float y, float alpha)
+  {
+    ActiveFont.Draw(
+      word,
+      new Vector2(rightEdge, y),
+      new Vector2(1f, 0.5f),
+      Vector2.One * RowLayout.WordScale,
+      RowLayout.Dim * alpha
     );
   }
 }

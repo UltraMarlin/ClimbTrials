@@ -1,4 +1,3 @@
-using System.IO;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Replays;
 
@@ -22,17 +21,12 @@ public sealed class Submission
     check = ReplayValidator.Check(replay, TrialSpec.From(trial), ModCheck.Allowed);
     if (!check.Passes)
       return false;
-    using MemoryStream stream = new();
-    using (BinaryWriter w = new(stream, System.Text.Encoding.UTF8, leaveOpen: true))
-    {
-      replay.Write(w);
-    }
     submission = new Submission
     {
       ClientId = Identity.ClientId,
       Key = Identity.Key,
       ClimbTrialsVersion = ClimbTrialsModule.Instance.Metadata.Version.ToString(),
-      ReplayBytes = stream.ToArray(),
+      ReplayBytes = replay.ToBytes(),
     };
     return true;
   }

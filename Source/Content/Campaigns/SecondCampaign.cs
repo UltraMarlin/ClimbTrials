@@ -102,7 +102,7 @@ public static class SecondCampaign
       new Trial
       {
         Id = "c2-5",
-        Name = "Resort",
+        Name = "Resort Thing",
         Difficulty = Difficulty.Hard,
         Run = new()
         {
@@ -123,6 +123,33 @@ public static class SecondCampaign
           Grabless = true,
         },
         Goals = GoalTimes.FromSeconds(bronze: 25, silver: 20, gold: 15, grandmaster: 12),
+      },
+      new Trial
+      {
+        Id = "c2-6",
+        Name = "That's not how you play 1B",
+        Difficulty = Difficulty.Expert,
+        Run = new()
+        {
+          Sid = "Celeste/1-ForsakenCity",
+          Mode = AreaMode.BSide,
+          StartRoom = "00",
+          Spawn = new(0f, 144f),
+          FinishRoom = "02b",
+          Finish = new(1080, -528, 32, 24),
+          Checkpoints =
+          [
+            new("00", new(80f, 24f), SetsSpawn: false),
+            new("00", new(176f, 48f), SetsSpawn: false),
+            new("01", new(296f, -144f), SetsSpawn: false),
+            new("01", new(504f, -48f), SetsSpawn: false),
+            new("02", new(576f, -280f), SetsSpawn: false),
+            new("02", new(792f, -216f), SetsSpawn: false),
+            new("02b", new(872f, -504f), SetsSpawn: false),
+            new("02b", new(992f, -384f), SetsSpawn: false),
+          ],
+        },
+        Goals = GoalTimes.FromSeconds(bronze: 42, silver: 30, gold: 26, grandmaster: 23),
       },
     ],
   };

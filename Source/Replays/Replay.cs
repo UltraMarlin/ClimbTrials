@@ -2,13 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Security.Cryptography;
 using Microsoft.Xna.Framework;
 
 namespace Celeste.Mod.ClimbTrials.Replays;
 
 public sealed class Replay
 {
-  public const int FormatVersion = 5;
+  public const int FormatVersion = 7;
   public const int ButtonCount = 15;
   public const int MaxFrames = 216_000;
   public const int MaxModules = 256;
@@ -16,6 +17,7 @@ public sealed class Replay
   public const int MaxStringLength = 128;
   public static int FrameBytes => ReplayColumns.FrameBytes;
   private const string Magic = "CTRP";
+  private const int HashBytes = 32;
 
   public string TrialId;
   public string CelesteVersion;
@@ -27,6 +29,8 @@ public sealed class Replay
   public CrouchDashModes CrouchDashMode;
   public ScreenshakeAmount ScreenShake;
   public bool ModOptionsInPauseMenu;
+  public DebugCause DebugCauses;
+  public bool DebugMode;
   public Vector2 LastAim;
   public float TimeActive;
   public float RawTimeActive;
@@ -60,7 +64,34 @@ public sealed class Replay
     return (byte)(index + 1);
   }
 
-  public void Write(BinaryWriter w)
+  public byte[] ToBytes()
+  {
+    using MemoryStream stream = new();
+    using (BinaryWriter w = new(stream))
+      Write(w);
+    byte[] payload = stream.ToArray();
+    byte[] bytes = new byte[payload.Length + HashBytes];
+    payload.CopyTo(bytes, 0);
+    SHA256.HashData(payload, bytes.AsSpan(payload.Length));
+    return bytes;
+  }
+
+  public static Replay FromBytes(byte[] bytes)
+  {
+    if (bytes.Length <= HashBytes)
+      throw new InvalidDataException("replay file is too short");
+    int payloadLength = bytes.Length - HashBytes;
+    using MemoryStream stream = new(bytes, 0, payloadLength);
+    using BinaryReader r = new(stream);
+    CheckFormat(r);
+    ReadOnlySpan<byte> payload = bytes.AsSpan(0, payloadLength);
+    ReadOnlySpan<byte> hash = bytes.AsSpan(payloadLength);
+    if (!CryptographicOperations.FixedTimeEquals(SHA256.HashData(payload), hash))
+      throw new InvalidDataException("replay file is corrupted");
+    return Read(r);
+  }
+
+  private void Write(BinaryWriter w)
   {
     w.Write(Magic);
     w.Write(FormatVersion);
@@ -79,6 +110,8 @@ public sealed class Replay
     w.Write((int)CrouchDashMode);
     w.Write((int)ScreenShake);
     w.Write(ModOptionsInPauseMenu);
+    w.Write((int)DebugCauses);
+    w.Write(DebugMode);
     ReplayColumns.WriteVector(w, LastAim);
     w.Write(TimeActive);
     w.Write(RawTimeActive);
@@ -104,14 +137,19 @@ public sealed class Replay
     w.Write(packed);
   }
 
-  public static Replay Read(BinaryReader r)
+  private static void CheckFormat(BinaryReader r)
   {
     if (ReadString(r, 4) != Magic)
       throw new InvalidDataException("not a ClimbTrials replay");
     int version = r.ReadInt32();
-    if (version != FormatVersion)
-      throw new InvalidDataException($"replay format {version}, expected {FormatVersion}");
+    if (version < FormatVersion)
+      throw new InvalidDataException("outdated replay format");
+    if (version > FormatVersion)
+      throw new InvalidDataException("replay format from a future release");
+  }
 
+  private static Replay Read(BinaryReader r)
+  {
     Replay replay = new()
     {
       TrialId = ReadString(r, MaxStringLength),
@@ -131,6 +169,8 @@ public sealed class Replay
     replay.CrouchDashMode = (CrouchDashModes)r.ReadInt32();
     replay.ScreenShake = (ScreenshakeAmount)r.ReadInt32();
     replay.ModOptionsInPauseMenu = r.ReadBoolean();
+    replay.DebugCauses = (DebugCause)r.ReadInt32();
+    replay.DebugMode = r.ReadBoolean();
     replay.LastAim = ReplayColumns.ReadVector(r);
     replay.TimeActive = r.ReadSingle();
     replay.RawTimeActive = r.ReadSingle();

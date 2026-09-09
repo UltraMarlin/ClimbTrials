@@ -4,6 +4,8 @@ namespace Celeste.Mod.ClimbTrials.Replays;
 
 public static class RunGuards
 {
+  private const string LogTag = "ClimbTrials/Guards";
+
   public static bool RenderFixes = true;
 
   public static void Load()
@@ -11,6 +13,7 @@ public static class RunGuards
     On.Celeste.UserIO.SaveHandler += OnSaveHandler;
     On.Celeste.SaveData.SetCheckpoint += OnSetCheckpoint;
     On.Celeste.Level.AutoSave += OnAutoSave;
+    On.Celeste.Level.CompleteArea_bool_bool_bool += OnCompleteArea;
     On.Celeste.FinalBoss.Added += OnFinalBossAdded;
   }
 
@@ -19,6 +22,7 @@ public static class RunGuards
     On.Celeste.UserIO.SaveHandler -= OnSaveHandler;
     On.Celeste.SaveData.SetCheckpoint -= OnSetCheckpoint;
     On.Celeste.Level.AutoSave -= OnAutoSave;
+    On.Celeste.Level.CompleteArea_bool_bool_bool -= OnCompleteArea;
     On.Celeste.FinalBoss.Added -= OnFinalBossAdded;
   }
 
@@ -28,6 +32,11 @@ public static class RunGuards
     bool settings
   )
   {
+    if (RunManager.OwnsSaveData)
+      file = false;
+    if (!file && !settings)
+      return;
+
     if (Replayer.Silenced && settings)
     {
       Replayer.UnpinSettings();
@@ -35,6 +44,7 @@ public static class RunGuards
       Replayer.PinSettings();
       return;
     }
+
     orig(file, settings);
     if (settings)
       AfterSettingsSave();
@@ -63,6 +73,27 @@ public static class RunGuards
     if (RunManager.Run != null)
       return;
     orig(self);
+  }
+
+  private static ScreenWipe OnCompleteArea(
+    On.Celeste.Level.orig_CompleteArea_bool_bool_bool orig,
+    Level self,
+    bool spotlightWipe,
+    bool skipScreenWipe,
+    bool skipCompleteScreen
+  )
+  {
+    if (RunManager.Run == null)
+      return orig(self, spotlightWipe, skipScreenWipe, skipCompleteScreen);
+
+    Logger.Log(
+      LogLevel.Info,
+      LogTag,
+      $"chapter end reached in '{RunManager.Trial?.Id}' room '{self.Session.Level}', "
+        + "returning to trials"
+    );
+    RunManager.LeaveToTrials();
+    return null;
   }
 
   // Unsure if this ever ends up mattering, but added just in case.

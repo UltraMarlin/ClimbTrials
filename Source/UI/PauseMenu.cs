@@ -36,7 +36,12 @@ public static class PauseMenu
       menu.Insert(restartIndex + 1, back);
 
     if (Replayer.Silenced)
-      LockRows(menu, Dialog.Clean("menu_pause_resume"), Dialog.Clean("menu_pause_retry"));
+      LockRows(
+        menu,
+        Dialog.Clean("menu_pause_resume"),
+        Dialog.Clean("menu_pause_retry"),
+        Dialog.Clean("menu_pause_skip_cutscene")
+      );
     else if (RunManager.Replaying)
       LockRows(menu, Dialog.Clean("menu_pause_resume"), Dialog.Clean("climbtrials_pause_return"));
     else if (

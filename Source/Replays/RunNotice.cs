@@ -1,9 +1,8 @@
-using System;
 using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.Runs;
+using Celeste.Mod.ClimbTrials.UI;
 using Microsoft.Xna.Framework;
 using Monocle;
-using Celeste.Mod.ClimbTrials.UI;
 
 namespace Celeste.Mod.ClimbTrials.Entities;
 
@@ -12,12 +11,10 @@ public class RunNotice : Entity
 {
   private const float NoticeDuration = 3f;
   private const float NoticeY = 200f;
+  private const float NoticeScale = 0.8f;
   private const float StatusY = 1060f;
-  private const string NoticeSound = "event:/ui/main/button_invalid";
-  private static readonly Color NoticeColor = Calc.HexToColor("f0777a");
 
-  private string notice;
-  private float noticeAge = -1f;
+  private readonly TransientText notice = new();
 
   public RunNotice()
   {
@@ -26,9 +23,7 @@ public class RunNotice : Entity
 
   public void Show(string dialogKey)
   {
-    notice = Dialog.Clean(dialogKey);
-    noticeAge = 0f;
-    Audio.Play(NoticeSound);
+    notice.Show(Dialog.Clean(dialogKey), NoticeDuration);
   }
 
   public override void Update()
@@ -39,27 +34,14 @@ public class RunNotice : Entity
       RemoveSelf();
       return;
     }
-    if (noticeAge >= 0f)
-      noticeAge += Engine.RawDeltaTime;
+    notice.Update(Engine.RawDeltaTime);
   }
 
   public override void Render()
   {
     if (SceneAs<Level>().Paused)
       return;
-    if (noticeAge >= 0f && noticeAge < NoticeDuration)
-    {
-      float alpha = Math.Clamp((NoticeDuration - noticeAge) / 0.5f, 0f, 1f);
-      ActiveFont.DrawOutline(
-        notice,
-        new Vector2(960f, NoticeY),
-        new Vector2(0.5f, 0.5f),
-        Vector2.One * 0.8f,
-        NoticeColor * alpha,
-        2f,
-        TimeText.StrokeFor(NoticeColor * alpha)
-      );
-    }
+    notice.Render(new Vector2(960f, NoticeY), NoticeScale, Colors.Warning, 1f);
     string status = StatusText();
     if (status == null)
       return;
@@ -79,10 +61,19 @@ public class RunNotice : Entity
     if (RunManager.Replaying)
       return null;
 
-    if (Recorder.StoppedAtLimit)
+    if (Recorder.Stopped == StopReason.Limit)
       return Dialog.Clean("climbtrials_replay_limit")
         + " "
         + Attempt.FormatSeconds(RunManager.ReplayLimitSeconds);
+
+    if (Recorder.Stopped == StopReason.Reload)
+      return Dialog.Clean("climbtrials_replay_reloaded");
+
+    if (Recorder.Stopped == StopReason.State)
+      return Dialog.Clean("climbtrials_replay_state");
+
+    if (DebugUse.Causes != DebugCause.None)
+      return DebugUse.RunWarning();
 
     if (ModCheck.OthersLoaded)
       return ModCheck.RunWarning();

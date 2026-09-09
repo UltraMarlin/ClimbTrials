@@ -11,10 +11,13 @@ public abstract class ListScreen : Oui
   protected const float OnScreenX = 960f;
   protected const float TitleY = 120f;
   private const float StatusY = 1060f;
+  private const float NoticeY = 975f;
+  private const float NoticeScale = 0.6f;
 
   private const float SlideWidth = 1920f;
 
   protected TrialsMenu menu;
+  protected readonly TransientText notice = new();
   protected float x = OnScreenX;
   protected float alpha;
   protected abstract int ScreenDepth { get; }
@@ -43,6 +46,7 @@ public abstract class ListScreen : Oui
       Overworld.Maddy.Hide();
     }
     TrialRecords.EnsureLoaded();
+    ReplayStore.Refresh();
     menu = BuildMenu();
     menu.Selection = InitialSelection(from);
     menu.Focused = false;
@@ -69,6 +73,7 @@ public abstract class ListScreen : Oui
   public override IEnumerator Leave(Oui next)
   {
     Focused = false;
+    notice.Clear();
     CancelTransitions();
     menu.Focused = false;
     float side = DepthOf(next) > ScreenDepth ? -1f : 1f;
@@ -83,6 +88,12 @@ public abstract class ListScreen : Oui
     menu.RemoveSelf();
     menu = null;
     Visible = false;
+  }
+
+  public override void Update()
+  {
+    base.Update();
+    notice.Update(Engine.RawDeltaTime);
   }
 
   public override void Render()
@@ -100,6 +111,7 @@ public abstract class ListScreen : Oui
     );
     RenderHeader();
     RenderPrompts();
+    notice.Render(new Vector2(x, NoticeY), NoticeScale, Colors.Warning, alpha);
     if (ModCheck.OthersLoaded)
       ActiveFont.DrawOutline(
         ModCheck.MenuWarning(),

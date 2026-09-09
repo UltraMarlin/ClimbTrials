@@ -60,7 +60,7 @@ public static class TrialRecords
     return removed;
   }
 
-  public static FinishResult Record(Trial trial, long ticks)
+  public static FinishResult Record(Trial trial, long ticks, bool submittable)
   {
     Dictionary<string, TrialRecord> bests = ClimbTrialsModule.SaveData.PersonalBests;
     TrialRecord previous = bests.GetValueOrDefault(trial.Id);
@@ -68,7 +68,12 @@ public static class TrialRecords
     bool isPb = previous == null || ticks < previous.BestTicks;
     if (isPb)
     {
-      bests[trial.Id] = new TrialRecord { BestTicks = ticks, AchievedAtUtc = DateTime.UtcNow };
+      bests[trial.Id] = new TrialRecord
+      {
+        BestTicks = ticks,
+        AchievedAtUtc = DateTime.UtcNow,
+        Submittable = submittable,
+      };
       Write();
     }
 

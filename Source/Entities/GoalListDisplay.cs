@@ -15,7 +15,8 @@ public class GoalListDisplay : Entity
   private const float ReachedAlpha = 0.25f;
   private static readonly TimeStyle TimeStyle = TimeText.Hud.At(RunHudLayout.TimeScale);
 
-  private const float DuckX = 420f;
+  private const float DuckX = 380f;
+  private const float DuckFloorY = 760f;
   private const float DuckAlpha = 0.25f;
   private const float DuckTime = 0.2f;
 
@@ -71,8 +72,13 @@ public class GoalListDisplay : Entity
     base.Update();
     Level level = SceneAs<Level>();
     Player player = level.Tracker.GetEntity<Player>();
-    bool nearLeftEdge = player != null && level.WorldToScreen(player.Center).X < DuckX;
-    float target = nearLeftEdge ? DuckAlpha : 1f;
+    bool inTheWay = false;
+    if (player != null)
+    {
+      Vector2 screen = level.WorldToScreen(player.Center);
+      inTheWay = screen.X < DuckX && screen.Y < DuckFloorY;
+    }
+    float target = inTheWay ? DuckAlpha : 1f;
     duck = Calc.Approach(duck, target, Engine.RawDeltaTime / DuckTime);
   }
 
