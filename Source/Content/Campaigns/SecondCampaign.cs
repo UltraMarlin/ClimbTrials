@@ -11,8 +11,24 @@ public static class SecondCampaign
     [
       new Trial
       {
+        Id = "test-1",
+        Name = "Test",
+        Difficulty = Difficulty.Normal,
+        Run = new()
+        {
+          Sid = "Celeste/8-Epilogue",
+          Mode = AreaMode.Normal,
+          StartRoom = "bridge",
+          Spawn = new(200f, 40f),
+          FinishRoom = "bridge",
+          Finish = new(304, 24, 16, 16),
+        },
+        Goals = GoalTimes.FromSeconds(bronze: 25, silver: 20, gold: 15, grandmaster: 10),
+      },
+      new Trial
+      {
         Id = "c2-1",
-        Name = "Temple Start Hub Exploration",
+        Name = "Temple Start Hub Exploration (WIP)",
         Difficulty = Difficulty.Normal,
         Run = new()
         {
@@ -77,7 +93,6 @@ public static class SecondCampaign
           Spawn = new(6800f, -5152f),
           FinishRoom = "c-07",
           Finish = new(8168, -6104, 24, 64),
-          Waypoints = [new("c-06b", new(8336f, -5656f), SetsSpawn: false)],
           RequiredStrawberries = 2,
           IgnoredStrawberries = [new("b-08", 129), new("b-09", 167)],
           Dashes = 1,
@@ -87,7 +102,7 @@ public static class SecondCampaign
       new Trial
       {
         Id = "c2-4",
-        Name = "Secret",
+        Name = "I have never seen this room before",
         Difficulty = Difficulty.Hard,
         Run = new()
         {
@@ -99,32 +114,6 @@ public static class SecondCampaign
           Finish = new(9296, -3256, 24, 40),
         },
         Goals = GoalTimes.FromSeconds(bronze: 15, silver: 12, gold: 10, grandmaster: 8),
-      },
-      new Trial
-      {
-        Id = "c2-5",
-        Name = "Resort Thing",
-        Difficulty = Difficulty.Hard,
-        Run = new()
-        {
-          Sid = "Celeste/3-CelestialResort",
-          Mode = AreaMode.Normal,
-          StartRoom = "s1",
-          Spawn = new(408f, 32f),
-          FinishRoom = "s3",
-          Finish = new(1368, -16, 24, 40),
-          Waypoints =
-          [
-            new("s3", new(1296f, -64f), new(1296f, 40f)),
-            new("s2", new(944f, -64f)),
-            new("s2", new(800f, -128f), new(800f, -104f)),
-            new("s1", new(532f, -88f), new(536f, -72f)),
-          ],
-          RequiredStrawberries = 1,
-          SpawnFacing = Facings.Right,
-          Grabless = true,
-        },
-        Goals = GoalTimes.FromSeconds(bronze: 25, silver: 20, gold: 15, grandmaster: 12),
       },
       new Trial
       {
@@ -163,34 +152,39 @@ public static class SecondCampaign
           Sid = "Celeste/5-MirrorTemple",
           Mode = AreaMode.BSide,
           StartRoom = "start",
-          Spawn = new(-488f, 104f),
+          Spawn = new(-536f, 88f),
           FinishRoom = "start",
-          Finish = new(-328, -56, 24, 184),
+          Finish = new(-312, -56, 24, 48),
           Waypoints =
           [
-            new("start", new(-512f, -16f), new(-512f, 32f)),
-            new("start", new(-584f, 8f), new(-512f, 32f)),
-            new("start", new(-632f, 80f), new(-536f, 88f)),
-            new("start", new(-440f, 8f), new(-512f, 32f)),
+            new("start", new(-512f, -16f), SetsSpawn: false),
+            new("start", new(-584f, 8f), SetsSpawn: false),
+            new("start", new(-632f, 80f), SetsSpawn: false),
+            new("start", new(-440f, 8f), SetsSpawn: false),
+            new("start", new(-392f, 80f), SetsSpawn: false),
           ],
+          BloomBaseAdd = 0.25f,
+          LightingAlphaAdd = -0.1f,
         },
         Goals = GoalTimes.FromSeconds(bronze: 10, silver: 8, gold: 6, grandmaster: 5),
       },
       new Trial
       {
-        Id = "test-1",
-        Name = "Test",
-        Difficulty = Difficulty.Normal,
+        Id = "c2-9",
+        Name = "1 Dash, 2 Berries, 1 Hotel",
+        Difficulty = Difficulty.Hard,
         Run = new()
         {
-          Sid = "Celeste/8-Epilogue",
+          Sid = "Celeste/7-Summit",
           Mode = AreaMode.Normal,
-          StartRoom = "bridge",
-          Spawn = new(200f, 40f),
-          FinishRoom = "bridge",
-          Finish = new(304, 24, 16, 16),
+          StartRoom = "d-01b",
+          Spawn = new(10552f, -7400f),
+          FinishRoom = "d-03",
+          Finish = new(12072, -7392, 16, 48),
+          Dashes = 1,
+          RequiredStrawberries = 2,
         },
-        Goals = GoalTimes.FromSeconds(bronze: 25, silver: 20, gold: 15, grandmaster: 10),
+        Goals = GoalTimes.FromSeconds(bronze: 40, silver: 30, gold: 26, grandmaster: 22),
       },
     ],
   };

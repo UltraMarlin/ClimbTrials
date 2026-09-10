@@ -117,7 +117,18 @@ public static class RunManager
       inventory.Dashes = dashes;
       session.Inventory = inventory;
     }
+    if (run.BloomBaseAdd is float bloomAdd)
+      session.BloomBaseAdd = bloomAdd;
+    if (run.LightingAlphaAdd is float lightingAdd)
+      session.LightingAlphaAdd = lightingAdd;
     session.SetFlag(TrialFlagPrefix + Trial?.Id);
+    foreach (CameraOffsetDef def in run.CameraOffsets)
+      if (session.MapData.Get(def.Room) == null)
+        Logger.Log(
+          LogLevel.Warn,
+          LogTag,
+          $"camera offset names room that doesnt exist '{def.Room}'"
+        );
     foreach (WaypointDef waypoint in run.Waypoints)
     {
       string actual = session.MapData.GetAt(waypoint.Position)?.Name;
@@ -280,6 +291,7 @@ public static class RunManager
         awaitingControl = true;
     }
     string room = level.Session.Level;
+    ApplyCameraOffset(level, room, playerIntro);
 
     if (level.Tracker.GetEntity<RunTimerDisplay>() == null)
       level.Add(new RunTimerDisplay());
@@ -331,6 +343,29 @@ public static class RunManager
 
     if (room == Run.FinishRoom && level.Tracker.GetEntity<FinishZone>() == null)
       level.Add(new FinishZone(Run.Finish));
+  }
+
+  private static void ApplyCameraOffset(Level level, string room, Player.IntroTypes playerIntro)
+  {
+    if (Run.CameraOffsetFor(room) is not Vector2 offset)
+      return;
+
+    level.CameraOffset =
+      new Vector2(Level.CameraOffsetXInterval, Level.CameraOffsetYInterval) * offset;
+    if (playerIntro == Player.IntroTypes.Transition)
+      return;
+
+    Player player = level.Tracker.GetEntity<Player>();
+    if (player == null)
+      return;
+
+    Level.CameraLockModes lockMode = level.CameraLockMode;
+    level.CameraLockMode = Level.CameraLockModes.None;
+    level.Camera.Position = level.GetFullCameraTargetAt(player, player.Position);
+    level.CameraLockMode = lockMode;
+    level.CameraUpwardMaxY = level.Camera.Y + 180f;
+    if (level.Session.RespawnPoint is Vector2 respawn)
+      SpotlightWipe.FocusPoint = respawn - level.Camera.Position;
   }
 
   private static void OnAfterUpdate(Level level)

@@ -1,3 +1,4 @@
+using Celeste.Mod.ClimbTrials.Commands;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Runs;
 using Monocle;
@@ -34,7 +35,7 @@ public static class EditorCommands
   [Command("ct_spawn", "ClimbTrials: place the spawn point in a trial draft")]
   public static void DraftSpawn()
   {
-    if (TryGetLevel(out Level level))
+    if (ConsoleOutput.TryGetLevel(out Level level))
       Begin(TrialDesigner.Get(level).BeginSpawn, "left click to place the spawn point");
   }
 
@@ -65,7 +66,7 @@ public static class EditorCommands
   [Command("ct_waypoint", "ClimbTrials: place a waypoint in a trial draft")]
   public static void DraftWaypoint()
   {
-    if (TryGetLevel(out Level level))
+    if (ConsoleOutput.TryGetLevel(out Level level))
       Begin(
         TrialDesigner.Get(level).BeginWaypoint,
         "left click to place the waypoint, shift-click to save the player position as its spawn, control-click for no spawn"
@@ -91,7 +92,7 @@ public static class EditorCommands
   )]
   public static void DraftIgnoreBerries(string room = null)
   {
-    if (!TryGetLevel(out Level level))
+    if (!ConsoleOutput.TryGetLevel(out Level level))
       return;
 
     room ??= level.Session.Level;
@@ -137,7 +138,7 @@ public static class EditorCommands
   [Command("ct_fin", "ClimbTrials: draw the finish in a trial draft")]
   public static void DraftFinish()
   {
-    if (TryGetLevel(out Level level))
+    if (ConsoleOutput.TryGetLevel(out Level level))
       Begin(TrialDesigner.Get(level).BeginFinish, "draw the finish rectangle with the mouse");
   }
 
@@ -151,7 +152,7 @@ public static class EditorCommands
       TrialDraft.Id = id;
     if (name != null)
       TrialDraft.Name = name;
-    Log(TrialDraft.TrialCode());
+    ConsoleOutput.Log(LogTag, TrialDraft.TrialCode());
     TrialDraft.Reset();
   }
 
@@ -176,20 +177,5 @@ public static class EditorCommands
     begin();
     Engine.Commands.Log($"{hint}, right click to cancel");
     Engine.Commands.Open = false;
-  }
-
-  private static bool TryGetLevel(out Level level)
-  {
-    level = Engine.Scene as Level;
-    if (level != null)
-      return true;
-    Engine.Commands.Log("not in a level");
-    return false;
-  }
-
-  private static void Log(string line)
-  {
-    Engine.Commands.Log(line);
-    Logger.Log(LogLevel.Info, LogTag, line);
   }
 }

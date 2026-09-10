@@ -38,6 +38,9 @@ public static class TrialDraft
   public static readonly List<PlacedWaypoint> Waypoints = [];
   public static PlacedFinish? Finish;
   public static readonly List<EntityID> IgnoredStrawberries = [];
+  public static readonly List<CameraOffsetDef> CameraOffsets = [];
+  public static float? BloomBaseAdd;
+  public static float? LightingAlphaAdd;
 
   public static void Reset()
   {
@@ -57,6 +60,9 @@ public static class TrialDraft
     Waypoints.Clear();
     Finish = null;
     IgnoredStrawberries.Clear();
+    CameraOffsets.Clear();
+    BloomBaseAdd = null;
+    LightingAlphaAdd = null;
   }
 
   public static void Load(Trial trial)
@@ -88,6 +94,9 @@ public static class TrialDraft
       );
     Finish = new PlacedFinish(run.FinishRoom, run.Finish);
     IgnoredStrawberries.AddRange(run.IgnoredStrawberries);
+    CameraOffsets.AddRange(run.CameraOffsets);
+    BloomBaseAdd = run.BloomBaseAdd;
+    LightingAlphaAdd = run.LightingAlphaAdd;
   }
 
   public static void SetSpawn(Level level, Vector2 position)
@@ -106,6 +115,12 @@ public static class TrialDraft
   }
 
   public static string BerryCode(EntityID id) => $"new(\"{id.Level}\", {id.ID})";
+
+  public static string CameraOffsetCode(CameraOffsetDef def) =>
+    $"new(\"{def.Room}\", {SpawnCode(def.Offset)})";
+
+  private static string FloatCode(float value) =>
+    $"{value.ToString(CultureInfo.InvariantCulture)}f";
 
   public static string FinishCode(Rectangle rect) =>
     $"new({rect.X}, {rect.Y}, {rect.Width}, {rect.Height})";
@@ -127,6 +142,10 @@ public static class TrialDraft
     ];
     if (Waypoints.Count > 0)
       run.Add($"Waypoints = [ {string.Join(", ", Waypoints.ConvertAll(WaypointCode))} ]");
+    if (CameraOffsets.Count > 0)
+      run.Add(
+        $"CameraOffsets = [ {string.Join(", ", CameraOffsets.ConvertAll(CameraOffsetCode))} ]"
+      );
     if (RequiredStrawberries > 0)
       run.Add($"RequiredStrawberries = {RequiredStrawberries}");
     if (IgnoredStrawberries.Count > 0)
@@ -139,6 +158,10 @@ public static class TrialDraft
       run.Add($"Dashes = {dashes}");
     if (Grabless)
       run.Add("Grabless = true");
+    if (BloomBaseAdd is float bloomAdd)
+      run.Add($"BloomBaseAdd = {FloatCode(bloomAdd)}");
+    if (LightingAlphaAdd is float lightingAdd)
+      run.Add($"LightingAlphaAdd = {FloatCode(lightingAdd)}");
 
     List<string> trial =
     [

@@ -58,7 +58,7 @@ public static class FirstCampaign
           StartRoom = "b-00",
           Spawn = new(4416f, -1016f),
           FinishRoom = "b-00",
-          Finish = new(4408, -1040, 16, 24),
+          Finish = new(4384, -1040, 64, 24),
           Waypoints =
           [
             new("b-00", new(4312f, -1068f)),
@@ -68,6 +68,7 @@ public static class FirstCampaign
             new("b-00", new(4314f, -1246f)),
             new("b-00", new(4374f, -1288f)),
           ],
+          CameraOffsets = [new("b-00", new(0f, 0f))],
           Dashes = 2,
         },
         Goals = GoalTimes.FromSeconds(bronze: 26, silver: 22, gold: 20, grandmaster: 18),
