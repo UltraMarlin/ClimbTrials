@@ -49,7 +49,7 @@ public class TrialRow : TextMenu.Item
       Vector2.One,
       nameColor * alpha,
       2f,
-      TimeText.StrokeFor(nameColor * alpha)
+      TextOutline.StrokeFor(nameColor * alpha)
     );
 
     TrialRecord record = TrialRecords.Get(Trial.Id);
@@ -87,7 +87,7 @@ public class TrialRow : TextMenu.Item
       Vector2.One * RowLayout.PbScale,
       mark,
       2f,
-      TimeText.StrokeFor(mark)
+      TextOutline.StrokeFor(mark)
     );
   }
 

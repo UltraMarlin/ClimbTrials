@@ -33,6 +33,7 @@ CLIMBTRIALS_INPUT_MENU_DOWN=           Menu{n}Down
 CLIMBTRIALS_INPUT_CONFIRM=             Confirm
 CLIMBTRIALS_INPUT_CANCEL=              Cancel
 CLIMBTRIALS_INPUT_JOURNAL=             Journal
+CLIMBTRIALS_INPUT_FLY=                 Fly
 CLIMBTRIALS_WATCHER_RESUME=            Resume Replay
 CLIMBTRIALS_WATCHER_RACE=              Race against Ghost
 CLIMBTRIALS_REPLAY_RESTART=            Restart Replay

@@ -97,7 +97,7 @@ public class Countdown : Entity
       Vector2.One * scale,
       showingGo ? GoColor : Color.White,
       4f,
-      TimeText.StrokeFor(showingGo ? GoColor : Color.White)
+      TextOutline.StrokeFor(showingGo ? GoColor : Color.White)
     );
   }
 

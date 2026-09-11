@@ -30,6 +30,21 @@ public enum FrameFlags : byte
   None = 0,
   FacingLeft = 1 << 0,
   LevelUpdated = 1 << 1,
+  Paused = 1 << 2,
+}
+
+[Flags]
+public enum DirectionBinds : byte
+{
+  None = 0,
+  MoveOnlyLeft = 1 << 0,
+  MoveOnlyRight = 1 << 1,
+  MoveOnlyUp = 1 << 2,
+  MoveOnlyDown = 1 << 3,
+  DashOnlyLeft = 1 << 4,
+  DashOnlyRight = 1 << 5,
+  DashOnlyUp = 1 << 6,
+  DashOnlyDown = 1 << 7,
 }
 
 public struct ButtonState
@@ -49,11 +64,13 @@ public struct InputFrame
   public sbyte MoveX;
   public sbyte MoveY;
   public sbyte GliderMoveY;
+  public DirectionBinds Binds;
   public Vector2 Aim;
   public Vector2 Feather;
   public Vector2 Position;
   public int State;
   public int Dashes;
+  public byte DashDir;
   public float Stamina;
   public byte AnimId;
   public byte AnimFrame;
@@ -63,4 +80,5 @@ public struct InputFrame
 
   public bool LevelUpdated => (Flags & FrameFlags.LevelUpdated) != 0;
   public bool FacingLeft => (Flags & FrameFlags.FacingLeft) != 0;
+  public bool Paused => (Flags & FrameFlags.Paused) != 0;
 }

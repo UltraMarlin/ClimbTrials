@@ -54,7 +54,7 @@ public class CampaignRow : TextMenu.Item
       Vector2.One,
       nameColor * alpha,
       2f,
-      TimeText.StrokeFor(nameColor * alpha)
+      TextOutline.StrokeFor(nameColor * alpha)
     );
     float countX =
       RowLayout.CampaignNameX + ActiveFont.Measure(Campaign.Name).X + RowLayout.CountGap;

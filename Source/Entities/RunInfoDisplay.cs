@@ -83,7 +83,7 @@ public class RunInfoDisplay : Entity
       Vector2.One * RunHudLayout.TimeScale,
       Color.White,
       2f,
-      TimeText.StrokeFor(Color.White)
+      TextOutline.StrokeFor(Color.White)
     );
   }
 }

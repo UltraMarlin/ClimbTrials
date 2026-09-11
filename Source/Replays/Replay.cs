@@ -9,7 +9,7 @@ namespace Celeste.Mod.ClimbTrials.Replays;
 
 public sealed class Replay
 {
-  public const int FormatVersion = 7;
+  public const int FormatVersion = 8;
   public const int ButtonCount = 15;
   public const int MaxFrames = 216_000;
   public const int MaxModules = 256;

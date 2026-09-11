@@ -20,6 +20,10 @@ public static class TimeText
   public static readonly TimeStyle Hud = new(1f, 4f, 2f, 0.7f);
   public static readonly TimeStyle Large = new(2.8f, 0f, 5f, 0.7f);
 
+  private static float numberWidth;
+  private static float spacerWidth;
+  private static float numberHeight;
+
   public static string Format(long ticks)
   {
     TimeSpan time = TimeSpan.FromTicks(ticks);
@@ -33,10 +37,6 @@ public static class TimeText
     TimeSpan time = TimeSpan.FromSeconds(seconds);
     return time.ToString(time.TotalHours >= 1 ? "h\\:mm\\:ss" : "m\\:ss");
   }
-
-  private static float numberWidth;
-  private static float spacerWidth;
-  private static float numberHeight;
 
   private static void MeasureFontWidth()
   {
@@ -73,12 +73,6 @@ public static class TimeText
     return numberHeight * style.Scale;
   }
 
-  public static Color StrokeFor(Color color)
-  {
-    float alpha = color.A / 255f;
-    return Color.Black * (alpha * alpha);
-  }
-
   public static void Draw(Vector2 baseline, string text, TimeStyle style, Color color)
   {
     MeasureFontWidth();
@@ -103,7 +97,7 @@ public static class TimeText
         Vector2.One * charScale * style.Scale,
         color,
         style.Stroke,
-        StrokeFor(color)
+        TextOutline.StrokeFor(color)
       );
       x += w;
     }

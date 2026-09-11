@@ -1,3 +1,4 @@
+using System;
 using Celeste.Mod.ClimbTrials.Runs;
 using Celeste.Mod.ClimbTrials.UI;
 using Microsoft.Xna.Framework;
@@ -5,26 +6,27 @@ using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.Entities;
 
+// Based on vanilla TouchSwitch.cs
 public class TrialWaypoint : Entity
 {
   private const string ContainerTexture = "objects/touchswitch/container";
   private const string IconTexture = "objects/touchswitch/icon";
   private const string TouchSound = "event:/game/general/touchswitch_any";
   private static readonly Color IdleColor = Calc.HexToColor("6ded87");
-  private const float TakenAlpha = 0.5f;
+  private static readonly Color TakenColor = Color.White;
   private const int BufferSize = 32;
 
   public readonly int Index;
   private readonly WaypointDef definition;
   private readonly Sprite icon = new(GFX.Game, IconTexture);
   private readonly Wiggler wiggler;
+  private readonly BloomPoint bloom;
   private readonly FadeBuffer layer;
   private Vector2 pulse = Vector2.One;
-  private float alpha = 1f;
+  private float timer;
   private float ease;
   private bool taken;
 
-  // Based on vanilla TouchSwitch.cs
   public TrialWaypoint(int index, WaypointDef definition)
     : base(definition.Position)
   {
@@ -38,6 +40,8 @@ public class TrialWaypoint : Entity
     icon.Add("idle", "", 0f, default(int));
     icon.Add("spin", "", 0.1f, new Chooser<string>("spin", 1f), 0, 1, 2, 3, 4, 5);
     icon.CenterOrigin();
+    Add(bloom = new BloomPoint(0f, 16f));
+    Add(new VertexLight(Color.White, 0.8f, 16, 32));
     Add(wiggler = Wiggler.Create(0.5f, 4f, v => pulse = Vector2.One * (1f + v * 0.25f)));
     Add(
       layer = new FadeBuffer("climbtrials-waypoint", BufferSize, BufferSize, DrawOpaque)
@@ -48,10 +52,10 @@ public class TrialWaypoint : Entity
     taken = RunManager.Progress.IsTaken(index);
     if (taken)
     {
-      alpha = TakenAlpha;
       icon.Play("idle");
       icon.Rate = 0.1f;
       ease = 1f;
+      bloom.Alpha = 1f;
     }
     else
     {
@@ -71,6 +75,16 @@ public class TrialWaypoint : Entity
     wiggler.Start();
     icon.Rate = 4f;
     Audio.Play(TouchSound, Position);
+    Level level = SceneAs<Level>();
+    for (int i = 0; i < 32; i++)
+    {
+      float angle = Calc.Random.NextFloat(MathF.PI * 2f);
+      level.Particles.Emit(
+        TouchSwitch.P_FireWhite,
+        Position + Calc.AngleToVector(angle, 6f),
+        angle
+      );
+    }
   }
 
   public override void Update()
@@ -81,7 +95,10 @@ public class TrialWaypoint : Entity
       return;
     }
     ease = Calc.Approach(ease, taken ? 1f : 0f, Engine.DeltaTime * 2f);
-    alpha = MathHelper.Lerp(1f, TakenAlpha, ease);
+    timer += Engine.DeltaTime * 8f;
+    bloom.Alpha = ease;
+    float swing = ((float)Math.Sin(timer) + 1f) / 2f;
+    layer.Alpha = 0.5f + swing * (1f - ease) * 0.5f + 0.5f * ease;
     if (taken && icon.Rate > 0.1f)
     {
       icon.Rate -= 2f * Engine.DeltaTime;
@@ -103,7 +120,8 @@ public class TrialWaypoint : Entity
   )
   {
     MTexture border = GFX.Game[ContainerTexture];
-    border.DrawCentered(position + new Vector2(0f, -1f), Color.Black * shadowAlpha);
+    if (shadowAlpha > 0f)
+      border.DrawCentered(position + new Vector2(0f, -1f), Color.Black * shadowAlpha);
     border.DrawCentered(position, color, borderScale);
     iconFrame.DrawCentered(position, color);
   }
@@ -117,11 +135,12 @@ public class TrialWaypoint : Entity
       Vector2.One
     );
 
-  private void DrawOpaque() => Draw(Position, icon.Texture, IdleColor, 1f, pulse);
+  private void DrawOpaque() =>
+    Draw(Position, icon.Texture, Color.Lerp(IdleColor, TakenColor, ease), 0f, pulse);
 
   public override void Render()
   {
-    layer.Alpha = alpha;
+    GFX.Game[ContainerTexture].DrawCentered(Position + new Vector2(0f, -1f), Color.Black);
     base.Render();
   }
 }

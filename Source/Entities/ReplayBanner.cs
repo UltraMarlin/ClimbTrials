@@ -16,7 +16,7 @@ public class ReplayBanner : Entity
   private static readonly TimeStyle TimeStyle = TimeText.Hud.At(0.8f);
   private static readonly Color TitleColor = Calc.HexToColor("ffd54f");
   private static readonly Color DesyncColor = Calc.HexToColor("f0777a");
-  private static readonly Color Dim = Color.White * 0.7f;
+  private const float TitleStroke = 3f;
 
   private const float PlayingAlpha = 0.3f;
   private const float FadeTime = 0.15f;
@@ -62,13 +62,19 @@ public class ReplayBanner : Entity
       Replayer.Desynced ? "climbtrials_replay_desynced"
       : Replayer.State == ReplayState.Paused ? "climbtrials_replay_paused"
       : "climbtrials_replay_title";
-    Outline(Dialog.Clean(titleKey), TitleY, 1.1f, Replayer.Desynced ? DesyncColor : TitleColor);
+    Outline(
+      Dialog.Clean(titleKey),
+      TitleY,
+      1.1f,
+      Replayer.Desynced ? DesyncColor : TitleColor,
+      TitleStroke
+    );
 
     string info =
-      $"{replay.PlayerName},  {Dialog.Clean("climbtrials_replay_played_date")} {TimeText.FormatDate(replay.AchievedAtUtc)}";
+      $"{replay.PlayerName}, {Dialog.Clean("climbtrials_replay_played_date")} {TimeText.FormatDate(replay.AchievedAtUtc)}";
     if (!replay.MatchesGame())
       info += $",  {Dialog.Clean("climbtrials_replay_recorded_on")} {replay.CelesteVersion}";
-    Outline(info, InfoY, 0.5f, Dim);
+    TextOutline.DrawDim(info, new Vector2(960f, InfoY), new Vector2(0.5f, 0.5f), 0.5f, 1f);
 
     string time = TimeText.Format(replay.Ticks);
     float width = TimeText.Width(time, TimeStyle);
@@ -95,16 +101,15 @@ public class ReplayBanner : Entity
     ButtonRow.DrawRight(alpha, prompts);
   }
 
-  private static void Outline(string text, float y, float scale, Color color)
+  private static void Outline(string text, float y, float scale, Color color, float stroke = 2f)
   {
-    ActiveFont.DrawOutline(
-      text,
-      new Vector2(960f, y),
-      new Vector2(0.5f, 0.5f),
-      Vector2.One * scale,
-      color,
-      2f,
-      TimeText.StrokeFor(color)
-    );
+    Vector2 position = new(960f, y);
+    Vector2 justify = new(0.5f, 0.5f);
+    Vector2 size = Vector2.One * scale;
+    Color strokeColor = TextOutline.StrokeFor(color);
+    if (stroke > 2f)
+      TextOutline.DrawRoundOutline(text, position, justify, size, color, stroke, strokeColor);
+    else
+      ActiveFont.DrawOutline(text, position, justify, size, color, stroke, strokeColor);
   }
 }

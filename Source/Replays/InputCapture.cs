@@ -87,6 +87,30 @@ public static class InputCapture
     }
   }
 
+  private static DirectionBinds ReadDirectionBinds()
+  {
+    Settings s = Settings.Instance;
+    int pad = Input.Gamepad;
+    DirectionBinds binds = DirectionBinds.None;
+    if (s.LeftMoveOnly.Check(pad, 0.3f))
+      binds |= DirectionBinds.MoveOnlyLeft;
+    if (s.RightMoveOnly.Check(pad, 0.3f))
+      binds |= DirectionBinds.MoveOnlyRight;
+    if (s.UpMoveOnly.Check(pad, 0.7f))
+      binds |= DirectionBinds.MoveOnlyUp;
+    if (s.DownMoveOnly.Check(pad, 0.7f))
+      binds |= DirectionBinds.MoveOnlyDown;
+    if (s.LeftDashOnly.Check(pad, 0.25f))
+      binds |= DirectionBinds.DashOnlyLeft;
+    if (s.RightDashOnly.Check(pad, 0.25f))
+      binds |= DirectionBinds.DashOnlyRight;
+    if (s.UpDashOnly.Check(pad, 0.25f))
+      binds |= DirectionBinds.DashOnlyUp;
+    if (s.DownDashOnly.Check(pad, 0.25f))
+      binds |= DirectionBinds.DashOnlyDown;
+    return binds;
+  }
+
   public static InputFrame Sample(Replay replay)
   {
     ReadButtons(out Actions held, out Actions pressed, out Actions released);
@@ -99,11 +123,14 @@ public static class InputCapture
       MoveX = (sbyte)Input.MoveX.Value,
       MoveY = (sbyte)Input.MoveY.Value,
       GliderMoveY = (sbyte)Input.GliderMoveY.Value,
+      Binds = ReadDirectionBinds(),
       Aim = Input.Aim.Value,
       Feather = Input.Feather.Value,
     };
     if (Engine.FreezeTimer <= 0f)
       frame.Flags |= FrameFlags.LevelUpdated;
+    if (Engine.Scene is Level { Paused: true })
+      frame.Flags |= FrameFlags.Paused;
     Player player = (Engine.Scene as Level)?.Tracker.GetEntity<Player>();
     if (player == null)
       return frame;
@@ -112,6 +139,7 @@ public static class InputCapture
     frame.Position = player.Position;
     frame.State = player.StateMachine.State;
     frame.Dashes = player.Dashes;
+    frame.DashDir = ReplayColumns.DashDirToByte(player.DashDir);
     frame.Stamina = player.Stamina;
     frame.AnimId = replay.AddAnimation(player.Sprite.CurrentAnimationID);
     frame.AnimFrame = (byte)Math.Min(player.Sprite.CurrentAnimationFrame, byte.MaxValue);

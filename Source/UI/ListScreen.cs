@@ -115,7 +115,7 @@ public abstract class ListScreen : Oui
       Vector2.One * 1.6f,
       Color.White * totalAlpha,
       2f,
-      TimeText.StrokeFor(Color.White * totalAlpha)
+      TextOutline.StrokeFor(Color.White * totalAlpha)
     );
     RenderHeader();
     RenderPrompts();
@@ -128,7 +128,7 @@ public abstract class ListScreen : Oui
         Vector2.One * 0.45f,
         Color.White * 0.7f * totalAlpha,
         2f,
-        TimeText.StrokeFor(Color.White * 0.7f * totalAlpha)
+        TextOutline.StrokeFor(Color.White * 0.7f * totalAlpha)
       );
   }
 }

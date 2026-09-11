@@ -36,6 +36,10 @@ public class RaceGhost : Entity
   private long ticks;
   private float fadeAlpha = 1f;
   private bool hairSettled;
+  private int shownIndex = -1;
+  private int slashStart = -1;
+  private Vector2 slashOrigin;
+  private Vector2 slashDirection;
 
   public RaceGhost(Replay replay, PlayerSpriteMode mode)
   {
@@ -88,6 +92,9 @@ public class RaceGhost : Entity
       return;
     int last = shownFrames.Length - 1;
     int index = (int)Math.Clamp(ticks / ticksPerFrame - 1, 0, last);
+    for (int i = shownIndex + 1; i <= index; i++)
+      DetectDash(i);
+    shownIndex = index;
     long pastEnd = ticks - (last + 1) * ticksPerFrame - Attempt.SecondsToTicks(HoldSeconds);
     fadeAlpha = 1f - Calc.Clamp((float)pastEnd / Attempt.SecondsToTicks(FadeSeconds), 0f, 1f);
 
@@ -96,6 +103,7 @@ public class RaceGhost : Entity
     if (!frame.HasPlayer)
     {
       hairSettled = false;
+      slashStart = -1;
       return;
     }
     Position = frame.Position;
@@ -123,12 +131,47 @@ public class RaceGhost : Entity
       hair.AfterUpdate();
   }
 
+  private void DetectDash(int shown)
+  {
+    Vector2 SlashOffset = new(0f, -6f);
+    if (shown < 1 || shown + 1 >= shownFrames.Length)
+      return;
+    InputFrame current = replay.Frames[shownFrames[shown]];
+    InputFrame before = replay.Frames[shownFrames[shown - 1]];
+    if (current.State != Player.StDash || before.State == Player.StDash)
+      return;
+    byte direction = replay.Frames[shownFrames[shown + 1]].DashDir;
+    if (direction == 0)
+      return;
+    slashStart = shown;
+    slashOrigin = current.Position + SlashOffset;
+    slashDirection = ReplayColumns.DashDirFromByte(direction);
+  }
+
   private void DrawOpaque()
   {
     sprite.Color = Color.White;
     hair.Alpha = 1f;
     hair.Render();
     sprite.Render();
+  }
+
+  private void DrawSlash()
+  {
+    const int SlashFrameTicks = 6;
+    if (slashStart < 0)
+      return;
+    List<MTexture> frames = GFX.Game.GetAtlasSubtextures("effects/slash/");
+    int elapsed = shownIndex - slashStart;
+    if (elapsed < 0 || elapsed >= 4 * SlashFrameTicks)
+    {
+      slashStart = -1;
+      return;
+    }
+    Vector2 at = slashOrigin + slashDirection * (8f * elapsed * replay.RawDeltaTime);
+    float angle = slashDirection.Angle();
+    float rotation = Math.Abs(angle - MathF.PI) > 0.01f ? angle : 0f;
+    frames[elapsed / SlashFrameTicks].DrawCentered(at, Color.White * Alpha, 1f, rotation);
   }
 
   public override void Render()
@@ -138,6 +181,7 @@ public class RaceGhost : Entity
     Alpha = Calc.ClampedMap(distance, DuckNear, DuckFar, MinAlpha, MaxAlpha) * fadeAlpha;
     layer.Alpha = Alpha;
     base.Render();
+    DrawSlash();
   }
 
   private string FirstKnownAnimation()

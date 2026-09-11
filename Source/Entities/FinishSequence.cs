@@ -21,6 +21,7 @@ public class FinishSequence : Entity
   private const float BoxPaddingTop = 16f;
   private const float BoxPaddingBottom = 20f;
   private const float BoxAlpha = 0.7f;
+  private readonly Color boxColor = Colors.ForChapter(RunManager.Run.Area).Dark;
   private const float MedalsVisualDelay = 0.36f;
   private const float MedalStagger = 0.3f;
   private const float MedalPopDuration = 0.56f;
@@ -187,7 +188,7 @@ public class FinishSequence : Entity
     float boxWidth = TimeText.Width(time, TimeText.Large) + 2f * BoxPaddingX;
     float boxTop = TimeBaselineY - TimeText.Height(TimeText.Large) - BoxPaddingTop;
     float boxBottom = (delta == null ? TimeBaselineY : DeltaBaselineY) + BoxPaddingBottom;
-    Draw.Rect(960f - boxWidth / 2f, boxTop, boxWidth, boxBottom - boxTop, Color.Black * boxAlpha);
+    Draw.Rect(960f - boxWidth / 2f, boxTop, boxWidth, boxBottom - boxTop, boxColor * boxAlpha);
 
     float alpha = Ease.CubeOut(Math.Clamp(timeAge / TimeFadeDuration, 0f, 1f));
     DrawAnimated(time, TimeText.Large, TimeBaselineY, timeAge, Color.White * alpha);

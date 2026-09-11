@@ -41,7 +41,7 @@ public sealed class TransientText
       Vector2.One * scale,
       shown,
       2f,
-      TimeText.StrokeFor(shown)
+      TextOutline.StrokeFor(shown)
     );
   }
 }

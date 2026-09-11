@@ -33,14 +33,16 @@ public class ReplayInputDisplay : Entity
   private const float ArrowFill = 0.7f;
   private const float BarHeight = 5f;
   private const float BarGap = 3f;
-  private const float StickRadius = Square / 2f - 4f;
-  private const float DotSize = 15f;
+
+  private const float StickRadius = Square * 0.55f;
+  private const float DotSize = 30f;
+  private const float DotInset = DotSize / 6f;
   private const float DirectionTolerance = 0.02f;
 
   private readonly record struct Button(
     string Key,
     Actions Flags,
-    Func<InputFrame, bool> Shadow,
+    Func<InputFrame, bool> HiddenWhen,
     bool WhilePaused = false
   );
 
@@ -57,15 +59,16 @@ public class ReplayInputDisplay : Entity
   );
   private static readonly Button[] DetailedButtons =
   [
-    new("climbtrials_input_talk", Actions.Talk, Holds(Actions.Dash)),
+    new("climbtrials_input_talk", Actions.Talk, Holding(Actions.Dash)),
     new("climbtrials_input_pause", Actions.Pause | Actions.Esc, null),
     new("climbtrials_input_restart", Actions.QuickRestart, null),
     new("climbtrials_input_menu_up", Actions.MenuUp, null, WhilePaused: true),
     new("climbtrials_input_menu_down", Actions.MenuDown, null, WhilePaused: true),
-    new("climbtrials_input_confirm", Actions.MenuConfirm, Holds(Actions.Jump)),
-    new("climbtrials_input_cancel", Actions.MenuCancel, Holds(Actions.Dash)),
-    new("climbtrials_input_journal", Actions.MenuJournal, Holds(Actions.Grab)),
+    new("climbtrials_input_confirm", Actions.MenuConfirm, Holding(Actions.Jump)),
+    new("climbtrials_input_cancel", Actions.MenuCancel, Holding(Actions.Dash)),
+    new("climbtrials_input_journal", Actions.MenuJournal, Holding(Actions.Grab)),
   ];
+
   private static readonly Vector2[] Directions =
   [
     new(-1f, 0f),
@@ -78,12 +81,13 @@ public class ReplayInputDisplay : Entity
   private static List<Button> scannedNormalRow;
   private static List<Button> scannedDetailedRow;
   private static bool scannedFeatherShown;
-  private static bool scannedAimShown;
+  private static bool scannedDashOnlyUpUsed;
 
   private readonly List<Button> normalRow;
   private readonly List<Button> detailedRow;
   private readonly bool featherShown;
-  private readonly bool aimShown;
+  private readonly bool dashOnlyUpUsed;
+  private readonly Color boxColor = Colors.ForChapter(RunManager.Run.Area).Dark;
   private readonly FadeBuffer idleLayer;
   private InputFrame? fed;
   private InputFrame? previous;
@@ -92,12 +96,12 @@ public class ReplayInputDisplay : Entity
   {
     Tag = Tags.HUD | Tags.Persistent | Tags.TransitionUpdate | Tags.FrozenUpdate;
     if (replay != scannedReplay)
-      Scan(replay);
+      ScanReplay(replay);
     normalRow = scannedNormalRow;
     detailedRow = scannedDetailedRow;
     featherShown = scannedFeatherShown;
-    aimShown = scannedAimShown;
-    float layerTop = BlockTop(TopRowTop) - PaddingY;
+    dashOnlyUpUsed = scannedDashOnlyUpUsed;
+    float layerTop = TopOfBlock(TopRowTop) - PaddingY;
     int layerHeight = (int)(ScreenBottom - layerTop);
     idleLayer = new FadeBuffer("climbtrials-input-display", LayerWidth, layerHeight, DrawIdle)
     {
@@ -107,29 +111,31 @@ public class ReplayInputDisplay : Entity
     Add(idleLayer);
   }
 
-  private static void Scan(Replay replay)
+  private static void ScanReplay(Replay replay)
   {
     List<InputFrame> frames = replay.Frames;
     scannedNormalRow = [.. NormalButtons];
-    if (Used(frames, CrouchDash))
+    if (HeldOnSomeFrame(frames, CrouchDash))
       scannedNormalRow.Add(CrouchDash);
     scannedDetailedRow = [];
     foreach (Button button in DetailedButtons)
-      if (button.WhilePaused || Used(frames, button))
+      if (HeldOnSomeFrame(frames, button))
         scannedDetailedRow.Add(button);
-    scannedFeatherShown = frames.Exists(frame => DiffersFromDigital(frame.Feather, frame));
-    scannedAimShown = frames.Exists(frame => frame.Aim != frame.Feather);
+    scannedFeatherShown = frames.Exists(frame => PointsOffDigital(frame.Feather, frame));
+    scannedDashOnlyUpUsed = frames.Exists(frame => (frame.Binds & DirectionBinds.DashOnlyUp) != 0);
     scannedReplay = replay;
   }
 
-  private static Func<InputFrame, bool> Holds(Actions flags) => frame => (frame.Held & flags) != 0;
+  private static Func<InputFrame, bool> Holding(Actions flags) =>
+    frame => (frame.Held & flags) != 0;
 
-  private static bool Used(List<InputFrame> frames, Button button) =>
-    frames.Exists(frame =>
-      (frame.Held & button.Flags) != 0 && !(button.Shadow?.Invoke(frame) ?? false)
-    );
+  private static bool HeldOnSomeFrame(List<InputFrame> frames, Button button) =>
+    frames.Exists(frame => IsHeldIn(frame, button) && !(button.HiddenWhen?.Invoke(frame) ?? false));
 
-  private static bool DiffersFromDigital(Vector2 value, InputFrame frame)
+  private static bool IsHeldIn(InputFrame frame, Button button) =>
+    (frame.Held & button.Flags) != 0 && (!button.WhilePaused || frame.Paused);
+
+  private static bool PointsOffDigital(Vector2 value, InputFrame frame)
   {
     if (value == Vector2.Zero)
       return false;
@@ -141,13 +147,10 @@ public class ReplayInputDisplay : Entity
 
   private static InputDisplayMode Mode => ClimbTrialsModule.Settings.ReplayInputDisplay;
 
-  private bool RecordingPaused => Scene is Level { Paused: true };
+  private bool DetailedRowShown => Mode == InputDisplayMode.Detailed && detailedRow.Count > 0;
 
-  private bool DetailedRowShown =>
-    Mode == InputDisplayMode.Detailed && (detailedRow.Count > 0 || aimShown);
-
-  private static float BlockTop(float topRowTop) =>
-    Math.Min(PlusTop, topRowTop - BarGap - BarHeight);
+  private float TopOfBlock(float topRowTop) =>
+    Math.Min(PlusTop - (dashOnlyUpUsed ? BarGap + BarHeight : 0f), topRowTop - BarGap - BarHeight);
 
   public override void Update()
   {
@@ -164,22 +167,23 @@ public class ReplayInputDisplay : Entity
   {
     if (Mode == InputDisplayMode.Off || RunManager.Replay == null || Replayer.MenuOpen)
       return;
+
     fed = Replayer.FedFrame();
     previous = Replayer.FedFrame(1);
-    float boxTop = BlockTop(DetailedRowShown ? TopRowTop : BottomRowTop) - PaddingY;
-    Draw.Rect(0f, boxTop, RightEdge() + PaddingX, ScreenBottom - boxTop, Color.Black * BoxAlpha);
+    float boxTop = TopOfBlock(DetailedRowShown ? TopRowTop : BottomRowTop) - PaddingY;
+    Draw.Rect(0f, boxTop, RightEdge() + PaddingX, ScreenBottom - boxTop, boxColor * BoxAlpha);
     base.Render();
     DrawLayout(idle: false);
   }
 
   private float RightEdge()
   {
-    float normal = RowEnd(normalRow, featherShown);
-    float detailed = DetailedRowShown ? RowEnd(detailedRow, aimShown) : 0f;
+    float normal = RowRightEdge(normalRow, featherShown);
+    float detailed = DetailedRowShown ? RowRightEdge(detailedRow, false) : 0f;
     return Math.Max(PlusLeft + PlusSize, Math.Max(normal, detailed));
   }
 
-  private static float RowEnd(List<Button> row, bool stick) =>
+  private static float RowRightEdge(List<Button> row, bool stick) =>
     RowsLeft + (row.Count + (stick ? 1 : 0)) * (Square + Gap) - Gap;
 
   private void DrawIdle() => DrawLayout(idle: true);
@@ -188,19 +192,16 @@ public class ReplayInputDisplay : Entity
   {
     bool detailed = DetailedRowShown;
     float normalTop = detailed ? TopRowTop : BottomRowTop;
-    foreach (Vector2 direction in Directions)
-      DrawDirection(direction, idle);
+    for (int i = 0; i < Directions.Length; i++)
+      DrawArrowSquare(i, idle);
     float x = DrawRow(normalRow, normalTop, idle);
     if (featherShown)
-      DrawStick(StickCenter(x, normalTop), fed?.Feather, idle);
-    if (!detailed)
-      return;
-    x = DrawRow(detailedRow, BottomRowTop, idle);
-    if (aimShown)
-      DrawStick(StickCenter(x, BottomRowTop), fed?.Aim, idle);
+      DrawFeatherRing(RingCenter(x, normalTop), idle);
+    if (detailed)
+      DrawRow(detailedRow, BottomRowTop, idle);
   }
 
-  private static Vector2 StickCenter(float x, float top) => new(x + Square / 2f, top + Square / 2f);
+  private static Vector2 RingCenter(float x, float top) => new(x + Square / 2f, top + Square / 2f);
 
   private float DrawRow(List<Button> buttons, float top, bool idle)
   {
@@ -213,39 +214,39 @@ public class ReplayInputDisplay : Entity
   private float DrawButton(Button button, float x, float top, bool idle)
   {
     string label = Dialog.Clean(button.Key);
-    bool active = !button.WhilePaused || RecordingPaused;
-    bool held = fed.HasValue && (fed.Value.Held & button.Flags) != 0;
+    Vector2 center = new(x + Square / 2f, top + Square / 2f);
+    bool held = fed.HasValue && IsHeldIn(fed.Value, button);
     if (idle)
     {
       Draw.HollowRect(x, top, Square, Square, Color.White);
-      DrawLabel(label, x, top);
+      DrawLabel(label, center);
     }
-    else if (held && active)
+    else if (held)
     {
       Draw.Rect(x, top, Square, Square, Color.White);
-      DrawLabel(label, x, top);
-      if (Repressed(button.Flags))
+      DrawLabel(label, center);
+      if (PressedWhileHeld(button.Flags))
         Draw.Rect(x, top - BarGap - BarHeight, Square, BarHeight, Color.White);
     }
     return x + Square + Gap;
   }
 
-  private bool Repressed(Actions flags)
+  private bool PressedWhileHeld(Actions flags)
   {
     if (!fed.HasValue || !previous.HasValue)
       return false;
     return (fed.Value.Pressed & flags) != 0 && (previous.Value.Held & flags) != 0;
   }
 
-  private static void DrawLabel(string label, float x, float top)
+  private static void DrawLabel(string label, Vector2 center)
   {
     ActiveFont.DrawOutline(
       label,
-      new Vector2(x + Square / 2f, top + Square / 2f),
+      center,
       new Vector2(0.5f, 0.5f),
       Vector2.One * FitScale(label),
       Color.White,
-      2f,
+      1.2f,
       Color.Black
     );
   }
@@ -258,49 +259,73 @@ public class ReplayInputDisplay : Entity
     return fit >= 1f ? LabelScale : LabelScale * fit;
   }
 
-  private void DrawDirection(Vector2 direction, bool idle)
+  private void DrawArrowSquare(int i, bool idle)
   {
+    Vector2 direction = Directions[i];
     Vector2 topLeft = new(
       PlusLeft + (direction.X + 1f) * (PlusSquare + PlusGap),
       PlusTop + (direction.Y + 1f) * (PlusSquare + PlusGap)
     );
-    bool held = fed.HasValue && HoldsDirection(fed.Value, direction);
-    if (!idle && !held)
-      return;
     if (idle)
+    {
       Draw.HollowRect(topLeft.X, topLeft.Y, PlusSquare, PlusSquare, Color.White);
-    else
-      Draw.Rect(topLeft.X, topLeft.Y, PlusSquare, PlusSquare, Color.White);
+      DrawArrowGlyph(direction, topLeft, Color.White);
+      return;
+    }
+
+    if (!fed.HasValue)
+      return;
+
+    InputFrame frame = fed.Value;
+    DirectionBinds moveOnly = (DirectionBinds)(1 << i);
+    DirectionBinds dashOnly = (DirectionBinds)(1 << (i + 4));
+    if ((frame.Binds & moveOnly) != 0)
+      Draw.Rect(topLeft.X, topLeft.Y + PlusSquare + BarGap, PlusSquare, BarHeight, Color.White);
+    if ((frame.Binds & dashOnly) != 0)
+      Draw.Rect(topLeft.X, topLeft.Y - BarGap - BarHeight, PlusSquare, BarHeight, Color.White);
+    if (!IsMoving(frame, direction))
+      return;
+
+    Draw.Rect(topLeft.X, topLeft.Y, PlusSquare, PlusSquare, Color.White);
+    DrawArrowGlyph(direction, topLeft, Color.Black);
+  }
+
+  private static void DrawArrowGlyph(Vector2 direction, Vector2 topLeft, Color color)
+  {
     MTexture arrow = Input.GuiDirection(direction);
     if (arrow == null)
       return;
+
     float scale = ArrowFill * PlusSquare / Math.Max(arrow.Width, arrow.Height);
-    Vector2 center = topLeft + new Vector2(PlusSquare / 2f);
-    arrow.DrawCentered(center, idle ? Color.White : Color.Black, scale);
+    arrow.DrawCentered(topLeft + new Vector2(PlusSquare / 2f), color, scale);
   }
 
-  private static bool HoldsDirection(InputFrame frame, Vector2 direction)
+  private static bool IsMoving(InputFrame frame, Vector2 direction)
   {
     if (direction.X != 0f)
       return frame.MoveX == (int)direction.X;
     return frame.MoveY == (int)direction.Y;
   }
 
-  private void DrawStick(Vector2 center, Vector2? value, bool idle)
+  private void DrawFeatherRing(Vector2 center, bool idle)
   {
     if (idle)
     {
       Draw.Circle(center, StickRadius, Color.White, 2f, 24);
+      DrawLabel(Dialog.Clean("climbtrials_input_fly"), center);
       return;
     }
-    if (!fed.HasValue || !value.HasValue)
+
+    if (!fed.HasValue)
       return;
-    Vector2 stick = value.Value;
-    if (!DiffersFromDigital(stick, fed.Value))
+
+    Vector2 stick = fed.Value.Feather;
+    if (stick == Vector2.Zero)
       return;
+
     Draw.Circle(center, StickRadius, Color.White, 2f, 24);
     MTexture dot = GFX.Gui["dot"];
-    Vector2 position = center + stick.SafeNormalize() * (StickRadius - DotSize / 2f);
+    Vector2 position = center + stick.SafeNormalize() * (StickRadius - DotInset);
     dot.DrawCentered(position, Color.White, DotSize / dot.Width);
   }
 }

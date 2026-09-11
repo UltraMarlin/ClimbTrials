@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Microsoft.Xna.Framework;
+using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.Replays;
 
@@ -61,6 +62,11 @@ public static class ReplayColumns
       (BinaryReader r, ref InputFrame f) => f.GliderMoveY = r.ReadSByte()
     ),
     Column(
+      1,
+      (w, f) => w.Write((byte)f.Binds),
+      (BinaryReader r, ref InputFrame f) => f.Binds = (DirectionBinds)r.ReadByte()
+    ),
+    Column(
       8,
       (w, f) => WriteVector(w, f.Aim),
       (BinaryReader r, ref InputFrame f) => f.Aim = ReadVector(r)
@@ -84,6 +90,11 @@ public static class ReplayColumns
       4,
       (w, f) => w.Write(f.Dashes),
       (BinaryReader r, ref InputFrame f) => f.Dashes = r.ReadInt32()
+    ),
+    Column(
+      1,
+      (w, f) => w.Write(f.DashDir),
+      (BinaryReader r, ref InputFrame f) => f.DashDir = r.ReadByte()
     ),
     Column(
       4,
@@ -129,6 +140,28 @@ public static class ReplayColumns
 
   public static sbyte ScaleToSByte(float scale) =>
     (sbyte)Math.Clamp(Math.Round(scale * ScaleUnit), sbyte.MinValue, sbyte.MaxValue);
+
+  private static readonly Vector2[] DashDirections =
+  [
+    new(-1f, -1f),
+    new(0f, -1f),
+    new(1f, -1f),
+    new(-1f, 0f),
+    new(1f, 0f),
+    new(-1f, 1f),
+    new(0f, 1f),
+    new(1f, 1f),
+  ];
+
+  public static byte DashDirToByte(Vector2 direction)
+  {
+    Vector2 signs = new(Math.Sign(direction.X), Math.Sign(direction.Y));
+    int index = Array.IndexOf(DashDirections, signs);
+    return index < 0 ? (byte)0 : (byte)(index + 1);
+  }
+
+  public static Vector2 DashDirFromByte(byte value) =>
+    value == 0 ? Vector2.Zero : DashDirections[value - 1].SafeNormalize();
 
   private static ReplayColumn Column(
     int bytes,

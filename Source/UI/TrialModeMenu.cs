@@ -65,7 +65,7 @@ public class TrialModeMenu : FadingMenu
       Vector2.One * scale,
       color,
       2f,
-      TimeText.StrokeFor(color)
+      TextOutline.StrokeFor(color)
     );
 
   private class TitleItem(Trial trial) : Item
@@ -125,7 +125,13 @@ public class TrialModeMenu : FadingMenu
     public override void Render(Vector2 position, bool highlighted)
     {
       float left = position.X + (Container.Width - LeftWidth()) / 2f;
-      Outline(text, new Vector2(left, position.Y), DateScale, RowLayout.Dim * Container.Alpha);
+      TextOutline.DrawDim(
+        text,
+        new Vector2(left, position.Y),
+        new Vector2(0f, 0.5f),
+        DateScale,
+        Container.Alpha
+      );
     }
   }
 

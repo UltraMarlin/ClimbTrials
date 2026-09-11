@@ -21,6 +21,7 @@ public class GoalListDisplay : Entity
   private const float DuckTime = 0.2f;
 
   private const float ListBoxAlpha = 0.5f;
+  private readonly Color boxColor = Colors.ForChapter(RunManager.Run.Area).Dark;
   private const float BoxPaddingTop = 14f;
   private const float BoxPaddingRight = 20f;
   private const float BoxPaddingBottom = 14f;
@@ -164,7 +165,7 @@ public class GoalListDisplay : Entity
       RunHudLayout.ListY - BoxPaddingTop,
       widest + BoxPaddingRight,
       rows.Count * rowHeight + BoxPaddingTop + BoxPaddingBottom,
-      Color.Black * (ListBoxAlpha * duck)
+      boxColor * (ListBoxAlpha * duck)
     );
     for (int i = 0; i < layers.Count; i++)
       layers[i].Alpha = (rows[i].Reached ? ReachedAlpha : 1f) * duck;
