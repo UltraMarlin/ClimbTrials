@@ -308,6 +308,9 @@ public static class RunManager
     if (Replaying && level.Tracker.GetEntity<ReplayBanner>() == null)
       level.Add(new ReplayBanner());
 
+    if (Replaying && level.Tracker.GetEntity<ReplayInputDisplay>() == null)
+      level.Add(new ReplayInputDisplay(Replay));
+
     RunNotice notice = level.Tracker.GetEntity<RunNotice>();
     if (notice == null)
     {

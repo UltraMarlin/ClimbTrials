@@ -23,6 +23,13 @@ public enum GoalIndicatorTargets
   EachCondition,
 }
 
+public enum InputDisplayMode
+{
+  Normal,
+  Detailed,
+  Off,
+}
+
 public class ClimbTrialsModuleSettings : EverestModuleSettings
 {
   [SettingRange(min: 1, max: 5)]
@@ -33,6 +40,7 @@ public class ClimbTrialsModuleSettings : EverestModuleSettings
   public GoalIndicatorMode GoalIndicator { get; set; } = GoalIndicatorMode.Subtle;
   public GoalIndicatorTargets GoalIndicatorTargets { get; set; } =
     GoalIndicatorTargets.EachCondition;
+  public InputDisplayMode ReplayInputDisplay { get; set; } = InputDisplayMode.Normal;
 
   [SettingMaxLength(20)]
   public string PlayerName { get; set; } = "";

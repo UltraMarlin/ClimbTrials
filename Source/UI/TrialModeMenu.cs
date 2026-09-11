@@ -6,10 +6,8 @@ using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.UI;
 
-public class TrialModeMenu : TextMenu
+public class TrialModeMenu : FadingMenu
 {
-  private const float BackdropAlpha = 0.6f;
-  private const float FadeSpeed = 5f;
   private const float MenuLift = 80f;
   private const float TitleScale = 1.2f;
   private const float TitleHeight = 100f;
@@ -22,16 +20,10 @@ public class TrialModeMenu : TextMenu
   private const float LabelGap = 16f;
 
   private readonly Action closed;
-  private float fade;
-  private bool closing;
-
-  public float Fade => fade;
 
   public TrialModeMenu(Trial trial, Action play, Action watch, Action race, Action closed)
   {
     this.closed = closed;
-    Alpha = 0f;
-    AutoScroll = false;
     Position.Y -= MenuLift;
 
     Add(new TitleItem(trial));
@@ -56,27 +48,13 @@ public class TrialModeMenu : TextMenu
     Dismiss();
   }
 
-  public void Dismiss()
-  {
-    Focused = false;
-    closing = true;
-  }
-
   public override void Update()
   {
     base.Update();
-    fade = Calc.Approach(fade, closing ? 0f : 1f, FadeSpeed * Engine.RawDeltaTime);
-    Alpha = fade;
-    if (!closing || fade > 0f)
+    if (!Closed)
       return;
     RemoveSelf();
     closed?.Invoke();
-  }
-
-  public override void Render()
-  {
-    Draw.Rect(-1f, -1f, 1922f, 1082f, Color.Black * (BackdropAlpha * fade));
-    base.Render();
   }
 
   private static void Outline(string text, Vector2 at, float scale, Color color) =>

@@ -23,13 +23,28 @@ public static class Replayer
   private const string ResumeSound = "event:/game/general/cassette_block_switch_2";
   private const string RestartSound = "event:/ui/main/button_select";
   private const float WatcherThreshold = 0.2f;
+  private const float StepThreshold = 0.4f;
+  private const float MenuThreshold = 0.4f;
+  private const float RecordedMenuDim = 0.05f;
+  private const int StepDelayTicks = 30;
+  private const int StepRepeatTicks = 4;
 
   public static ReplayState State { get; private set; }
   public static bool Desynced { get; private set; }
   public static int Frame { get; private set; }
   public static bool Silenced => State is ReplayState.Playing or ReplayState.Paused;
+  public static bool MenuOpen => menu != null;
 
   private static Replay current;
+  private static bool stepping;
+  private static int stepHeldTicks;
+  private static WatcherMenu menu;
+  private static bool resumeOnClose;
+  private static bool pauseEffectsHeld;
+  private static TextMenu recordedMenu;
+  private static float recordedMenuAlpha;
+  private static bool menuStarted;
+  private static Level watchedLevel;
 
   private static readonly ButtonNode[] buttonNodes = new ButtonNode[Replay.ButtonCount];
   private static readonly AxisNode moveX = new();
@@ -72,6 +87,8 @@ public static class Replayer
     current = replay;
     Frame = 0;
     Desynced = false;
+    stepping = false;
+    stepHeldTicks = 0;
 
     savedGrabMode = Settings.Instance.GrabMode;
     savedCrouchDashMode = Settings.Instance.CrouchDashMode;
@@ -85,9 +102,11 @@ public static class Replayer
       Dialog.Language = language;
     }
 
+    watchedLevel = level;
     Input.LastAim = replay.LastAim;
     level.TimeActive = replay.TimeActive;
     level.RawTimeActive = replay.RawTimeActive;
+    level.AllowHudHide = false;
 
     VirtualButton[] buttons = InputCapture.Buttons();
     for (int i = 0; i < buttons.Length; i++)
@@ -146,6 +165,22 @@ public static class Replayer
     State = ReplayState.Idle;
     current = null;
     Desynced = false;
+    stepping = false;
+    ReleasePauseAudio();
+    RestoreRecordedMenu();
+    menu = null;
+    resumeOnClose = false;
+    watchedLevel = null;
+  }
+
+  public static void RenderMenu() => menu?.Render();
+
+  public static InputFrame? FedFrame(int framesBack = 0)
+  {
+    int index = Frame - 1 - framesBack;
+    if (!Silenced || index < 0 || index >= current.Frames.Count)
+      return null;
+    return current.Frames[index];
   }
 
   public static void PinSettings()
@@ -236,8 +271,9 @@ public static class Replayer
     GameTime gameTime
   )
   {
-    if (State != ReplayState.Paused)
+    if (State != ReplayState.Paused && menu == null)
     {
+      stepHeldTicks = 0;
       orig(self, gameTime);
       return;
     }
@@ -252,16 +288,174 @@ public static class Replayer
     {
       MInput.Keyboard.Update();
       MInput.GamePads[Input.Gamepad].Update();
-      HandleWatcherControls();
+      if (menu != null)
+        DriveMenu();
+      else
+      {
+        HandleWatcherControls();
+        if (menu == null && State == ReplayState.Paused && StepRequested())
+        {
+          StepOnce(orig, self, gameTime);
+          return;
+        }
+      }
+    }
+    else
+    {
+      stepHeldTicks = 0;
     }
 
-    if (State == ReplayState.Idle)
+    if (State == ReplayState.Idle && menu == null)
       orig(self, gameTime);
+  }
+
+  private static void DriveMenu()
+  {
+    if (!menuStarted)
+      StartMenu();
+    if (!menu.Closing)
+    {
+      if (WatcherPressed(Settings.Instance.Confirm))
+      {
+        menu.Confirm();
+        if (menu == null)
+          return;
+      }
+      else if (
+        WatcherPressed(Settings.Instance.Cancel)
+        || WatcherPressed(Settings.Instance.Pause)
+        || WatcherPressed(EscapeBinding())
+      )
+        ResumeReplay();
+      else if (MenuPressed(Settings.Instance.MenuUp))
+        menu.MoveUp();
+      else if (MenuPressed(Settings.Instance.MenuDown))
+        menu.MoveDown();
+    }
+    menu.Update();
+    recordedMenu?.Alpha = recordedMenuAlpha * (1f - (1f - RecordedMenuDim) * menu.Fade);
+    if (!menu.Closed)
+      return;
+
+    RestoreRecordedMenu();
+    menu = null;
+    if (resumeOnClose && State == ReplayState.Paused)
+      State = ReplayState.Playing;
+  }
+
+  private static void OpenMenu()
+  {
+    if (menu != null)
+      return;
+    resumeOnClose = State == ReplayState.Playing;
+    if (resumeOnClose)
+      State = ReplayState.Paused;
+    stepHeldTicks = 0;
+    if (State == ReplayState.Finished)
+    {
+      Input.Pause.ConsumePress();
+      Input.ESC.ConsumePress();
+    }
+    menuStarted = false;
+    menu = new WatcherMenu(ResumeReplay, PlayTrial, RaceGhost, LeaveReplay);
+  }
+
+  private static void StartMenu()
+  {
+    menuStarted = true;
+    Level level = Engine.Scene as Level;
+    pauseEffectsHeld = level != null && !level.Paused;
+    if (pauseEffectsHeld)
+      level.StartPauseEffects();
+    else
+      Audio.Play(SFX.ui_game_pause);
+    recordedMenu = level?.Paused == true ? level.Entities.FindFirst<TextMenu>() : null;
+    recordedMenuAlpha = recordedMenu?.Alpha ?? 1f;
+  }
+
+  private static void RestoreRecordedMenu()
+  {
+    recordedMenu?.Alpha = recordedMenuAlpha;
+    recordedMenu = null;
+  }
+
+  private static void ResumeReplay()
+  {
+    ReleasePauseAudio();
+    Audio.Play(SFX.ui_game_unpause);
+    menu.Dismiss();
+  }
+
+  private static void PlayTrial()
+  {
+    ReleasePauseAudio();
+    RestoreRecordedMenu();
+    menu = null;
+    RunManager.StartTrial(RunManager.Trial);
+  }
+
+  private static void RaceGhost()
+  {
+    ReleasePauseAudio();
+    RestoreRecordedMenu();
+    menu = null;
+    RunManager.StartRace(RunManager.Trial, current);
+  }
+
+  private static void LeaveReplay()
+  {
+    ReleasePauseAudio();
+    RestoreRecordedMenu();
+    menu = null;
+    RunManager.LeaveToTrials();
+  }
+
+  private static void ReleasePauseAudio()
+  {
+    Level level = Engine.Scene as Level ?? watchedLevel;
+    if (pauseEffectsHeld && level != null)
+      level.EndPauseEffects();
+    pauseEffectsHeld = false;
+  }
+
+  private static Binding EscapeBinding() => SavedBinding(Input.ESC) ?? Input.ESC.Binding;
+
+  private static bool MenuPressed(Binding binding) => binding.Pressed(Input.Gamepad, MenuThreshold);
+
+  private static void StepOnce(On.Monocle.Engine.orig_Update orig, Engine self, GameTime gameTime)
+  {
+    stepping = true;
+    try
+    {
+      orig(self, gameTime);
+    }
+    finally
+    {
+      stepping = false;
+    }
+  }
+
+  private static bool StepRequested()
+  {
+    Binding right = Settings.Instance.MenuRight;
+    if (right.Pressed(Input.Gamepad, StepThreshold))
+    {
+      stepHeldTicks = 1;
+      return true;
+    }
+    if (stepHeldTicks == 0 || !right.Check(Input.Gamepad, StepThreshold))
+    {
+      stepHeldTicks = 0;
+      return false;
+    }
+    stepHeldTicks++;
+    int pastDelay = stepHeldTicks - StepDelayTicks - 1;
+    return pastDelay >= 0 && pastDelay % StepRepeatTicks == 0;
   }
 
   private static void OnMInputUpdate(On.Monocle.MInput.orig_Update orig)
   {
-    if (State == ReplayState.Playing && InputCapture.Counts())
+    if ((State == ReplayState.Playing || stepping) && InputCapture.Counts())
       Step();
     orig();
     if (State != ReplayState.Idle)
@@ -303,16 +497,9 @@ public static class Replayer
 
   private static void HandleWatcherControls()
   {
-    if (Engine.Scene is Level { Paused: true })
-      return;
-    if (WatcherPressed(Settings.Instance.Cancel))
+    if (WatcherPressed(Settings.Instance.Pause) || WatcherPressed(EscapeBinding()))
     {
-      RunManager.LeaveToTrials();
-      return;
-    }
-    if (WatcherPressed(ClimbTrialsModule.Settings.Retry.Button.Binding))
-    {
-      RunManager.StartRun(RunManager.Run);
+      OpenMenu();
       return;
     }
     if (WatcherPressed(Settings.Instance.Journal))

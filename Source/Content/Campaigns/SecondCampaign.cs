@@ -76,6 +76,7 @@ public static class SecondCampaign
             new("end_3b", new(2264f, 1784f), new(2264f, 1808f)),
             new("end_3b", new(1984f, 1864f), new(1984f, 1888f)),
           ],
+          CameraOffsets = [new("end_3b", new(-0.3f, 0f)), new("end_4", new(-0.3f, 0f))],
           SpawnFacing = Facings.Right,
         },
         Goals = GoalTimes.FromSeconds(bronze: 16, silver: 13, gold: 11, grandmaster: 10),

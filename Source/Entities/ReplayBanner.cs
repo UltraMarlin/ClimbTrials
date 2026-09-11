@@ -26,6 +26,7 @@ public class ReplayBanner : Entity
   public ReplayBanner()
   {
     Tag = Tags.HUD | Tags.Persistent | Tags.TransitionUpdate | Tags.FrozenUpdate;
+    Depth = Depths.Top;
     Add(layer = new FadeBuffer("climbtrials-replay-banner", 1920, 1080, DrawContent));
   }
 
@@ -41,10 +42,14 @@ public class ReplayBanner : Entity
   public override void Render()
   {
     alpha = Calc.Approach(alpha, TargetAlpha(), Engine.RawDeltaTime / FadeTime);
-    if (RunManager.Replay == null || SceneAs<Level>().Paused)
+    if (RunManager.Replay == null)
       return;
-    layer.Alpha = alpha;
-    base.Render();
+    if (!Replayer.MenuOpen)
+    {
+      layer.Alpha = alpha;
+      base.Render();
+    }
+    Replayer.RenderMenu();
   }
 
   private void DrawContent()
@@ -81,11 +86,10 @@ public class ReplayBanner : Entity
         : "climbtrials_replay_pause";
     List<(string, VirtualButton)> prompts =
     [
-      (Dialog.Clean("climbtrials_finish_back"), Input.MenuCancel),
+      (Dialog.Clean("climbtrials_replay_restart"), Input.MenuJournal),
     ];
-
-    prompts.Add((Dialog.Clean("climbtrials_replay_restart"), Input.MenuJournal));
-    prompts.Add((Dialog.Clean("climbtrials_replay_play"), ClimbTrialsModule.Settings.Retry.Button));
+    if (Replayer.State == ReplayState.Paused)
+      prompts.Add((Dialog.Clean("climbtrials_replay_step"), Input.MenuRight));
     if (Replayer.State != ReplayState.Finished)
       prompts.Add((Dialog.Clean(pauseKey), Input.MenuConfirm));
     ButtonRow.DrawRight(alpha, prompts);
