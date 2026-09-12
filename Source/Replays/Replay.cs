@@ -9,7 +9,7 @@ namespace Celeste.Mod.ClimbTrials.Replays;
 
 public sealed class Replay
 {
-  public const int FormatVersion = 8;
+  public const int FormatVersion = 9;
   public const int ButtonCount = 15;
   public const int MaxFrames = 216_000;
   public const int MaxModules = 256;
@@ -23,7 +23,6 @@ public sealed class Replay
   public string CelesteVersion;
   public string EverestVersion;
   public List<ModuleRef> Modules = [];
-  public string PlayerName;
   public string Language;
   public GrabModes GrabMode;
   public CrouchDashModes CrouchDashMode;
@@ -46,6 +45,7 @@ public sealed class Replay
   public List<InputFrame> Frames = [];
 
   public bool IsOwn { get; set; }
+  public string OwnerName { get; set; }
 
   public bool MatchesGame() => CelesteVersion == Celeste.Instance.Version.ToString();
 
@@ -107,7 +107,6 @@ public sealed class Replay
       w.Write(module.Name);
       w.Write(module.Version);
     }
-    w.Write(PlayerName);
     w.Write(Language);
     w.Write((int)GrabMode);
     w.Write((int)CrouchDashMode);
@@ -166,7 +165,6 @@ public sealed class Replay
       string moduleVersion = ReadString(r, MaxStringLength);
       replay.Modules.Add(new ModuleRef(name, moduleVersion));
     }
-    replay.PlayerName = ReadString(r, MaxStringLength);
     replay.Language = ReadString(r, MaxStringLength);
     replay.GrabMode = (GrabModes)r.ReadInt32();
     replay.CrouchDashMode = (CrouchDashModes)r.ReadInt32();

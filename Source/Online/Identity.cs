@@ -1,4 +1,5 @@
 using System;
+using Celeste.Mod.ClimbTrials.Replays;
 
 namespace Celeste.Mod.ClimbTrials.Online;
 
@@ -8,22 +9,26 @@ public static class Identity
 
   private static ClimbTrialsModuleSettings Settings => ClimbTrialsModule.Settings;
 
-  public static string ClientId => Settings.ClientId;
+  public static bool Registered =>
+    Settings.ClientId?.StartsWith("ct_", StringComparison.Ordinal) == true;
+
+  public static string ClientId => Registered ? Settings.ClientId : null;
 
   public static string Key => string.IsNullOrEmpty(Settings.Key) ? null : Settings.Key;
 
-  public static string DisplayName =>
-    string.IsNullOrEmpty(Settings.PlayerName)
-      ? Dialog.Clean("climbtrials_replay_you")
-      : Settings.PlayerName;
+  public static string NameOf(Replay replay) =>
+    replay.IsOwn ? Settings.PlayerName : replay.OwnerName;
 
-  public static void CreateClientIdIfMissing()
+  public static void Store(string clientId, string name)
   {
-    if (!string.IsNullOrEmpty(Settings.ClientId))
-      return;
-
-    Settings.ClientId = Guid.NewGuid().ToString("N");
+    Settings.ClientId = clientId;
+    Settings.PlayerName = name;
     ClimbTrialsModule.Instance.SaveSettings();
-    Logger.Log(LogLevel.Info, LogTag, "no client id in the settings, generated one");
+  }
+
+  public static void Forget()
+  {
+    Logger.Log(LogLevel.Info, LogTag, "the server did not know this client id, dropped it");
+    Store("", "");
   }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Celeste.Mod.ClimbTrials.Online;
 using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.Runs;
 using Celeste.Mod.ClimbTrials.UI;
@@ -44,7 +45,7 @@ public class RaceGhost : Entity
   public RaceGhost(Replay replay, PlayerSpriteMode mode)
   {
     this.replay = replay;
-    Name = replay.PlayerName;
+    Name = Identity.NameOf(replay);
     ticksPerFrame = Attempt.SecondsToTicks(replay.RawDeltaTime);
     shownFrames = ticksPerFrame > 0 ? LevelUpdatedFrames(replay.Frames) : [];
     Tag = Tags.Persistent;

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Celeste.Mod.ClimbTrials.Online;
 using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.Runs;
 using Celeste.Mod.ClimbTrials.UI;
@@ -70,8 +71,10 @@ public class ReplayBanner : Entity
       TitleStroke
     );
 
-    string info =
-      $"{replay.PlayerName}, {Dialog.Clean("climbtrials_replay_played_date")} {TimeText.FormatDate(replay.AchievedAtUtc)}";
+    string played = Dialog.Clean("climbtrials_replay_played_date");
+    string owner = Identity.NameOf(replay);
+    string info = string.IsNullOrEmpty(owner) ? "" : $"{owner}, ";
+    info += $"{played} {TimeText.FormatDate(replay.AchievedAtUtc)}";
     if (!replay.MatchesGame())
       info += $",  {Dialog.Clean("climbtrials_replay_recorded_on")} {replay.CelesteVersion}";
     TextOutline.DrawDim(info, new Vector2(960f, InfoY), new Vector2(0.5f, 0.5f), 0.5f, 1f);

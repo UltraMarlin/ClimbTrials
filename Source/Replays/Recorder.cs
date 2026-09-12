@@ -42,7 +42,6 @@ public static class Recorder
       CelesteVersion = Celeste.Instance.Version.ToString(),
       EverestVersion = Everest.VersionString,
       Modules = ModCheck.Modules(),
-      PlayerName = Online.Identity.DisplayName,
       Language = Settings.Instance.Language,
       GrabMode = Settings.Instance.GrabMode,
       CrouchDashMode = Settings.Instance.CrouchDashMode,

@@ -36,12 +36,15 @@ public class ClimbTrialsModuleSettings : EverestModuleSettings
   public int CountdownLength { get; set; } = 3;
   public CountdownMode CountdownMode { get; set; } = CountdownMode.Fast;
   public bool ResetOnDeath { get; set; } = false;
-  public bool ShowTimerWhileRunning { get; set; } = true;
+  public bool ShowTimer { get; set; } = true;
+  public bool ShowLeaderboard { get; set; } = true;
+  public bool PbAutoSubmit { get; set; } = true;
   public GoalIndicatorMode GoalIndicator { get; set; } = GoalIndicatorMode.Subtle;
   public GoalIndicatorTargets GoalIndicatorTargets { get; set; } =
     GoalIndicatorTargets.EachCondition;
   public InputDisplayMode ReplayInputDisplay { get; set; } = InputDisplayMode.Normal;
 
+  [SettingIgnore]
   [SettingMaxLength(20)]
   public string PlayerName { get; set; } = "";
 
@@ -51,6 +54,9 @@ public class ClimbTrialsModuleSettings : EverestModuleSettings
   [SettingIgnore]
   [SettingMaxLength(16)]
   public string Key { get; set; } = "";
+
+  [SettingIgnore]
+  public string ServerUrl { get; set; } = "http://localhost:3000";
 
   [DefaultButtonBinding(Buttons.Back, Keys.F7)]
   public ButtonBinding Retry { get; set; }

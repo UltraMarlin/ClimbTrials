@@ -9,7 +9,7 @@ public static class ReplayStore
 {
   private const string LogTag = "ClimbTrials/Replay";
 
-  private static string Folder => Path.Combine(UserIO.GetSaveFilePath(), "ClimbTrials");
+  public static string Folder => Path.Combine(UserIO.GetSaveFilePath(), "ClimbTrials");
 
   private static string PathFor(string trialId) => Path.Combine(Folder, trialId + ".ctreplay");
 
