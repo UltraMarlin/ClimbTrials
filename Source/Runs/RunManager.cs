@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Entities;
+using Celeste.Mod.ClimbTrials.Online;
 using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.UI;
 using FMOD.Studio;
@@ -187,6 +188,16 @@ public static class RunManager
       notice.Show(noticeKey);
     else
       pendingNotice = noticeKey;
+  }
+
+  private static void ReportUpload(Trial trial, Upload upload)
+  {
+    if (Trial != trial || Attempt.State != AttemptState.Finished)
+      return;
+
+    (string text, bool warning) = Uploader.Describe(upload);
+    if (Engine.Scene is Level level && level.Tracker.GetEntity<RunNotice>() is RunNotice notice)
+      notice.ShowText(text, warning);
   }
 
   private static void RunPendingRestart()
@@ -516,7 +527,16 @@ public static class RunManager
     {
       LastFinish = TrialRecords.Record(Trial, Attempt.ElapsedTicks, submittable);
       if (LastFinish.IsPersonalBest && recorded != null)
+      {
         ReplayStore.Save(recorded);
+        if (ClimbTrialsModule.Settings.PbAutoSubmit && submittable)
+        {
+          if (Identity.Registered)
+            Uploader.Start(Trial, recorded, upload => ReportUpload(Trial, upload));
+          else
+            ShowNotice("climbtrials_not_connected");
+        }
+      }
       else if (LastFinish.IsPersonalBest)
         ReplayStore.Delete(Trial.Id);
       if (LastFinish.IsPersonalBest && RaceReplay?.IsOwn == true)

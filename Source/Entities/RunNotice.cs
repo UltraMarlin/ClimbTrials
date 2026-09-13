@@ -36,6 +36,11 @@ public class RunNotice : Entity
     notice.Show(Dialog.Clean(dialogKey), NoticeDuration);
   }
 
+  public void ShowText(string text, bool warning)
+  {
+    notice.Show(text, NoticeDuration, warning);
+  }
+
   public override void Update()
   {
     base.Update();
@@ -52,7 +57,7 @@ public class RunNotice : Entity
     if (RunManager.Run == null || SceneAs<Level>().Paused)
       return;
 
-    notice.Render(new Vector2(960f, NoticeY), NoticeScale, Colors.Warning, 1f);
+    notice.Render(new Vector2(960f, NoticeY), NoticeScale, 1f);
     base.Render();
   }
 

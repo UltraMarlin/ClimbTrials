@@ -7,18 +7,21 @@ namespace Celeste.Mod.ClimbTrials.UI;
 public sealed class TransientText
 {
   private const float FadeTime = 0.5f;
-  private const string Sound = "event:/ui/main/button_invalid";
 
   private string text;
+  private Color color;
   private float duration;
   private float age = -1f;
 
-  public void Show(string shown, float seconds)
+  public void Show(string shown, float seconds, bool warning = true)
   {
     text = shown;
     duration = seconds;
     age = 0f;
-    Audio.Play(Sound);
+    color = warning ? Colors.Warning : Color.White;
+
+    if (warning)
+      Audio.Play("event:/ui/main/button_invalid");
   }
 
   public void Clear() => age = -1f;
@@ -29,7 +32,7 @@ public sealed class TransientText
       age += deltaTime;
   }
 
-  public void Render(Vector2 center, float scale, Color color, float alpha)
+  public void Render(Vector2 center, float scale, float alpha)
   {
     if (age < 0f || age >= duration)
       return;

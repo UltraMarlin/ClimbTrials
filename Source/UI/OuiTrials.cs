@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Celeste.Mod.ClimbTrials.Content;
+using Celeste.Mod.ClimbTrials.Online;
 using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.Runs;
 using Microsoft.Xna.Framework;
@@ -22,8 +23,10 @@ public class OuiTrials : ListScreen
   private const float TotalY = TitleY + 115f;
   private const float TotalScale = 0.6f;
   private const float TotalLabelGap = 16f;
+  private const float OfflineY = TotalY + 34f;
+  private const float OfflineScale = 0.45f;
   private const float TrialsListTop = 280f;
-  private const float ReplayDeletedSeconds = 5f;
+  private const float NoticeSeconds = 5f;
   private const float ListDim = 0.05f;
 
   private int campaignIndex;
@@ -92,6 +95,7 @@ public class OuiTrials : ListScreen
 
     outgoingCampaign = Campaign;
     campaignIndex = (campaignIndex + direction + count) % count;
+    Standings.EnsureFresh(Campaign);
     Audio.Play(
       direction > 0 ? "event:/ui/main/button_toggle_on" : "event:/ui/main/button_toggle_off"
     );
@@ -140,13 +144,16 @@ public class OuiTrials : ListScreen
 
   protected override void CancelTransitions() => FinishSwitch();
 
+  protected override void FetchOnline()
+  {
+    Identity.EnsureRegistered();
+    Standings.EnsureFresh(Campaign);
+  }
+
   private void Choose(Trial trial)
   {
     Audio.Play(SFX.ui_main_button_select);
-    if (ReplayStore.Exists(trial.Id))
-      OpenMenu(trial);
-    else
-      Start(trial);
+    OpenMenu(trial);
   }
 
   private void OpenMenu(Trial trial)
@@ -157,6 +164,7 @@ public class OuiTrials : ListScreen
       play: () => CloseThen(() => Start(trial)),
       watch: () => CloseThen(() => WatchPb(trial)),
       race: () => CloseThen(() => Race(trial)),
+      submit: () => CloseThen(() => SubmitPb(trial)),
       closed: OnMenuClosed
     );
     Scene.Add(open);
@@ -172,6 +180,7 @@ public class OuiTrials : ListScreen
   {
     open = null;
     SetDim(1f);
+    Standings.EnsureFresh(Campaign);
     if (Focused)
       menu.Focused = true;
   }
@@ -200,6 +209,20 @@ public class OuiTrials : ListScreen
       Add(new Coroutine(StartRoutine(trial, replay, race: true)));
   }
 
+  private void SubmitPb(Trial trial)
+  {
+    if (TryLoadPb(trial, out Replay replay))
+      Uploader.Start(trial, replay, ReportUpload);
+  }
+
+  private void ReportUpload(Upload upload)
+  {
+    if (!IsCurrentScreen)
+      return;
+    (string text, bool warning) = Uploader.Describe(upload);
+    notice.Show(text, NoticeSeconds, warning);
+  }
+
   private bool TryLoadPb(Trial trial, out Replay replay)
   {
     replay = null;
@@ -211,7 +234,7 @@ public class OuiTrials : ListScreen
     if (ReplayStore.TryLoad(trial.Id, out replay, out string failure))
       return true;
     string text = Dialog.Get("climbtrials_replay_deleted").Replace("{0}", failure);
-    notice.Show(text, ReplayDeletedSeconds);
+    notice.Show(text, NoticeSeconds);
     return false;
   }
 
@@ -259,6 +282,14 @@ public class OuiTrials : ListScreen
       arrow.DrawCentered(new Vector2(atX - half, NameY), dim, new Vector2(-1f, 1f));
     }
     CampaignRecord record = TrialRecords.Get(campaign);
+    if (Standings.State(campaign) == StandingsState.Offline)
+      ActiveFont.Draw(
+        Dialog.Clean("climbtrials_offline"),
+        new Vector2(atX, record.TotalTicks == null ? TotalY : OfflineY),
+        new Vector2(0.5f, 0.5f),
+        Vector2.One * OfflineScale,
+        dim
+      );
     if (record.TotalTicks is not long total)
       return;
 

@@ -43,13 +43,13 @@ public class CampaignRow : TextMenu.Item
   public override void Render(Vector2 position, bool highlighted)
   {
     float alpha = Container.Alpha;
-    Vector2 slid = position + new Vector2(Ease.CubeInOut(ease) * RowLayout.SlideDistance, 0f);
-    float rightEdge = slid.X + Container.Width - RowLayout.SlideDistance;
+    Vector2 rowStart = position + new Vector2(Ease.CubeInOut(ease) * RowLayout.SlideDistance, 0f);
+    float rightEdge = rowStart.X + Container.Width - RowLayout.SlideDistance;
 
     Color nameColor = highlighted ? Container.HighlightColor : Color.White;
     ActiveFont.DrawOutline(
       Campaign.Name,
-      slid + new Vector2(RowLayout.CampaignNameX, 0f),
+      rowStart + new Vector2(RowLayout.CampaignNameX, 0f),
       new Vector2(0f, 0.5f),
       Vector2.One,
       nameColor * alpha,
@@ -60,7 +60,7 @@ public class CampaignRow : TextMenu.Item
       RowLayout.CampaignNameX + ActiveFont.Measure(Campaign.Name).X + RowLayout.CountGap;
     ActiveFont.Draw(
       CountText,
-      slid + new Vector2(countX, 0f),
+      rowStart + new Vector2(countX, 0f),
       new Vector2(0f, 0.5f),
       Vector2.One * RowLayout.CountScale,
       RowLayout.Dim * alpha
@@ -74,14 +74,14 @@ public class CampaignRow : TextMenu.Item
     float width = TimeText.Width(text, TimeText.Hud.At(RowLayout.PbScale));
     if (record.Medal != Medal.None)
       MedalIcon.Draw(
-        new Vector2(rightEdge - width - RowLayout.MedalGap, slid.Y),
+        new Vector2(rightEdge - width - RowLayout.MedalGap, rowStart.Y),
         record.Medal,
         RowLayout.MedalIconHeight,
         alpha
       );
 
     TimeText.Draw(
-      new Vector2(rightEdge - width, slid.Y + RowLayout.PbBaseline),
+      new Vector2(rightEdge - width, rowStart.Y + RowLayout.PbBaseline),
       text,
       TimeText.Hud.At(RowLayout.PbScale),
       MedalIcon.TextColor(record.Medal) * alpha

@@ -1,4 +1,5 @@
 using Celeste.Mod.ClimbTrials.Content;
+using Celeste.Mod.ClimbTrials.Online;
 using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.Runs;
 using Microsoft.Xna.Framework;
@@ -36,15 +37,15 @@ public class TrialRow : TextMenu.Item
   public override void Render(Vector2 position, bool highlighted)
   {
     float alpha = Container.Alpha;
-    Vector2 slid = position + new Vector2(Ease.CubeInOut(ease) * RowLayout.SlideDistance, 0f);
-    float rightEdge = slid.X + Container.Width - RowLayout.SlideDistance;
+    Vector2 rowStart = position + new Vector2(Ease.CubeInOut(ease) * RowLayout.SlideDistance, 0f);
+    float rightEdge = rowStart.X + Container.Width - RowLayout.SlideDistance;
 
     GFX.Gui[Trial.SkullTexture]
-      .DrawCentered(slid + new Vector2(RowLayout.IconX, 0f), Color.White * alpha, Vector2.One);
+      .DrawCentered(rowStart + new Vector2(RowLayout.IconX, 0f), Color.White * alpha, Vector2.One);
     Color nameColor = highlighted ? Container.HighlightColor : Color.White;
     ActiveFont.DrawOutline(
       Trial.Name,
-      slid + new Vector2(RowLayout.NameX, 0f),
+      rowStart + new Vector2(RowLayout.NameX, 0f),
       new Vector2(0f, 0.5f),
       Vector2.One,
       nameColor * alpha,
@@ -56,38 +57,51 @@ public class TrialRow : TextMenu.Item
     float timeRight = rightEdge - RowLayout.MarkGap - RowLayout.MarkWidth;
     if (record == null)
     {
-      DrawWord("new", timeRight, slid.Y, alpha);
+      DrawWord("new", timeRight, rowStart.Y, alpha);
       return;
     }
 
     string best = TimeText.Format(record.BestTicks);
     float width = TimeText.Width(best, TimeText.Hud.At(RowLayout.PbScale));
     Medal medal = Trial.Goals?.MedalFor(record.BestTicks) ?? Medal.None;
+    float medalCenter = timeRight - width - RowLayout.MedalGap;
     if (medal != Medal.None)
-      MedalIcon.Draw(
-        new Vector2(timeRight - width - RowLayout.MedalGap, slid.Y),
-        medal,
-        RowLayout.MedalIconHeight,
-        alpha
-      );
+      MedalIcon.Draw(new Vector2(medalCenter, rowStart.Y), medal, RowLayout.MedalIconHeight, alpha);
     TimeText.Draw(
-      new Vector2(timeRight - width, slid.Y + RowLayout.PbBaseline),
+      new Vector2(timeRight - width, rowStart.Y + RowLayout.PbBaseline),
       best,
       TimeText.Hud.At(RowLayout.PbScale),
       MedalIcon.TextColor(medal) * alpha
     );
+    DrawRank(new Vector2(medalCenter, rowStart.Y + 3f), alpha);
 
     if (record.Submittable && ReplayStore.Exists(Trial.Id))
       return;
     Color mark = Colors.Warning * alpha;
     ActiveFont.DrawOutline(
       RowLayout.Mark,
-      new Vector2(rightEdge, slid.Y + RowLayout.PbBaseline),
+      new Vector2(rightEdge, rowStart.Y + RowLayout.PbBaseline),
       new Vector2(1f, 1f),
       Vector2.One * RowLayout.PbScale,
       mark,
       2f,
       TextOutline.StrokeFor(mark)
+    );
+  }
+
+  private void DrawRank(Vector2 position, float alpha)
+  {
+    if (Standings.For(Trial)?.Rank is not int rank)
+      return;
+    Color color = Color.White * alpha;
+    ActiveFont.DrawOutline(
+      "#" + rank,
+      position,
+      new Vector2(0.5f, 0.5f),
+      Vector2.One * RowLayout.RankScale,
+      color,
+      2f,
+      TextOutline.StrokeFor(color)
     );
   }
 

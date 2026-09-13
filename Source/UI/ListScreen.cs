@@ -25,6 +25,8 @@ public abstract class ListScreen : Oui
 
   private static int DepthOf(Oui other) => (other as ListScreen)?.ScreenDepth ?? 0;
 
+  protected bool IsCurrentScreen => Overworld.Current == this || Overworld.Next == this;
+
   protected abstract TrialsMenu BuildMenu();
 
   protected abstract int InitialSelection(Oui from);
@@ -34,6 +36,8 @@ public abstract class ListScreen : Oui
   protected virtual void RenderPrompts() { }
 
   protected virtual void CancelTransitions() { }
+
+  protected virtual void FetchOnline() { }
 
   protected void SetDim(float value)
   {
@@ -54,6 +58,7 @@ public abstract class ListScreen : Oui
     }
     TrialRecords.EnsureLoaded();
     ReplayStore.Refresh();
+    FetchOnline();
     menu = BuildMenu();
     menu.Selection = InitialSelection(from);
     menu.Focused = false;
@@ -119,7 +124,7 @@ public abstract class ListScreen : Oui
     );
     RenderHeader();
     RenderPrompts();
-    notice.Render(new Vector2(x, NoticeY), NoticeScale, Colors.Warning, totalAlpha);
+    notice.Render(new Vector2(x, NoticeY), NoticeScale, totalAlpha);
     if (ModCheck.OthersLoaded)
       ActiveFont.DrawOutline(
         ModCheck.MenuWarning(),

@@ -11,8 +11,9 @@ public static class RowLayout
   public const float CampaignNameX = 0f;
   public const float PbScale = 0.85f;
   public const float PbBaseline = 30f;
-  public const float MedalGap = 38f;
+  public const float MedalGap = 46f;
   public const float MedalIconHeight = 64f;
+  public const float RankScale = 0.6f;
   public const float SlideDistance = 32f;
   public const float CountGap = 24f;
   public const float CountScale = 0.8f;

@@ -49,6 +49,9 @@ public class ClimbTrialsModuleSettings : EverestModuleSettings
   public string PlayerName { get; set; } = "";
 
   [SettingIgnore]
+  public bool PlayerNameChosen { get; set; }
+
+  [SettingIgnore]
   public string ClientId { get; set; } = "";
 
   [SettingIgnore]

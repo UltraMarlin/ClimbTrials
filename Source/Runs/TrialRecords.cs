@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Celeste.Mod.ClimbTrials.Content;
+using Celeste.Mod.ClimbTrials.Replays;
 
 namespace Celeste.Mod.ClimbTrials.Runs;
 
@@ -95,6 +96,36 @@ public static class TrialRecords
       PreviousMedal = before,
       NewMedal = newMedal,
     };
+  }
+
+  public static int Adopt(IEnumerable<(string TrialId, long Ticks, DateTime AchievedAtUtc)> times)
+  {
+    Dictionary<string, TrialRecord> bests = ClimbTrialsModule.SaveData?.PersonalBests;
+    if (bests == null)
+      return 0;
+
+    int adopted = 0;
+    foreach ((string trialId, long ticks, DateTime achievedAtUtc) in times)
+    {
+      TrialRecord local = bests.GetValueOrDefault(trialId);
+      if (local != null && local.BestTicks <= ticks)
+        continue;
+
+      if (local != null)
+        ReplayStore.Delete(trialId);
+      bests[trialId] = new TrialRecord
+      {
+        BestTicks = ticks,
+        AchievedAtUtc = achievedAtUtc,
+        Submittable = true,
+      };
+      adopted++;
+    }
+
+    if (adopted > 0)
+      Write();
+
+    return adopted;
   }
 
   private static void Write()

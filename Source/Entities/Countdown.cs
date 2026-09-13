@@ -90,14 +90,15 @@ public class Countdown : Entity
     float t = Math.Clamp(beatAge / (beat * 0.6f), 0f, 1f);
     float scale = PeakScale - (PeakScale - RestScale) * Ease.CubeOut(t);
     string text = showingGo ? "GO" : remaining.ToString();
-    ActiveFont.DrawOutline(
+    Color color = showingGo ? GoColor : Color.White;
+    TextOutline.DrawRoundOutline(
       text,
       new Vector2(960f, 324f),
       new Vector2(0.5f, 0.5f),
       Vector2.One * scale,
-      showingGo ? GoColor : Color.White,
+      color,
       4f,
-      TextOutline.StrokeFor(showingGo ? GoColor : Color.White)
+      TextOutline.StrokeFor(color)
     );
   }
 
