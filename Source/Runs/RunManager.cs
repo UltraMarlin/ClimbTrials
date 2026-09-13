@@ -313,6 +313,9 @@ public static class RunManager
     if (Trial != null && level.Tracker.GetEntity<GoalListDisplay>() == null)
       level.Add(new GoalListDisplay());
 
+    if (Trial != null && level.Tracker.GetEntity<LeaderboardDisplay>() == null)
+      level.Add(new LeaderboardDisplay());
+
     if (!Replaying && level.Tracker.GetEntity<GoalIndicator>() == null)
       level.Add(new GoalIndicator());
 

@@ -1,3 +1,5 @@
+using Microsoft.Xna.Framework;
+
 namespace Celeste.Mod.ClimbTrials.Entities;
 
 public static class RunHudLayout
@@ -9,4 +11,21 @@ public static class RunHudLayout
   public const float TimeX = 64f;
   public const float TimeScale = 0.7f;
   public const float IconHeight = 48f;
+
+  public const float DuckX = 380f;
+  public const float GoalListFloorY = 760f;
+  public const float DuckAlpha = 0.15f;
+  public const float DuckTime = 0.2f;
+
+  public const float BoxAlpha = 0.5f;
+  public const float BoxPaddingTop = 14f;
+  public const float BoxPaddingRight = 20f;
+  public const float BoxPaddingBottom = 14f;
+  public const int RowPad = 4;
+
+  public static float DuckTarget(Vector2 screen, float floorY) =>
+    screen.X < DuckX && screen.Y < floorY ? DuckAlpha : 1f;
+
+  public static float GoalListBottom(int rowCount) =>
+    ListY + rowCount * RowHeight + BoxPaddingBottom;
 }

@@ -8,8 +8,8 @@ namespace Celeste.Mod.ClimbTrials.UI;
 
 public abstract class ListScreen : Oui
 {
-  protected const float OnScreenX = 960f;
-  protected const float TitleY = 120f;
+  public const float OnScreenX = 960f;
+  public const float TitleY = 120f;
   private const float StatusY = 1060f;
   private const float NoticeY = 975f;
   private const float NoticeScale = 0.6f;
@@ -20,6 +20,7 @@ public abstract class ListScreen : Oui
   protected readonly TransientText notice = new();
   protected float x = OnScreenX;
   protected float alpha;
+  protected float yOffset;
   private float dim = 1f;
   protected abstract int ScreenDepth { get; }
 
@@ -33,7 +34,7 @@ public abstract class ListScreen : Oui
 
   protected virtual void RenderHeader() { }
 
-  protected virtual void RenderPrompts() { }
+  protected virtual void RenderPrompts(float alpha) { }
 
   protected virtual void CancelTransitions() { }
 
@@ -115,7 +116,7 @@ public abstract class ListScreen : Oui
     float totalAlpha = alpha * dim;
     ActiveFont.DrawOutline(
       Dialog.Clean("climbtrials_trials_title"),
-      new Vector2(x, TitleY),
+      new Vector2(x, TitleY + yOffset),
       new Vector2(0.5f, 0.5f),
       Vector2.One * 1.6f,
       Color.White * totalAlpha,
@@ -123,12 +124,12 @@ public abstract class ListScreen : Oui
       TextOutline.StrokeFor(Color.White * totalAlpha)
     );
     RenderHeader();
-    RenderPrompts();
-    notice.Render(new Vector2(x, NoticeY), NoticeScale, totalAlpha);
+    RenderPrompts(totalAlpha);
+    notice.Render(new Vector2(x, NoticeY + yOffset), NoticeScale, totalAlpha);
     if (ModCheck.OthersLoaded)
       ActiveFont.DrawOutline(
         ModCheck.MenuWarning(),
-        new Vector2(x, StatusY),
+        new Vector2(x, StatusY + yOffset),
         new Vector2(0.5f, 0.5f),
         Vector2.One * 0.45f,
         Color.White * 0.7f * totalAlpha,

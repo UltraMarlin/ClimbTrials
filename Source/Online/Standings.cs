@@ -36,6 +36,15 @@ public sealed class TrialStanding
   public List<BoardRow> Window { get; set; } = [];
 }
 
+public sealed class Board
+{
+  public string TrialId { get; set; }
+  public int Total { get; set; }
+  public int Offset { get; set; }
+  public List<BoardRow> Rows { get; set; } = [];
+  public BoardRow Me { get; set; }
+}
+
 public sealed class CampaignStandings
 {
   public string Name { get; set; }
@@ -57,7 +66,7 @@ public enum StandingsState
 
 public static class Standings
 {
-  private const double FreshSeconds = 30;
+  private const double FreshSeconds = 60;
 
   private sealed class Entry
   {
@@ -68,6 +77,18 @@ public static class Standings
   }
 
   private static readonly Dictionary<string, Entry> entries = [];
+
+  public const int ChunkRows = 150;
+
+  private static readonly Dictionary<
+    (string TrialId, int Chunk),
+    (DateTime FetchedAt, Board Board)
+  > chunks = [];
+
+  private static readonly Dictionary<
+    (string TrialId, int Chunk),
+    List<Action<ServerResult<Board>>>
+  > waiting = [];
 
   private static ClimbTrialsModuleSettings Settings => ClimbTrialsModule.Settings;
 
@@ -109,6 +130,37 @@ public static class Standings
       result
         .Value.Trials.Where(s => s.Ticks != null)
         .Select(s => (s.TrialId, s.Ticks.Value, s.AchievedAt ?? DateTime.UtcNow))
+    );
+  }
+
+  public static void FetchBoard(Trial trial, int chunk, Action<ServerResult<Board>> onDone)
+  {
+    (string, int) key = (trial.Id, chunk);
+    bool hit = chunks.TryGetValue(key, out (DateTime FetchedAt, Board Board) cached);
+    if (hit && (DateTime.UtcNow - cached.FetchedAt).TotalSeconds < FreshSeconds)
+    {
+      onDone(new ServerResult<Board>(cached.Board, ServerError.None, null));
+      return;
+    }
+    if (waiting.TryGetValue(key, out List<Action<ServerResult<Board>>> waiters))
+    {
+      waiters.Add(onDone);
+      return;
+    }
+    waiting[key] = [onDone];
+    ServerClient.GetBoard(
+      trial.Id,
+      chunk * ChunkRows,
+      ChunkRows,
+      result =>
+      {
+        if (result.Ok)
+          chunks[key] = (DateTime.UtcNow, result.Value);
+        List<Action<ServerResult<Board>>> done = waiting[key];
+        waiting.Remove(key);
+        foreach (Action<ServerResult<Board>> callback in done)
+          callback(result);
+      }
     );
   }
 

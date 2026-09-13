@@ -30,6 +30,13 @@ public enum InputDisplayMode
   Off,
 }
 
+public enum LeaderboardMode
+{
+  Normal,
+  Subtle,
+  Off,
+}
+
 public class ClimbTrialsModuleSettings : EverestModuleSettings
 {
   [SettingRange(min: 1, max: 5)]
@@ -37,7 +44,7 @@ public class ClimbTrialsModuleSettings : EverestModuleSettings
   public CountdownMode CountdownMode { get; set; } = CountdownMode.Fast;
   public bool ResetOnDeath { get; set; } = false;
   public bool ShowTimer { get; set; } = true;
-  public bool ShowLeaderboard { get; set; } = true;
+  public LeaderboardMode Leaderboard { get; set; } = LeaderboardMode.Normal;
   public bool PbAutoSubmit { get; set; } = true;
   public GoalIndicatorMode GoalIndicator { get; set; } = GoalIndicatorMode.Subtle;
   public GoalIndicatorTargets GoalIndicatorTargets { get; set; } =

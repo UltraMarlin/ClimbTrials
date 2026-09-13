@@ -36,7 +36,10 @@ public static class ServerClient
   private const string UrlRefused = "server URL refused";
 
   private static readonly HttpClient http = Build();
+
+  private const int PassiveIconDelayMs = 300;
   private static int pending;
+  private static bool iconShown;
   private static readonly JsonSerializerOptions json = new() { PropertyNameCaseInsensitive = true };
 
   private static ClimbTrialsModuleSettings Settings => ClimbTrialsModule.Settings;
@@ -74,7 +77,21 @@ public static class ServerClient
   public static void GetStandings(
     string campaignId,
     Action<ServerResult<CampaignStandings>> onDone
-  ) => Send($"/v1/campaigns/{campaignId}/standings", HttpMethod.Get, null, onDone);
+  ) => Send($"/v1/campaigns/{campaignId}/standings", HttpMethod.Get, null, onDone, passive: true);
+
+  public static void GetBoard(
+    string trialId,
+    int offset,
+    int limit,
+    Action<ServerResult<Board>> onDone
+  ) =>
+    Send(
+      $"/v1/trials/{trialId}/board?offset={offset}&limit={limit}",
+      HttpMethod.Get,
+      null,
+      onDone,
+      passive: true
+    );
 
   public static void Submit(
     string trialId,
@@ -97,7 +114,8 @@ public static class ServerClient
     string path,
     HttpMethod method,
     HttpContent body,
-    Action<ServerResult<T>> onDone
+    Action<ServerResult<T>> onDone,
+    bool passive = false
   )
   {
     if (!TryBaseUri(out Uri baseUri))
@@ -109,19 +127,48 @@ public static class ServerClient
     string clientId = Identity.ClientId;
     Uri url = new(baseUri, path);
 
-    if (pending++ == 0)
-      SaveLoadIcon.Show(Engine.Scene);
+    BeginRequest(passive);
 
     Task.Run(async () =>
     {
       ServerResult<T> result = await Request<T>(url, method, body, clientId);
       await MainThreadHelper.Schedule(() =>
       {
-        if (--pending == 0)
-          SaveLoadIcon.Hide();
+        EndRequest();
         Deliver(path, result, onDone);
       });
     });
+  }
+
+  private static void BeginRequest(bool passive)
+  {
+    pending++;
+    if (!passive)
+    {
+      ShowIconWhilePending();
+      return;
+    }
+    Task.Run(async () =>
+    {
+      await Task.Delay(PassiveIconDelayMs);
+      await MainThreadHelper.Schedule(ShowIconWhilePending);
+    });
+  }
+
+  private static void ShowIconWhilePending()
+  {
+    if (pending == 0 || iconShown)
+      return;
+    iconShown = true;
+    SaveLoadIcon.Show(Engine.Scene);
+  }
+
+  private static void EndRequest()
+  {
+    if (--pending > 0 || !iconShown)
+      return;
+    iconShown = false;
+    SaveLoadIcon.Hide();
   }
 
   private static async Task<ServerResult<T>> Request<T>(

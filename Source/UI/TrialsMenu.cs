@@ -8,12 +8,28 @@ public class TrialsMenu : TextMenu
 {
   public const float ListMinWidth = 1200f;
   public const float ListBottom = 960f;
-  public static readonly Color Highlight = Calc.HexToColor("6ded87");
+
+  public static readonly Color Highlight = HighlightColorA;
 
   public float ListTop = 240f;
 
   public Action OnSwitchLeft;
   public Action OnSwitchRight;
+
+  private float yOffset;
+
+  public float YOffset
+  {
+    get => yOffset;
+    set
+    {
+      Position.Y += value - yOffset;
+      yOffset = value;
+    }
+  }
+
+  private float ViewTop => ListTop + yOffset;
+  private float ViewBottom => ListBottom + yOffset;
 
   public TrialsMenu()
   {
@@ -28,12 +44,12 @@ public class TrialsMenu : TextMenu
   {
     get
     {
-      float viewport = ListBottom - ListTop;
+      float viewport = ViewBottom - ViewTop;
       float height = SettledHeight();
       if (height <= viewport)
-        return ListTop;
-      float centered = ListTop + viewport / 2f - SettledOffsetOf(Current);
-      return Calc.Clamp(centered, ListBottom - height, ListTop);
+        return ViewTop;
+      float centered = ViewTop + viewport / 2f - SettledOffsetOf(Current);
+      return Calc.Clamp(centered, ViewBottom - height, ViewTop);
     }
   }
 
@@ -111,7 +127,7 @@ public class TrialsMenu : TextMenu
 
   private float EdgeFade(float y, float height)
   {
-    float inside = Math.Min(y - ListTop, ListBottom - y);
+    float inside = Math.Min(y - ViewTop, ViewBottom - y);
     return Calc.Clamp(inside / (height * 0.5f), 0f, 1f);
   }
 }

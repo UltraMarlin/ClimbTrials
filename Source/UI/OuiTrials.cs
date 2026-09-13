@@ -15,8 +15,8 @@ public class OuiTrials : ListScreen
   public const Overworld.StartMode ReturnStartMode = (Overworld.StartMode)5602393;
   public static Trial ReturnTrial;
 
-  private const float SwitchDuration = 0.3f;
-  private const float SwitchDistance = 640f;
+  public const float SwitchDuration = 0.3f;
+  public const float SwitchDistance = 640f;
   private const float NameY = TitleY + 70f;
   private const float NameScale = 0.8f;
   private const float ArrowGap = 50f;
@@ -34,6 +34,7 @@ public class OuiTrials : ListScreen
   private TrialsMenu outgoing;
   private Coroutine switching;
   private TrialModeMenu open;
+  private LeaderboardView view;
   private readonly List<TrialRow> rows = [];
 
   protected override int ScreenDepth => 2;
@@ -112,18 +113,30 @@ public class OuiTrials : ListScreen
     Add(switching);
   }
 
-  private IEnumerator SwitchRoutine(int direction)
+  public static IEnumerator SwitchSlide(int direction, Action<float, float, float> place)
   {
     for (float t = 0f; t < SwitchDuration; t += Engine.DeltaTime)
     {
       float ease = Ease.CubeOut(t / SwitchDuration);
-      outgoing.X = OnScreenX - direction * SwitchDistance * ease;
-      outgoing.Alpha = 1f - ease;
-      menu.X = OnScreenX + direction * SwitchDistance * (1f - ease);
-      menu.Alpha = ease;
+      float outX = OnScreenX - direction * SwitchDistance * ease;
+      float inX = OnScreenX + direction * SwitchDistance * (1f - ease);
+      place(outX, inX, ease);
       yield return null;
     }
+  }
 
+  private IEnumerator SwitchRoutine(int direction)
+  {
+    yield return SwitchSlide(
+      direction,
+      (outX, inX, ease) =>
+      {
+        outgoing.X = outX;
+        outgoing.Alpha = 1f - ease;
+        menu.X = inX;
+        menu.Alpha = ease;
+      }
+    );
     switching = null;
     FinishSwitch();
   }
@@ -142,7 +155,15 @@ public class OuiTrials : ListScreen
     switching = null;
   }
 
-  protected override void CancelTransitions() => FinishSwitch();
+  protected override void CancelTransitions()
+  {
+    FinishSwitch();
+    if (view == null)
+      return;
+    view.Discard();
+    view = null;
+    SetBoardSlide(0f);
+  }
 
   protected override void FetchOnline()
   {
@@ -165,6 +186,7 @@ public class OuiTrials : ListScreen
       watch: () => CloseThen(() => WatchPb(trial)),
       race: () => CloseThen(() => Race(trial)),
       submit: () => CloseThen(() => SubmitPb(trial)),
+      board: () => CloseThen(() => OpenBoard(trial)),
       closed: OnMenuClosed
     );
     Scene.Add(open);
@@ -190,6 +212,48 @@ public class OuiTrials : ListScreen
     base.Update();
     if (open != null)
       SetDim(1f - (1f - ListDim) * open.Fade);
+    if (
+      BoardPromptShown
+      && outgoing == null
+      && menu.Focused
+      && Input.MenuJournal.Pressed
+      && menu.Current is TrialRow row
+    )
+    {
+      Audio.Play(SFX.ui_main_button_select);
+      OpenBoard(row.Trial);
+    }
+  }
+
+  private bool BoardPromptShown => menu != null && open == null && view == null;
+
+  private void OpenBoard(Trial trial)
+  {
+    menu.Focused = false;
+    Focused = false;
+    view = new LeaderboardView(trial, SetBoardSlide, OnBoardClosed);
+    Scene.Add(view);
+  }
+
+  private void SetBoardSlide(float progress)
+  {
+    yOffset = progress * LeaderboardView.SlideDistance;
+    menu.YOffset = yOffset;
+  }
+
+  private void OnBoardClosed(Trial shown)
+  {
+    view = null;
+    int index = rows.FindIndex(r => r.Trial == shown);
+    if (index >= 0 && menu.Current != rows[index])
+    {
+      menu.Current?.OnLeave?.Invoke();
+      menu.Selection = menu.Items.IndexOf(rows[index]);
+      menu.Current?.OnEnter?.Invoke();
+    }
+    Standings.EnsureFresh(Campaign);
+    menu.Focused = true;
+    Focused = true;
   }
 
   private void Start(Trial trial)
@@ -259,33 +323,50 @@ public class OuiTrials : ListScreen
   protected override void RenderHeader()
   {
     if (menu != null)
-      DrawCampaignHeader(Campaign, menu.X, menu.Alpha);
+      DrawCampaignHeader(Campaign, menu.X, yOffset, menu.Alpha, menu.Focused);
     if (outgoing != null)
-      DrawCampaignHeader(outgoingCampaign, outgoing.X, outgoing.Alpha);
+      DrawCampaignHeader(outgoingCampaign, outgoing.X, yOffset, outgoing.Alpha, false);
   }
 
-  private static void DrawCampaignHeader(Campaign campaign, float atX, float alpha)
+  protected override void RenderPrompts(float alpha)
+  {
+    if (menu == null || open != null)
+      return;
+    float shown = alpha * (1f - yOffset / LeaderboardView.SlideDistance);
+    ButtonRow.DrawCenter(Dialog.Clean("climbtrials_trials_leaderboard"), Input.MenuJournal, shown);
+  }
+
+  private static void DrawCampaignHeader(
+    Campaign campaign,
+    float atX,
+    float yOffset,
+    float alpha,
+    bool active
+  )
   {
     Color dim = RowLayout.Dim * alpha;
+    float nameY = NameY + yOffset;
+    float totalY = TotalY + yOffset;
     ActiveFont.Draw(
       campaign.Name,
-      new Vector2(atX, NameY),
+      new Vector2(atX, nameY),
       new Vector2(0.5f, 0.5f),
       Vector2.One * NameScale,
       dim
     );
     if (Campaigns.All.Count > 1)
     {
+      Color arrows = active ? TrialsMenu.Highlight * alpha : dim;
       MTexture arrow = GFX.Gui["dotarrow_outline"];
       float half = ActiveFont.Measure(campaign.Name).X * NameScale / 2f + ArrowGap;
-      arrow.DrawCentered(new Vector2(atX + half, NameY), dim);
-      arrow.DrawCentered(new Vector2(atX - half, NameY), dim, new Vector2(-1f, 1f));
+      arrow.DrawCentered(new Vector2(atX + half, nameY), arrows);
+      arrow.DrawCentered(new Vector2(atX - half, nameY), arrows, new Vector2(-1f, 1f));
     }
     CampaignRecord record = TrialRecords.Get(campaign);
     if (Standings.State(campaign) == StandingsState.Offline)
       ActiveFont.Draw(
         Dialog.Clean("climbtrials_offline"),
-        new Vector2(atX, record.TotalTicks == null ? TotalY : OfflineY),
+        new Vector2(atX, record.TotalTicks == null ? totalY : OfflineY + yOffset),
         new Vector2(0.5f, 0.5f),
         Vector2.One * OfflineScale,
         dim
@@ -300,12 +381,12 @@ public class OuiTrials : ListScreen
     float left = atX - (labelWidth + TotalLabelGap + timeWidth) / 2f;
     ActiveFont.Draw(
       label,
-      new Vector2(left, TotalY),
+      new Vector2(left, totalY),
       new Vector2(0f, 0.5f),
       Vector2.One * TotalScale,
       dim
     );
-    float baseline = TotalY + TimeText.Height(TimeText.Hud.At(TotalScale)) / 2f;
+    float baseline = totalY + TimeText.Height(TimeText.Hud.At(TotalScale)) / 2f;
     TimeText.Draw(
       new Vector2(left + labelWidth + TotalLabelGap, baseline),
       text,

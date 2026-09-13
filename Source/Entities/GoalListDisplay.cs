@@ -15,18 +15,7 @@ public class GoalListDisplay : Entity
   private const float ReachedAlpha = 0.2f;
   private static readonly TimeStyle TimeStyle = TimeText.Hud.At(RunHudLayout.TimeScale);
 
-  private const float DuckX = 380f;
-  private const float DuckFloorY = 760f;
-  private const float DuckAlpha = 0.15f;
-  private const float DuckTime = 0.2f;
-
-  private const float ListBoxAlpha = 0.5f;
   private readonly Color boxColor = Colors.ForChapter(RunManager.Run.Area).Dark;
-  private const float BoxPaddingTop = 14f;
-  private const float BoxPaddingRight = 20f;
-  private const float BoxPaddingBottom = 14f;
-
-  private const int RowPad = 4;
 
   private Trial cachedTrial;
   private long cachedBest;
@@ -76,14 +65,13 @@ public class GoalListDisplay : Entity
     base.Update();
     Level level = SceneAs<Level>();
     Player player = level.Tracker.GetEntity<Player>();
-    bool inTheWay = false;
+    float target = 1f;
     if (player != null)
     {
       Vector2 screen = level.WorldToScreen(player.Center);
-      inTheWay = screen.X < DuckX && screen.Y < DuckFloorY;
+      target = RunHudLayout.DuckTarget(screen, RunHudLayout.GoalListFloorY);
     }
-    float target = inTheWay ? DuckAlpha : 1f;
-    duck = Calc.Approach(duck, target, Engine.RawDeltaTime / DuckTime);
+    duck = Calc.Approach(duck, target, Engine.RawDeltaTime / RunHudLayout.DuckTime);
     foreach (FadeBuffer layer in layers)
       layer.Visible = Shown;
 
@@ -105,18 +93,21 @@ public class GoalListDisplay : Entity
     foreach (FadeBuffer layer in layers)
       Remove(layer);
     layers.Clear();
-    int width = (int)Math.Ceiling(widest + BoxPaddingRight);
+    int width = (int)Math.Ceiling(widest + RunHudLayout.BoxPaddingRight);
     for (int i = 0; i < rows.Count; i++)
     {
       int index = i;
       FadeBuffer layer = new(
         "climbtrials-goal-row",
         width,
-        (int)RunHudLayout.RowHeight + 2 * RowPad,
+        (int)RunHudLayout.RowHeight + 2 * RunHudLayout.RowPad,
         () => DrawRow(index)
       )
       {
-        Origin = new Vector2(0f, RunHudLayout.ListY + index * RunHudLayout.RowHeight - RowPad),
+        Origin = new Vector2(
+          0f,
+          RunHudLayout.ListY + index * RunHudLayout.RowHeight - RunHudLayout.RowPad
+        ),
       };
       Add(layer);
       layers.Add(layer);
@@ -149,7 +140,9 @@ public class GoalListDisplay : Entity
     );
   }
 
-  private static bool Shown =>
+  public static int RowCount(Trial trial, long best) => Rows(trial, best).Count;
+
+  public static bool Shown =>
     RunManager.Trial?.Goals != null
     && RunManager.Run != null
     && (!RunManager.Replaying || RunManager.Replay.IsOwn)
@@ -162,10 +155,10 @@ public class GoalListDisplay : Entity
     float rowHeight = RunHudLayout.RowHeight;
     Draw.Rect(
       0f,
-      RunHudLayout.ListY - BoxPaddingTop,
-      widest + BoxPaddingRight,
-      rows.Count * rowHeight + BoxPaddingTop + BoxPaddingBottom,
-      boxColor * (ListBoxAlpha * duck)
+      RunHudLayout.ListY - RunHudLayout.BoxPaddingTop,
+      widest + RunHudLayout.BoxPaddingRight,
+      rows.Count * rowHeight + RunHudLayout.BoxPaddingTop + RunHudLayout.BoxPaddingBottom,
+      boxColor * (RunHudLayout.BoxAlpha * duck)
     );
     for (int i = 0; i < layers.Count; i++)
       layers[i].Alpha = (rows[i].Reached ? ReachedAlpha : 1f) * duck;

@@ -25,10 +25,8 @@ public class ClimbTrialsModule : EverestModule
   {
     Instance = this;
 #if DEBUG
-    // debug builds use verbose logging
     Logger.SetLogLevel(nameof(ClimbTrialsModule), LogLevel.Verbose);
 #else
-    // release builds use info logging to reduce spam in log files
     Logger.SetLogLevel(nameof(ClimbTrialsModule), LogLevel.Info);
 #endif
   }

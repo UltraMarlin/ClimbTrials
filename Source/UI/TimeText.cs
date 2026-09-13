@@ -18,6 +18,7 @@ public readonly record struct TimeStyle(
 
 public static class TimeText
 {
+  public static readonly TimeStyle SmallHud = new(0.4f, 1f, 1.35f, 0.85f);
   public static readonly TimeStyle Hud = new(1f, 4f, 2f, 0.7f);
   public static readonly TimeStyle Large = new(2.8f, 0f, 3.5f, 0.7f, RoundStroke: true);
 

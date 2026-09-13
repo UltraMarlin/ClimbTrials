@@ -30,6 +30,7 @@ public class TrialModeMenu : FadingMenu
     Action watch,
     Action race,
     Action submit,
+    Action board,
     Action closed
   )
   {
@@ -39,12 +40,12 @@ public class TrialModeMenu : FadingMenu
     Campaign campaign = Campaigns.CampaignOf(trial);
     TrialRecord record = TrialRecords.Get(trial.Id);
     TrialStanding standing = Standings.For(trial);
-    StandingsState board = Standings.State(campaign);
+    StandingsState state = Standings.State(campaign);
 
     Add(new TitleItem(trial));
     if (record != null)
       Add(new PbItem(record, standing));
-    if (board == StandingsState.Offline)
+    if (state == StandingsState.Offline)
       Add(new NoteItem(Dialog.Clean("climbtrials_offline"), RowLayout.Dim));
     if (record != null)
       Add(new DateItem(record));
@@ -55,8 +56,9 @@ public class TrialModeMenu : FadingMenu
     {
       Add(new Button(Dialog.Clean("climbtrials_trials_watch_pb")).Pressed(watch));
       Add(new Button(Dialog.Clean("climbtrials_trials_race_pb")).Pressed(race));
-      AddSubmitRow(trial, record, standing, board, submit);
+      AddSubmitRow(trial, record, standing, state, submit);
     }
+    Add(new Button(Dialog.Clean("climbtrials_trials_leaderboard")).Pressed(board));
 
     OnCancel = Back;
     OnESC = Back;
@@ -67,12 +69,12 @@ public class TrialModeMenu : FadingMenu
     Trial trial,
     TrialRecord record,
     TrialStanding standing,
-    StandingsState board,
+    StandingsState state,
     Action submit
   )
   {
     Upload upload = Uploader.For(trial.Id);
-    bool connected = Identity.Registered && board != StandingsState.Offline;
+    bool connected = Identity.Registered && state != StandingsState.Offline;
     bool submittable = record?.Submittable == true;
     bool submitting = upload.State == UploadState.Submitting;
     bool faster = standing?.Ticks is not long serverTicks || serverTicks > record?.BestTicks;
