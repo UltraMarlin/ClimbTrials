@@ -34,6 +34,7 @@ public static class ServerClient
   private const string VersionHeader = "X-ClimbTrials-Version";
   private const string ClientIdHeader = "X-Client-Id";
   private const string UrlRefused = "server URL refused";
+  private const string OfflineModeMessage = "offline mode";
 
   private static readonly HttpClient http = Build();
 
@@ -118,6 +119,11 @@ public static class ServerClient
     bool passive = false
   )
   {
+    if (Settings.OfflineMode)
+    {
+      Deliver(path, new ServerResult<T>(default, ServerError.Offline, OfflineModeMessage), onDone);
+      return;
+    }
     if (!TryBaseUri(out Uri baseUri))
     {
       Deliver(path, new ServerResult<T>(default, ServerError.Offline, UrlRefused), onDone);
@@ -135,6 +141,8 @@ public static class ServerClient
       await MainThreadHelper.Schedule(() =>
       {
         EndRequest();
+        if (!result.Ok)
+          Logger.Log(LogLevel.Info, LogTag, $"{path}: {result.Error}, {result.Message}");
         Deliver(path, result, onDone);
       });
     });
@@ -227,8 +235,6 @@ public static class ServerClient
     Action<ServerResult<T>> onDone
   )
   {
-    if (!result.Ok)
-      Logger.Log(LogLevel.Info, LogTag, $"{path}: {result.Error}, {result.Message}");
     if (result.Error == ServerError.UnknownClient)
       Identity.Forget();
     try

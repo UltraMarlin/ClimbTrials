@@ -18,13 +18,13 @@ public class LeaderboardDisplay : Entity
   private const float SubtleTextAlpha = 0.5f;
   private const float RowHeightPerScale = 64f;
   private const float GapBelowGoals = 12f;
-  private const float DuckMargin = 80f;
   private const float RankX = 16f;
   private const float NameX = 76f;
   private const float TimeGap = 28f;
   private const string Ellipsis = "...";
 
   private readonly Color boxColor = Colors.ForChapter(RunManager.Run.Area).Dark;
+  private static readonly Color myTimeColor = Calc.HexToColor("fad768");
   private readonly List<FadeBuffer> layers = [];
   private List<Row> rows = [];
   private TrialStanding cachedStanding;
@@ -48,7 +48,7 @@ public class LeaderboardDisplay : Entity
     Tag = Tags.HUD | Tags.Persistent | Tags.TransitionUpdate;
   }
 
-  private static LeaderboardMode Mode => ClimbTrialsModule.Settings.Leaderboard;
+  private static LeaderboardMode Mode => ClimbTrialsModule.Settings.ShowLeaderboard;
 
   private static bool Shown =>
     Mode != LeaderboardMode.Off
@@ -73,7 +73,7 @@ public class LeaderboardDisplay : Entity
     if (player != null)
     {
       Vector2 screen = level.WorldToScreen(player.Center);
-      target = RunHudLayout.DuckTarget(screen, BoxBottom + DuckMargin);
+      target = RunHudLayout.DuckTarget(screen, BoxBottom + RunHudLayout.DuckMargin);
     }
     duck = Calc.Approach(duck, target, Engine.RawDeltaTime / RunHudLayout.DuckTime);
     foreach (FadeBuffer layer in layers)
@@ -128,7 +128,14 @@ public class LeaderboardDisplay : Entity
   private static List<Row> RowsOf(TrialStanding standing, StandingsState state)
   {
     if (standing == null || state == StandingsState.Offline)
-      return [Message("climbtrials_board_unavailable")];
+      return
+      [
+        Message(
+          ClimbTrialsModule.Settings.OfflineMode
+            ? "climbtrials_offline_mode"
+            : "climbtrials_board_unavailable"
+        ),
+      ];
     if (standing.Total == 0)
       return [Message("climbtrials_board_no_times")];
     List<Row> rows = [];
@@ -136,7 +143,7 @@ public class LeaderboardDisplay : Entity
     {
       if (rows.Count == 3 && row.Rank > 4)
         rows.Add(new Row(Ellipsis, "", "", Color.White));
-      Color color = row.Me ? TrialsMenu.Highlight : Color.White;
+      Color color = row.Me ? myTimeColor : Color.White;
       rows.Add(new Row($"#{row.Rank}", row.Name, TimeText.Format(row.Ticks), color));
     }
     return rows;

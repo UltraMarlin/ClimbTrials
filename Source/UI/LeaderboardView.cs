@@ -49,6 +49,8 @@ public class LeaderboardView : Entity
 
   private bool Switchable => campaign.Trials.Count > 1;
 
+  private static bool RetryAllowed => !ClimbTrialsModule.Settings.OfflineMode;
+
   public LeaderboardView(Trial trial, Action<float> slid, Action<Trial> closed)
   {
     this.slid = slid;
@@ -323,7 +325,7 @@ public class LeaderboardView : Entity
       return;
     }
 
-    if (current.State == BoardState.Offline && Input.MenuConfirm.Pressed)
+    if (current.State == BoardState.Offline && RetryAllowed && Input.MenuConfirm.Pressed)
     {
       Audio.Play(SFX.ui_main_button_select);
       Fetch(FirstEntry);
@@ -335,8 +337,8 @@ public class LeaderboardView : Entity
     DrawUnderMenu(current);
     if (outgoing != null)
       DrawUnderMenu(outgoing);
-    if (!sliding && outgoing == null && current.State == BoardState.Offline)
-      ButtonRow.DrawRight(1f, [(Dialog.Clean("climbtrials_board_retry"), Input.MenuConfirm)]);
+    if (!sliding && outgoing == null && current.State == BoardState.Offline && RetryAllowed)
+      ButtonRow.DrawCenter(Dialog.Clean("climbtrials_board_retry"), Input.MenuConfirm, 1f);
   }
 
   private void DrawUnderMenu(Shown shown)

@@ -21,6 +21,7 @@ public class NameRow : TextMenu.Item
       RegistrationState.Registered => Dialog
         .Get("climbtrials_name_row")
         .Replace("{0}", Settings.PlayerName),
+      _ when Settings.OfflineMode => Dialog.Clean("climbtrials_offline_mode"),
       _ => Dialog.Clean("climbtrials_not_connected"),
     };
 
@@ -32,11 +33,12 @@ public class NameRow : TextMenu.Item
   {
     float alpha = Container.Alpha;
     string text = Text;
-    bool connected =
-      Identity.Registration is RegistrationState.Registered or RegistrationState.Registering;
+    bool live =
+      !Settings.OfflineMode
+      && Identity.Registration is RegistrationState.Registered or RegistrationState.Registering;
     Color color =
       highlighted ? Container.HighlightColor
-      : connected ? Color.White
+      : live ? Color.White
       : RowLayout.Dim;
     Vector2 at = position + new Vector2(RowLayout.CampaignNameX, 0f);
     ActiveFont.DrawOutline(

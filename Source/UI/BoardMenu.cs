@@ -1,6 +1,7 @@
 using System;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Online;
+using Celeste.Mod.ClimbTrials.Runs;
 using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -127,7 +128,8 @@ public class BoardMenu : TextMenu
     ActiveFont.DrawOutline(row.Name, nameAt, justify, scale, color, 2f, stroke);
 
     string time = TimeText.Format(row.Ticks);
-    Medal medal = trial.Goals?.MedalFor(row.Ticks) ?? Medal.None;
+    long viewerBest = TrialRecords.Get(trial.Id)?.BestTicks ?? long.MaxValue;
+    Medal medal = trial.Goals?.VisibleMedalFor(row.Ticks, viewerBest) ?? Medal.None;
     float timeWidth = TimeText.Width(time, Style);
     Vector2 baseline = new(left.X + width - timeWidth, left.Y + TimeText.Height(Style) / 2f);
     TimeText.Draw(baseline, time, Style, MedalIcon.TextColor(medal) * alpha);

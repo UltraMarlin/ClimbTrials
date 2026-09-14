@@ -30,7 +30,8 @@ public class FinishSequence : Entity
   private const float MedalSpacing = 110f;
   private const string BronzeMedalSound = "event:/game/07_summit/gem_unlock_1";
   private const string SilverMedalSound = "event:/game/07_summit/gem_unlock_3";
-  private const string GoldMedalSound = "event:/game/07_summit/gem_unlock_5";
+  private const string GoldMedalSound = "event:/game/07_summit/gem_unlock_4";
+  private const string DiamondMedalSound = "event:/game/07_summit/gem_unlock_5";
   private const string MasterMedalSound = "event:/game/07_summit/gem_unlock_6";
   private const string PbSound = "event:/ui/postgame/strawberry_total";
 
@@ -298,6 +299,7 @@ public class FinishSequence : Entity
       Medal.Bronze => BronzeMedalSound,
       Medal.Silver => SilverMedalSound,
       Medal.Gold => GoldMedalSound,
+      Medal.Diamond => DiamondMedalSound,
       Medal.Grandmaster => MasterMedalSound,
       _ => PbSound,
     };

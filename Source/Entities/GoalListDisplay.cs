@@ -19,6 +19,7 @@ public class GoalListDisplay : Entity
 
   private Trial cachedTrial;
   private long cachedBest;
+  private GoalTimesDisplayMode cachedMode;
   private List<Row> rows = [];
   private readonly List<FadeBuffer> layers = [];
   private float widest;
@@ -39,26 +40,36 @@ public class GoalListDisplay : Entity
     Tag = Tags.HUD | Tags.Persistent | Tags.TransitionUpdate;
   }
 
-  private static List<Row> Rows(Trial trial, long best)
+  private static GoalTimesDisplayMode Mode => ClimbTrialsModule.Settings.ShowGoalTimes;
+
+  private static List<Row> Rows(Trial trial, long best, GoalTimesDisplayMode mode)
   {
     GoalTimes goals = trial.Goals;
+    bool hasPb = best != long.MaxValue;
+    if (mode == GoalTimesDisplayMode.Off)
+      return [];
+    if (mode == GoalTimesDisplayMode.PbOnly)
+      return hasPb ? [Pb(best, Medal.None)] : [];
     List<Row> rows =
     [
       Goal(Medal.Bronze, goals.BronzeTicks, best),
       Goal(Medal.Silver, goals.SilverTicks, best),
       Goal(Medal.Gold, goals.GoldTicks, best),
     ];
-    if (best != long.MaxValue)
+    if (hasPb)
     {
       if (best <= goals.GoldTicks)
-        rows.Add(Goal(Medal.Grandmaster, goals.GrandmasterTicks, best));
-      rows.Add(new Row(Medal.None, best, TimeText.Format(best), true, goals.MedalFor(best), false));
+        rows.Add(Goal(Medal.Diamond, goals.DiamondTicks, best));
+      rows.Add(Pb(best, goals.MedalFor(best)));
     }
     return rows.OrderBy(r => r.Ticks).ThenBy(r => r.IsPb).ToList();
   }
 
   private static Row Goal(Medal medal, long ticks, long best) =>
     new(medal, ticks, TimeText.Format(ticks), false, medal, best <= ticks);
+
+  private static Row Pb(long best, Medal textMedal) =>
+    new(Medal.None, best, TimeText.Format(best), true, textMedal, false);
 
   public override void Update()
   {
@@ -69,7 +80,8 @@ public class GoalListDisplay : Entity
     if (player != null)
     {
       Vector2 screen = level.WorldToScreen(player.Center);
-      target = RunHudLayout.DuckTarget(screen, RunHudLayout.GoalListFloorY);
+      float floorY = RunHudLayout.GoalListBottom(rows.Count) + RunHudLayout.DuckMargin;
+      target = RunHudLayout.DuckTarget(screen, floorY);
     }
     duck = Calc.Approach(duck, target, Engine.RawDeltaTime / RunHudLayout.DuckTime);
     foreach (FadeBuffer layer in layers)
@@ -79,11 +91,13 @@ public class GoalListDisplay : Entity
     if (trial?.Goals == null)
       return;
     long best = TrialRecords.Get(trial.Id)?.BestTicks ?? long.MaxValue;
-    if (trial == cachedTrial && best == cachedBest)
+    GoalTimesDisplayMode mode = Mode;
+    if (trial == cachedTrial && best == cachedBest && mode == cachedMode)
       return;
     cachedTrial = trial;
     cachedBest = best;
-    rows = Rows(trial, best);
+    cachedMode = mode;
+    rows = Rows(trial, best, mode);
     widest = WidestRow(rows);
     RebuildLayers();
   }
@@ -140,13 +154,13 @@ public class GoalListDisplay : Entity
     );
   }
 
-  public static int RowCount(Trial trial, long best) => Rows(trial, best).Count;
+  public static int RowCount(Trial trial, long best) => Rows(trial, best, Mode).Count;
 
   public static bool Shown =>
-    RunManager.Trial?.Goals != null
+    Mode != GoalTimesDisplayMode.Off
+    && RunManager.Trial?.Goals != null
     && RunManager.Run != null
-    && (!RunManager.Replaying || RunManager.Replay.IsOwn)
-    && RunTimerDisplay.ShouldShow;
+    && (!RunManager.Replaying || RunManager.Replay.IsOwn);
 
   public override void Render()
   {

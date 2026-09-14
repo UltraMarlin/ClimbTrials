@@ -37,6 +37,13 @@ public enum LeaderboardMode
   Off,
 }
 
+public enum GoalTimesDisplayMode
+{
+  Off,
+  PbOnly,
+  All,
+}
+
 public class ClimbTrialsModuleSettings : EverestModuleSettings
 {
   [SettingRange(min: 1, max: 5)]
@@ -44,12 +51,26 @@ public class ClimbTrialsModuleSettings : EverestModuleSettings
   public CountdownMode CountdownMode { get; set; } = CountdownMode.Fast;
   public bool ResetOnDeath { get; set; } = false;
   public bool ShowTimer { get; set; } = true;
-  public LeaderboardMode Leaderboard { get; set; } = LeaderboardMode.Normal;
+
+  [SettingSubText("modoptions_climbtrialsmodule_pbautosubmit_desc")]
   public bool PbAutoSubmit { get; set; } = true;
+
+  [SettingSubText("modoptions_climbtrialsmodule_goalindicator_desc")]
   public GoalIndicatorMode GoalIndicator { get; set; } = GoalIndicatorMode.Subtle;
   public GoalIndicatorTargets GoalIndicatorTargets { get; set; } =
     GoalIndicatorTargets.EachCondition;
+
+  [SettingSubText("modoptions_climbtrialsmodule_showgoaltimes_desc")]
+  public GoalTimesDisplayMode ShowGoalTimes { get; set; } = GoalTimesDisplayMode.All;
+
+  [SettingSubText("modoptions_climbtrialsmodule_showleaderboard_desc")]
+  public LeaderboardMode ShowLeaderboard { get; set; } = LeaderboardMode.Normal;
+
+  [SettingSubText("modoptions_climbtrialsmodule_replayinputdisplay_desc")]
   public InputDisplayMode ReplayInputDisplay { get; set; } = InputDisplayMode.Normal;
+
+  [SettingSubText("modoptions_climbtrialsmodule_offlinemode_desc")]
+  public bool OfflineMode { get; set; } = false;
 
   [SettingIgnore]
   [SettingMaxLength(20)]

@@ -74,6 +74,11 @@ public class OuiCampaigns : ListScreen
 
   private void OnNameRow()
   {
+    if (Settings.OfflineMode)
+    {
+      Audio.Play("event:/ui/main/button_invalid");
+      return;
+    }
     if (!Identity.Registered)
     {
       Audio.Play("event:/ui/main/button_select");

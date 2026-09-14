@@ -8,6 +8,7 @@ public enum Medal
   Bronze,
   Silver,
   Gold,
+  Diamond,
   Grandmaster,
 }
 
@@ -16,12 +17,14 @@ public sealed class GoalTimes
   public long BronzeTicks { get; init; }
   public long SilverTicks { get; init; }
   public long GoldTicks { get; init; }
+  public long DiamondTicks { get; init; }
   public long GrandmasterTicks { get; init; }
 
   public static GoalTimes FromSeconds(
     double bronze,
     double silver,
     double gold,
+    double diamond,
     double grandmaster
   ) =>
     new()
@@ -29,6 +32,7 @@ public sealed class GoalTimes
       BronzeTicks = Ticks(bronze),
       SilverTicks = Ticks(silver),
       GoldTicks = Ticks(gold),
+      DiamondTicks = Ticks(diamond),
       GrandmasterTicks = Ticks(grandmaster),
     };
 
@@ -38,6 +42,8 @@ public sealed class GoalTimes
   {
     if (ticks <= GrandmasterTicks)
       return Medal.Grandmaster;
+    if (ticks <= DiamondTicks)
+      return Medal.Diamond;
     if (ticks <= GoldTicks)
       return Medal.Gold;
     if (ticks <= SilverTicks)
@@ -45,5 +51,11 @@ public sealed class GoalTimes
     if (ticks <= BronzeTicks)
       return Medal.Bronze;
     return Medal.None;
+  }
+
+  public Medal VisibleMedalFor(long ticks, long viewerBest)
+  {
+    Medal medal = MedalFor(ticks);
+    return medal == Medal.Grandmaster && viewerBest > GrandmasterTicks ? Medal.Diamond : medal;
   }
 }

@@ -23,7 +23,13 @@ public static class SecondCampaign
           FinishRoom = "bridge",
           Finish = new(304, 24, 16, 16),
         },
-        Goals = GoalTimes.FromSeconds(bronze: 25, silver: 20, gold: 15, grandmaster: 10),
+        Goals = GoalTimes.FromSeconds(
+          bronze: 25,
+          silver: 20,
+          gold: 15,
+          diamond: 10,
+          grandmaster: 8
+        ),
       },
       new Trial
       {
@@ -50,7 +56,13 @@ public static class SecondCampaign
             new("a-01", new(1616f, 24f)),
           ],
         },
-        Goals = GoalTimes.FromSeconds(bronze: 25, silver: 20, gold: 15, grandmaster: 10),
+        Goals = GoalTimes.FromSeconds(
+          bronze: 25,
+          silver: 20,
+          gold: 15,
+          diamond: 10,
+          grandmaster: 9
+        ),
       },
       new Trial
       {
@@ -79,7 +91,13 @@ public static class SecondCampaign
           CameraOffsets = [new("end_3b", new(-0.3f, 0f)), new("end_4", new(-0.3f, 0f))],
           SpawnFacing = Facings.Right,
         },
-        Goals = GoalTimes.FromSeconds(bronze: 16, silver: 13, gold: 11, grandmaster: 10),
+        Goals = GoalTimes.FromSeconds(
+          bronze: 15,
+          silver: 13,
+          gold: 11,
+          diamond: 10,
+          grandmaster: 9.8
+        ),
       },
       new Trial
       {
@@ -98,7 +116,13 @@ public static class SecondCampaign
           IgnoredStrawberries = [new("b-08", 129), new("b-09", 167)],
           Dashes = 1,
         },
-        Goals = GoalTimes.FromSeconds(bronze: 45, silver: 40, gold: 35, grandmaster: 30),
+        Goals = GoalTimes.FromSeconds(
+          bronze: 45,
+          silver: 40,
+          gold: 36,
+          diamond: 31,
+          grandmaster: 28
+        ),
       },
       new Trial
       {
@@ -114,7 +138,13 @@ public static class SecondCampaign
           FinishRoom = "b-00c",
           Finish = new(9296, -3256, 24, 40),
         },
-        Goals = GoalTimes.FromSeconds(bronze: 15, silver: 12, gold: 10, grandmaster: 8),
+        Goals = GoalTimes.FromSeconds(
+          bronze: 15,
+          silver: 12,
+          gold: 10,
+          diamond: 8.5,
+          grandmaster: 8
+        ),
       },
       new Trial
       {
@@ -141,7 +171,13 @@ public static class SecondCampaign
             new("02b", new(992f, -384f), SetsSpawn: false),
           ],
         },
-        Goals = GoalTimes.FromSeconds(bronze: 42, silver: 30, gold: 26, grandmaster: 23),
+        Goals = GoalTimes.FromSeconds(
+          bronze: 42,
+          silver: 30,
+          gold: 26,
+          diamond: 24,
+          grandmaster: 22.5
+        ),
       },
       new Trial
       {
@@ -167,7 +203,7 @@ public static class SecondCampaign
           BloomBaseAdd = 0.25f,
           LightingAlphaAdd = -0.1f,
         },
-        Goals = GoalTimes.FromSeconds(bronze: 10, silver: 8, gold: 6, grandmaster: 5),
+        Goals = GoalTimes.FromSeconds(bronze: 10, silver: 8, gold: 6, diamond: 5, grandmaster: 4.5),
       },
       new Trial
       {
@@ -185,7 +221,13 @@ public static class SecondCampaign
           Dashes = 1,
           RequiredStrawberries = 2,
         },
-        Goals = GoalTimes.FromSeconds(bronze: 40, silver: 30, gold: 26, grandmaster: 22),
+        Goals = GoalTimes.FromSeconds(
+          bronze: 40,
+          silver: 30,
+          gold: 26,
+          diamond: 22,
+          grandmaster: 21
+        ),
       },
     ],
   };

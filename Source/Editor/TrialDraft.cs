@@ -24,7 +24,8 @@ public static class TrialDraft
   public static double Bronze = 25,
     Silver = 20,
     Gold = 15,
-    Grandmaster = 10;
+    Diamond = 10,
+    Grandmaster = 9;
   public static int ReplayLimitSeconds = Trial.DefaultReplayLimitSeconds;
   public static int? Dashes;
   public static bool Grabless;
@@ -47,7 +48,7 @@ public static class TrialDraft
     Id = "id";
     Name = "Untitled";
     Difficulty = Difficulty.Normal;
-    (Bronze, Silver, Gold, Grandmaster) = (25, 20, 15, 10);
+    (Bronze, Silver, Gold, Diamond, Grandmaster) = (25, 20, 15, 10, 9);
     ReplayLimitSeconds = Trial.DefaultReplayLimitSeconds;
     Dashes = null;
     Grabless = false;
@@ -76,6 +77,7 @@ public static class TrialDraft
       Bronze = ToSeconds(goals.BronzeTicks);
       Silver = ToSeconds(goals.SilverTicks);
       Gold = ToSeconds(goals.GoldTicks);
+      Diamond = ToSeconds(goals.DiamondTicks);
       Grandmaster = ToSeconds(goals.GrandmasterTicks);
     }
     ReplayLimitSeconds = trial.ReplayLimitSeconds;
@@ -173,6 +175,7 @@ public static class TrialDraft
         + $"bronze: {SecondsToString(Bronze)}, "
         + $"silver: {SecondsToString(Silver)}, "
         + $"gold: {SecondsToString(Gold)}, "
+        + $"diamond: {SecondsToString(Diamond)}, "
         + $"grandmaster: {SecondsToString(Grandmaster)})",
     ];
     if (ReplayLimitSeconds != Trial.DefaultReplayLimitSeconds)

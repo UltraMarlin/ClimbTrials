@@ -13,7 +13,8 @@ public static class RunHudLayout
   public const float IconHeight = 48f;
 
   public const float DuckX = 380f;
-  public const float GoalListFloorY = 760f;
+
+  public const float DuckMargin = 80f;
   public const float DuckAlpha = 0.15f;
   public const float DuckTime = 0.2f;
 

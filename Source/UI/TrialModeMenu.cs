@@ -46,7 +46,7 @@ public class TrialModeMenu : FadingMenu
     if (record != null)
       Add(new PbItem(record, standing));
     if (state == StandingsState.Offline)
-      Add(new NoteItem(Dialog.Clean("climbtrials_offline"), RowLayout.Dim));
+      Add(new NoteItem(Standings.OfflineNote, RowLayout.Dim));
     if (record != null)
       Add(new DateItem(record));
 
@@ -56,8 +56,9 @@ public class TrialModeMenu : FadingMenu
     {
       Add(new Button(Dialog.Clean("climbtrials_trials_watch_pb")).Pressed(watch));
       Add(new Button(Dialog.Clean("climbtrials_trials_race_pb")).Pressed(race));
-      AddSubmitRow(trial, record, standing, state, submit);
     }
+    if (record != null && !OnBoard(record, standing))
+      AddSubmitRow(trial, record, state, submit);
     Add(new Button(Dialog.Clean("climbtrials_trials_leaderboard")).Pressed(board));
 
     OnCancel = Back;
@@ -65,32 +66,42 @@ public class TrialModeMenu : FadingMenu
     OnPause = Back;
   }
 
-  private void AddSubmitRow(
-    Trial trial,
-    TrialRecord record,
-    TrialStanding standing,
-    StandingsState state,
-    Action submit
-  )
+  private static bool OnBoard(TrialRecord record, TrialStanding standing) =>
+    standing?.Ticks is long serverTicks && serverTicks <= record.BestTicks;
+
+  private void AddSubmitRow(Trial trial, TrialRecord record, StandingsState state, Action submit)
   {
     Upload upload = Uploader.For(trial.Id);
-    bool connected = Identity.Registered && state != StandingsState.Offline;
-    bool submittable = record?.Submittable == true;
+    bool hasReplay = ReplayStore.Exists(trial.Id);
     bool submitting = upload.State == UploadState.Submitting;
-    bool faster = standing?.Ticks is not long serverTicks || serverTicks > record?.BestTicks;
-    bool live = connected && submittable && !submitting && faster;
+    bool offlineMode = ClimbTrialsModule.Settings.OfflineMode;
+    bool live =
+      record.Submittable
+      && hasReplay
+      && !offlineMode
+      && state == StandingsState.Ready
+      && Identity.Registered
+      && !submitting;
 
     DimButton row = new(Dialog.Clean("climbtrials_trials_submit_pb"), live, submit);
     Add(row);
     string reason = null;
-    if (!connected)
-      reason = Dialog.Clean("climbtrials_submit_offline");
-    else if (!submittable)
+    if (!record.Submittable)
       reason = Dialog.Clean("climbtrials_submit_unsubmittable");
+    else if (!hasReplay)
+      reason = Dialog.Clean("climbtrials_submit_no_replay");
+    else if (offlineMode)
+      reason = Dialog.Clean("climbtrials_offline_mode");
+    else if (state == StandingsState.Offline)
+      reason = Dialog.Clean("climbtrials_submit_offline");
+    else if (state == StandingsState.Idle)
+      reason = Dialog.Clean("climbtrials_submit_loading");
+    else if (Identity.Registration == RegistrationState.Registering)
+      reason = Dialog.Clean("climbtrials_connecting");
+    else if (!Identity.Registered)
+      reason = Dialog.Clean("climbtrials_not_connected");
     else if (submitting)
       reason = Dialog.Clean("climbtrials_submitting");
-    else if (!faster)
-      reason = Dialog.Clean("climbtrials_submit_already");
     else if (upload.State == UploadState.Failed)
       reason = upload.Message;
     if (reason != null)

@@ -14,6 +14,7 @@ public static class MedalIcon
       Medal.Bronze => Calc.HexToColor("ab5e24"),
       Medal.Silver => Calc.HexToColor("85aabf"),
       Medal.Gold => Calc.HexToColor("facb32"),
+      Medal.Diamond => Calc.HexToColor("12c8ff"),
       Medal.Grandmaster => Calc.HexToColor("ff54b5"),
       _ => Color.White,
     };
@@ -27,8 +28,9 @@ public static class MedalIcon
     medal switch
     {
       Medal.Silver => new Burst(28, 10, 180f, 1.0f),
-      Medal.Gold => new Burst(36, 18, 230f, 1.3f),
-      Medal.Grandmaster => new Burst(56, 26, 280f, 1.7f),
+      Medal.Gold => new Burst(40, 18, 220f, 1.3f),
+      Medal.Diamond => new Burst(52, 30, 245f, 1.5f),
+      Medal.Grandmaster => new Burst(72, 32, 270f, 1.8f),
       _ => new Burst(0, 0, 0f, 0f),
     };
 

@@ -95,6 +95,9 @@ public static class Standings
   public static StandingsState State(Campaign campaign) =>
     campaign == null ? StandingsState.Idle : EntryOf(campaign).State;
 
+  public static string OfflineNote =>
+    Dialog.Clean(Settings.OfflineMode ? "climbtrials_offline_mode_lower" : "climbtrials_offline");
+
   public static void EnsureFresh(Campaign campaign)
   {
     Entry entry = EntryOf(campaign);
@@ -102,7 +105,7 @@ public static class Standings
       return;
 
     bool fresh = (DateTime.UtcNow - entry.FetchedAt).TotalSeconds < FreshSeconds;
-    if (entry.State == StandingsState.Ready && fresh)
+    if (entry.State == StandingsState.Ready && fresh && !Settings.OfflineMode)
       return;
 
     entry.Fetching = true;
@@ -137,7 +140,8 @@ public static class Standings
   {
     (string, int) key = (trial.Id, chunk);
     bool hit = chunks.TryGetValue(key, out (DateTime FetchedAt, Board Board) cached);
-    if (hit && (DateTime.UtcNow - cached.FetchedAt).TotalSeconds < FreshSeconds)
+    bool fresh = hit && (DateTime.UtcNow - cached.FetchedAt).TotalSeconds < FreshSeconds;
+    if (fresh && !Settings.OfflineMode)
     {
       onDone(new ServerResult<Board>(cached.Board, ServerError.None, null));
       return;

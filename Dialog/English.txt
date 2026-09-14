@@ -63,7 +63,6 @@ CLIMBTRIALS_REQ_WAYPOINTS=             Touch all waypoints ({0})
 CLIMBTRIALS_REQ_STRAWBERRY=            Get any strawberry (1)
 CLIMBTRIALS_REQ_STRAWBERRIES=          Get any strawberries ({0})
 CLIMBTRIALS_REQ_GOAL=                  Reach the goal
-CLIMBTRIALS_SUBMIT_ALREADY=            Already on the leaderboard
 CLIMBTRIALS_SUBMIT_UNSUBMITTABLE=      This PB cannot be submitted
 CLIMBTRIALS_SUBMIT_OFFLINE=            Offline
 CLIMBTRIALS_SUBMITTING=                Submitting...
@@ -77,3 +76,19 @@ CLIMBTRIALS_NAME_TAKEN=                That name is taken
 CLIMBTRIALS_NAME_OFFLINE=              Name change failed, try again later
 CLIMBTRIALS_UPDATE_REQUIRED=           Update ClimbTrials to submit
 CLIMBTRIALS_SUBMITTED=                 Submitted to the leaderboard
+CLIMBTRIALS_SUBMIT_NO_REPLAY=          No replay for this PB
+CLIMBTRIALS_SUBMIT_LOADING=            Loading...
+CLIMBTRIALS_OFFLINE_MODE=              Offline mode
+CLIMBTRIALS_OFFLINE_MODE_LOWER=        offline mode
+
+
+MODOPTIONS_CLIMBTRIALSMODULE_PBAUTOSUBMIT=               PB Auto Submit
+MODOPTIONS_CLIMBTRIALSMODULE_PBAUTOSUBMIT_DESC=          Automatically submits a new PB to the leaderboards.
+MODOPTIONS_CLIMBTRIALSMODULE_GOALINDICATOR_DESC=         Points you towards the goal or a close waypoint.
+MODOPTIONS_CLIMBTRIALSMODULE_SHOWGOALTIMES_DESC=         Shows your PB and goal times while running.
+MODOPTIONS_CLIMBTRIALSMODULE_SHOWLEADERBOARD_DESC=       Shows a small leaderboard while running.
+MODOPTIONS_CLIMBTRIALSMODULE_REPLAYINPUTDISPLAY_DESC=    Shows an input display while watching a replay.
+MODOPTIONS_CLIMBTRIALSMODULE_OFFLINEMODE_DESC=           No connection attempts to the server are made.
+MODOPTIONS_GOALTIMESDISPLAYMODE_OFF=                     Off
+MODOPTIONS_GOALTIMESDISPLAYMODE_PBONLY=                  PB Only
+MODOPTIONS_GOALTIMESDISPLAYMODE_ALL=                     All

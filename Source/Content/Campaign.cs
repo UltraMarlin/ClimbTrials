@@ -45,6 +45,7 @@ public static class Campaigns
 {
   public static readonly IReadOnlyList<Campaign> All =
   [
+    Classics.Definition,
     FirstCampaign.Definition,
     SecondCampaign.Definition,
   ];

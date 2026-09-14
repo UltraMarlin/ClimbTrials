@@ -532,7 +532,8 @@ public static class RunManager
       if (LastFinish.IsPersonalBest && recorded != null)
       {
         ReplayStore.Save(recorded);
-        if (ClimbTrialsModule.Settings.PbAutoSubmit && submittable)
+        ClimbTrialsModuleSettings settings = ClimbTrialsModule.Settings;
+        if (settings.PbAutoSubmit && submittable && !settings.OfflineMode)
         {
           if (Identity.Registered)
             Uploader.Start(Trial, recorded, upload => ReportUpload(Trial, upload));

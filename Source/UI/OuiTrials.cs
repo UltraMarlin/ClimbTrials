@@ -365,7 +365,7 @@ public class OuiTrials : ListScreen
     CampaignRecord record = TrialRecords.Get(campaign);
     if (Standings.State(campaign) == StandingsState.Offline)
       ActiveFont.Draw(
-        Dialog.Clean("climbtrials_offline"),
+        Standings.OfflineNote,
         new Vector2(atX, record.TotalTicks == null ? totalY : OfflineY + yOffset),
         new Vector2(0.5f, 0.5f),
         Vector2.One * OfflineScale,
