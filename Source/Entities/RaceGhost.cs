@@ -12,10 +12,10 @@ namespace Celeste.Mod.ClimbTrials.Entities;
 [Tracked]
 public class RaceGhost : Entity
 {
-  public const float MaxAlpha = 0.6f;
-  public const float MinAlpha = 0.1f;
-  public const float DuckNear = 14f;
-  public const float DuckFar = 32f;
+  public const float MaxAlpha = 0.7f;
+  public const float MinAlpha = 0.2f;
+  public const float DuckNear = 8f;
+  public const float DuckFar = 24f;
   public const float HoldSeconds = 1.5f;
   public const float FadeSeconds = 1f;
   public const float TagLift = 20f;
