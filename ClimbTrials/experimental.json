@@ -27,11 +27,11 @@
         "grabless": false
       },
       "goals": {
-        "bronze": 54,
-        "silver": 48,
-        "gold": 44,
-        "diamond": 40,
-        "grandmaster": 34
+        "bronze": 20,
+        "silver": 18,
+        "gold": 16.5,
+        "diamond": 15.8,
+        "grandmaster": 15.5
       }
     },
     {
@@ -67,11 +67,11 @@
         "grabless": false
       },
       "goals": {
-        "bronze": 25,
-        "silver": 20,
-        "gold": 15,
-        "diamond": 12,
-        "grandmaster": 8
+        "bronze": 7,
+        "silver": 6,
+        "gold": 5.4,
+        "diamond": 5,
+        "grandmaster": 4.8
       }
     },
     {
@@ -101,7 +101,7 @@
         "silver": 35,
         "gold": 34,
         "diamond": 33.5,
-        "grandmaster": 33.2
+        "grandmaster": 33.1
       }
     },
     {
@@ -127,11 +127,11 @@
         "grabless": false
       },
       "goals": {
-        "bronze": 18,
-        "silver": 16,
-        "gold": 14,
-        "diamond": 12,
-        "grandmaster": 10
+        "bronze": 11,
+        "silver": 10.5,
+        "gold": 10,
+        "diamond": 9.7,
+        "grandmaster": 9.5
       }
     },
     {
@@ -170,17 +170,17 @@
           },
           {
             "room": "end_3b",
-            "position": [1968, 1776],
+            "position": [1968, 1784],
             "spawn": [1968, 1800]
           },
           {
             "room": "end_3b",
-            "position": [2160, 1768],
+            "position": [2160, 1776],
             "spawn": [2160, 1792]
           },
           {
             "room": "end_3b",
-            "position": [2264, 1784],
+            "position": [2264, 1792],
             "spawn": [2264, 1808]
           },
           {
@@ -211,7 +211,7 @@
         "silver": 13,
         "gold": 11,
         "diamond": 10,
-        "grandmaster": 9.8
+        "grandmaster": 9.5
       }
     },
     {
@@ -342,11 +342,11 @@
         "grabless": false
       },
       "goals": {
-        "bronze": 10,
-        "silver": 8,
-        "gold": 6,
-        "diamond": 5,
-        "grandmaster": 4.5
+        "bronze": 7,
+        "silver": 6,
+        "gold": 5,
+        "diamond": 4.5,
+        "grandmaster": 4.2
       }
     },
     {
@@ -372,50 +372,11 @@
         "grabless": false
       },
       "goals": {
-        "bronze": 14,
-        "silver": 12,
+        "bronze": 12,
+        "silver": 11,
         "gold": 10,
         "diamond": 8.5,
         "grandmaster": 8
-      }
-    },
-    {
-      "id": "t13",
-      "name": "1 Dash, 2 Berries, 1 Dream",
-      "difficulty": "Hard",
-      "replayLimitSeconds": 120,
-      "run": {
-        "sid": "Celeste/7-Summit",
-        "mode": "Normal",
-        "startRoom": "c-03",
-        "spawn": [6800, -5152],
-        "spawnFacing": null,
-        "finishRoom": "c-07",
-        "finish": [8168, -6104, 24, 64],
-        "waypoints": [],
-        "cameraOffsets": [],
-        "bloomBaseAdd": null,
-        "lightingAlphaAdd": null,
-        "ignoredStrawberries": [
-          {
-            "room": "b-08",
-            "id": 129
-          },
-          {
-            "room": "b-09",
-            "id": 167
-          }
-        ],
-        "requiredStrawberries": 2,
-        "dashes": 1,
-        "grabless": false
-      },
-      "goals": {
-        "bronze": 45,
-        "silver": 40,
-        "gold": 36,
-        "diamond": 31,
-        "grandmaster": 28
       }
     },
     {
@@ -441,11 +402,11 @@
         "grabless": false
       },
       "goals": {
-        "bronze": 40,
-        "silver": 30,
-        "gold": 26,
-        "diamond": 22,
-        "grandmaster": 21
+        "bronze": 32,
+        "silver": 28,
+        "gold": 24,
+        "diamond": 21,
+        "grandmaster": 19
       }
     },
     {
@@ -512,8 +473,8 @@
         "grabless": false
       },
       "goals": {
-        "bronze": 42,
-        "silver": 30,
+        "bronze": 32,
+        "silver": 28,
         "gold": 26,
         "diamond": 24,
         "grandmaster": 22.5

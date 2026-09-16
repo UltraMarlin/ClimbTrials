@@ -1,7 +1,7 @@
 {
   "id": "c1",
-  "name": "First Climb",
-  "description": "",
+  "name": "Test",
+  "description": "Testing stuff",
   "order": 3,
   "trials": [
     {
@@ -87,11 +87,11 @@
         "grabless": false
       },
       "goals": {
-        "bronze": 26,
-        "silver": 22,
-        "gold": 20,
-        "diamond": 18,
-        "grandmaster": 12
+        "bronze": 60,
+        "silver": 50,
+        "gold": 40,
+        "diamond": 30,
+        "grandmaster": 20
       }
     }
   ]
