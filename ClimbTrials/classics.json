@@ -1,7 +1,7 @@
 {
   "id": "cl1",
   "name": "Classics",
-  "description": "These might feel familiar.",
+  "description": "Regular gameplay, you probably have played before.",
   "order": 1,
   "trials": [
     {
@@ -65,36 +65,6 @@
       }
     },
     {
-      "id": "t03",
-      "name": "Depths Cornerboost",
-      "difficulty": "Normal",
-      "replayLimitSeconds": 120,
-      "run": {
-        "sid": "Celeste/5-MirrorTemple",
-        "mode": "Normal",
-        "startRoom": "b-00",
-        "spawn": [2296, 32],
-        "spawnFacing": null,
-        "finishRoom": "b-01b",
-        "finish": [3832, -240, 16, 32],
-        "waypoints": [],
-        "cameraOffsets": [],
-        "bloomBaseAdd": null,
-        "lightingAlphaAdd": null,
-        "ignoredStrawberries": [],
-        "requiredStrawberries": 0,
-        "dashes": null,
-        "grabless": false
-      },
-      "goals": {
-        "bronze": 15,
-        "silver": 13,
-        "gold": 11,
-        "diamond": 10,
-        "grandmaster": 9.6
-      }
-    },
-    {
       "id": "t04",
       "name": "7A 1000M the fun part",
       "difficulty": "Normal",
@@ -155,9 +125,39 @@
       }
     },
     {
+      "id": "t03",
+      "name": "Depths Cornerboost",
+      "difficulty": "Hard",
+      "replayLimitSeconds": 120,
+      "run": {
+        "sid": "Celeste/5-MirrorTemple",
+        "mode": "Normal",
+        "startRoom": "b-00",
+        "spawn": [2296, 32],
+        "spawnFacing": null,
+        "finishRoom": "b-01b",
+        "finish": [3832, -240, 16, 32],
+        "waypoints": [],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 0,
+        "dashes": null,
+        "grabless": false
+      },
+      "goals": {
+        "bronze": 13,
+        "silver": 12,
+        "gold": 11,
+        "diamond": 10,
+        "grandmaster": 9.6
+      }
+    },
+    {
       "id": "t05",
       "name": "It's just 7B Flag 10",
-      "difficulty": "Normal",
+      "difficulty": "Hard",
       "replayLimitSeconds": 120,
       "run": {
         "sid": "Celeste/7-Summit",
