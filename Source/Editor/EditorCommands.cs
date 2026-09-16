@@ -148,10 +148,8 @@ public static class EditorCommands
   )]
   public static void DraftExport(string id = null, string name = null)
   {
-    if (id != null)
-      TrialDraft.Id = id;
-    if (name != null)
-      TrialDraft.Name = name;
+    TrialDraft.Id = id ?? TrialDraft.Id ?? Campaigns.NextTrialId();
+    TrialDraft.Name = name ?? TrialDraft.Name ?? TrialDraft.Id;
     ConsoleOutput.Log(LogTag, TrialDraft.TrialJson());
     TrialDraft.Reset();
   }

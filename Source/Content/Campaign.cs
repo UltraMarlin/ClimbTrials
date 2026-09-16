@@ -93,6 +93,7 @@ public static class Campaigns
 {
   public static IReadOnlyList<Campaign> All { get; private set; } = [];
   public static string LoadError { get; private set; }
+  private static int lastIssued;
 
   public static void Load()
   {
@@ -101,6 +102,7 @@ public static class Campaigns
       All = TrialFile.Load();
       Validate();
       LoadError = null;
+      lastIssued = 0;
     }
     catch (Exception e)
     {
@@ -115,6 +117,26 @@ public static class Campaigns
 
   public static Campaign CampaignOf(Trial trial) =>
     All.FirstOrDefault(c => c.Trials.Contains(trial));
+
+  public static string NextTrialId()
+  {
+    int highest = lastIssued;
+    foreach (Trial trial in All.SelectMany(c => c.Trials))
+      if (TrialNumber(trial.Id) is int number && number > highest)
+        highest = number;
+    lastIssued = highest + 1;
+    return $"t{lastIssued:00}";
+  }
+
+  private static int? TrialNumber(string id)
+  {
+    if (id == null || id.Length < 2 || id[0] != 't')
+      return null;
+    for (int i = 1; i < id.Length; i++)
+      if (!char.IsAsciiDigit(id[i]))
+        return null;
+    return int.TryParse(id[1..], out int number) ? number : null;
+  }
 
   public static int IndexOf(Campaign campaign)
   {

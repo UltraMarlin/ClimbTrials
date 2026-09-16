@@ -18,8 +18,8 @@ public static class TrialDraft
 
   public readonly record struct PlacedFinish(string Room, Rectangle Rect);
 
-  public static string Id = "id";
-  public static string Name = "Untitled";
+  public static string Id;
+  public static string Name;
   public static Difficulty Difficulty = Difficulty.Normal;
   public static double Bronze = 25,
     Silver = 20,
@@ -45,8 +45,8 @@ public static class TrialDraft
 
   public static void Reset()
   {
-    Id = "id";
-    Name = "Untitled";
+    Id = null;
+    Name = null;
     Difficulty = Difficulty.Normal;
     (Bronze, Silver, Gold, Diamond, Grandmaster) = (25, 20, 15, 10, 9);
     ReplayLimitSeconds = Trial.DefaultReplayLimitSeconds;

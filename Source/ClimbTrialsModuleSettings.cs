@@ -4,17 +4,17 @@ namespace Celeste.Mod.ClimbTrials;
 
 public enum CountdownMode
 {
-  Slow,
-  Fast,
-  VeryFast,
   Off,
+  VeryFast,
+  Fast,
+  Slow,
 }
 
 public enum GoalIndicatorMode
 {
+  Off,
   Subtle,
   Strong,
-  Off,
 }
 
 public enum GoalIndicatorTargets
@@ -25,16 +25,16 @@ public enum GoalIndicatorTargets
 
 public enum InputDisplayMode
 {
+  Off,
   Normal,
   Detailed,
-  Off,
 }
 
 public enum LeaderboardMode
 {
-  Normal,
-  Subtle,
   Off,
+  Subtle,
+  Normal,
 }
 
 public enum GoalTimesDisplayMode
@@ -42,6 +42,12 @@ public enum GoalTimesDisplayMode
   Off,
   PbOnly,
   All,
+}
+
+public enum GhostVisibility
+{
+  Subtle,
+  Strong,
 }
 
 public class ClimbTrialsModuleSettings : EverestModuleSettings
@@ -65,6 +71,9 @@ public class ClimbTrialsModuleSettings : EverestModuleSettings
 
   [SettingSubText("modoptions_climbtrialsmodule_showleaderboard_desc")]
   public LeaderboardMode ShowLeaderboard { get; set; } = LeaderboardMode.Normal;
+
+  [SettingSubText("modoptions_climbtrialsmodule_ghostvisibility_desc")]
+  public GhostVisibility GhostVisibility { get; set; } = GhostVisibility.Strong;
 
   [SettingSubText("modoptions_climbtrialsmodule_replayinputdisplay_desc")]
   public InputDisplayMode ReplayInputDisplay { get; set; } = InputDisplayMode.Normal;

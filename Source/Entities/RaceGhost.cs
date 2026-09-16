@@ -12,10 +12,17 @@ namespace Celeste.Mod.ClimbTrials.Entities;
 [Tracked]
 public class RaceGhost : Entity
 {
-  public const float MaxAlpha = 0.7f;
-  public const float MinAlpha = 0.2f;
-  public const float DuckNear = 8f;
-  public const float DuckFar = 24f;
+  public const float StrongFarAlpha = 0.7f;
+  public const float StrongNearAlpha = 0.25f;
+  public const float StrongDuckNear = 8f;
+  public const float StrongDuckFar = 24f;
+  public const float SubtleFarAlpha = 0.6f;
+  public const float SubtleNearAlpha = 0.3f;
+  public const float SubtleDuckNear = 12f;
+  public const float SubtleDuckFar = 28f;
+
+  public static readonly Color SubtleColor = Calc.HexToColor("364a59");
+
   public const float HoldSeconds = 1.5f;
   public const float FadeSeconds = 1f;
   public const float TagLift = 20f;
@@ -50,7 +57,7 @@ public class RaceGhost : Entity
     shownFrames = ticksPerFrame > 0 ? LevelUpdatedFrames(replay.Frames) : [];
     Tag = Tags.Persistent;
     Depth = Depths.Player + 1;
-    sprite = new PlayerSprite(mode);
+    sprite = new PlayerSprite(Subtle ? PlayerSpriteMode.Playback : mode);
     Add(hair = new PlayerHair(sprite));
     Add(sprite);
     sprite.Active = false;
@@ -149,9 +156,23 @@ public class RaceGhost : Entity
     slashDirection = ReplayColumns.DashDirFromByte(direction);
   }
 
+  private static bool Subtle =>
+    ClimbTrialsModule.Settings.GhostVisibility == GhostVisibility.Subtle;
+
+  private static float FarAlpha => Subtle ? SubtleFarAlpha : StrongFarAlpha;
+  private static float NearAlpha => Subtle ? SubtleNearAlpha : StrongNearAlpha;
+  private static float DuckNear => Subtle ? SubtleDuckNear : StrongDuckNear;
+  private static float DuckFar => Subtle ? SubtleDuckFar : StrongDuckFar;
+
   private void DrawOpaque()
   {
-    sprite.Color = Color.White;
+    if (Subtle)
+    {
+      sprite.Color = SubtleColor;
+      hair.Color = SubtleColor;
+    }
+    else
+      sprite.Color = Color.White;
     hair.Alpha = 1f;
     hair.Render();
     sprite.Render();
@@ -179,10 +200,11 @@ public class RaceGhost : Entity
   {
     Player player = Scene.Tracker.GetEntity<Player>();
     float distance = player == null ? DuckFar : (player.Position - Position).Length();
-    Alpha = Calc.ClampedMap(distance, DuckNear, DuckFar, MinAlpha, MaxAlpha) * fadeAlpha;
+    Alpha = Calc.ClampedMap(distance, DuckNear, DuckFar, NearAlpha, FarAlpha) * fadeAlpha;
     layer.Alpha = Alpha;
     base.Render();
-    DrawSlash();
+    if (!Subtle)
+      DrawSlash();
   }
 
   private string FirstKnownAnimation()

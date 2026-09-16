@@ -19,8 +19,7 @@ public class LeaderboardDisplay : Entity
   private const float RowHeightPerScale = 64f;
   private const float GapBelowGoals = 12f;
   private const float RankX = 16f;
-  private const float NameX = 76f;
-  private const float TimeGap = 28f;
+  private const float ColumnGapPerScale = 36f;
   private const string Ellipsis = "...";
 
   private readonly Color boxColor = Colors.ForChapter(RunManager.Run.Area).Dark;
@@ -39,9 +38,16 @@ public class LeaderboardDisplay : Entity
   private float textAlpha;
   private TimeStyle timeStyle;
   private float widest;
+  private float nameX;
   private float duck = 1f;
 
-  private readonly record struct Row(string Rank, string Name, string Time, Color Color);
+  private readonly record struct Row(
+    string Rank,
+    string Name,
+    string Time,
+    Color Color,
+    bool Message = false
+  );
 
   public LeaderboardDisplay()
   {
@@ -149,20 +155,27 @@ public class LeaderboardDisplay : Entity
     return rows;
   }
 
-  private static Row Message(string key) => new(Dialog.Clean(key), "", "", Colors.DimText);
+  private static Row Message(string key) =>
+    new(Dialog.Clean(key), "", "", Colors.DimText, Message: true);
 
   private void MeasureColumns()
   {
+    float rankColumn = 0f;
     float widestName = 0f;
     float widestTime = 0f;
     widest = 0f;
+    float columnGap = textScale * ColumnGapPerScale;
     foreach (Row row in rows)
     {
+      float rank = ActiveFont.Measure(row.Rank).X * textScale;
+      widest = Math.Max(widest, RankX + rank);
+      if (!row.Message)
+        rankColumn = Math.Max(rankColumn, rank);
       widestName = Math.Max(widestName, ActiveFont.Measure(row.Name).X * textScale);
       widestTime = Math.Max(widestTime, TimeText.Width(row.Time, timeStyle));
-      widest = Math.Max(widest, RankX + ActiveFont.Measure(row.Rank).X * textScale);
     }
-    float timeX = NameX + widestName + TimeGap;
+    nameX = RankX + rankColumn + columnGap;
+    float timeX = nameX + widestName + columnGap;
     if (widestTime > 0f)
       widest = Math.Max(widest, timeX + widestTime);
   }
@@ -208,7 +221,7 @@ public class LeaderboardDisplay : Entity
     if (row.Name.Length > 0)
       ActiveFont.DrawOutline(
         row.Name,
-        new Vector2(NameX, y),
+        new Vector2(nameX, y),
         justify,
         scale,
         row.Color,
