@@ -78,6 +78,7 @@ public class TrialModeMenu : FadingMenu
     bool live =
       record.Submittable
       && hasReplay
+      && !Identity.Banned
       && !offlineMode
       && state == StandingsState.Ready
       && Identity.Registered
@@ -86,7 +87,9 @@ public class TrialModeMenu : FadingMenu
     DimButton row = new(Dialog.Clean("climbtrials_trials_submit_pb"), live, submit);
     Add(row);
     string reason = null;
-    if (!record.Submittable)
+    if (Identity.Banned)
+      reason = Dialog.Clean("climbtrials_submit_banned");
+    else if (!record.Submittable)
       reason = Dialog.Clean("climbtrials_submit_unsubmittable");
     else if (!hasReplay)
       reason = Dialog.Clean("climbtrials_submit_no_replay");

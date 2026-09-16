@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
+using System.Text.Json;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Runs;
 using Microsoft.Xna.Framework;
@@ -109,82 +109,70 @@ public static class TrialDraft
     Spawn = position;
   }
 
-  public static string WaypointCode(PlacedWaypoint waypoint)
-  {
-    string spawn = waypoint.Spawn is Vector2 s ? $", {SpawnCode(s)}" : "";
-    string mode = waypoint.SetsSpawn ? "" : ", SetsSpawn: false";
-    return $"new(\"{waypoint.Room}\", {SpawnCode(waypoint.Position)}{spawn}{mode})";
-  }
+  private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
-  public static string BerryCode(EntityID id) => $"new(\"{id.Level}\", {id.ID})";
-
-  public static string CameraOffsetCode(CameraOffsetDef def) =>
-    $"new(\"{def.Room}\", {SpawnCode(def.Offset)})";
-
-  private static string FloatCode(float value) =>
-    $"{value.ToString(CultureInfo.InvariantCulture)}f";
-
-  public static string FinishCode(Rectangle rect) =>
-    $"new({rect.X}, {rect.Y}, {rect.Width}, {rect.Height})";
-
-  public static string SpawnCode(Vector2 spawn) =>
-    $"new({spawn.X.ToString(CultureInfo.InvariantCulture)}f, {spawn.Y.ToString(CultureInfo.InvariantCulture)}f)";
-
-  public static string TrialCode()
+  public static string TrialJson()
   {
     PlacedFinish? finish = Finish;
-    List<string> run =
-    [
-      $"Sid = \"{Sid}\"",
-      $"Mode = AreaMode.{Mode}",
-      $"StartRoom = \"{StartRoom}\"",
-      $"Spawn = {SpawnCode(Spawn ?? Vector2.Zero)}",
-      $"FinishRoom = \"{finish?.Room}\"",
-      $"Finish = {FinishCode(finish?.Rect ?? new Rectangle(0, 0, 16, 24))}",
-    ];
-    if (Waypoints.Count > 0)
-      run.Add($"Waypoints = [ {string.Join(", ", Waypoints.ConvertAll(WaypointCode))} ]");
-    if (CameraOffsets.Count > 0)
-      run.Add(
-        $"CameraOffsets = [ {string.Join(", ", CameraOffsets.ConvertAll(CameraOffsetCode))} ]"
-      );
-    if (RequiredStrawberries > 0)
-      run.Add($"RequiredStrawberries = {RequiredStrawberries}");
-    if (IgnoredStrawberries.Count > 0)
-      run.Add(
-        $"IgnoredStrawberries = [ {string.Join(", ", IgnoredStrawberries.ConvertAll(BerryCode))} ]"
-      );
-    if (SpawnFacing is Facings facing)
-      run.Add($"SpawnFacing = Facings.{facing}");
-    if (Dashes is int dashes)
-      run.Add($"Dashes = {dashes}");
-    if (Grabless)
-      run.Add("Grabless = true");
-    if (BloomBaseAdd is float bloomAdd)
-      run.Add($"BloomBaseAdd = {FloatCode(bloomAdd)}");
-    if (LightingAlphaAdd is float lightingAdd)
-      run.Add($"LightingAlphaAdd = {FloatCode(lightingAdd)}");
-
-    List<string> trial =
-    [
-      $"Id = \"{Id}\"",
-      $"Name = \"{Name}\"",
-      $"Difficulty = Difficulty.{Difficulty}",
-      $"Run = new() {{ {string.Join(", ", run)} }}",
-      "Goals = GoalTimes.FromSeconds("
-        + $"bronze: {SecondsToString(Bronze)}, "
-        + $"silver: {SecondsToString(Silver)}, "
-        + $"gold: {SecondsToString(Gold)}, "
-        + $"diamond: {SecondsToString(Diamond)}, "
-        + $"grandmaster: {SecondsToString(Grandmaster)})",
-    ];
-    if (ReplayLimitSeconds != Trial.DefaultReplayLimitSeconds)
-      trial.Add($"ReplayLimitSeconds = {ReplayLimitSeconds}");
-    return $"new Trial {{ {string.Join(", ", trial)} }},";
+    Rectangle rect = finish?.Rect ?? new Rectangle(0, 0, 16, 24);
+    var trial = new
+    {
+      id = Id,
+      name = Name,
+      difficulty = Difficulty.ToString(),
+      replayLimitSeconds = ReplayLimitSeconds,
+      run = new
+      {
+        sid = Sid,
+        mode = Mode.ToString(),
+        startRoom = StartRoom,
+        spawn = Vec(Spawn ?? Vector2.Zero),
+        spawnFacing = SpawnFacing?.ToString(),
+        finishRoom = finish?.Room,
+        finish = new[] { rect.X, rect.Y, rect.Width, rect.Height },
+        waypoints = Waypoints.ConvertAll(w => new
+        {
+          room = w.Room,
+          position = Vec(w.Position),
+          spawn = w.Spawn is Vector2 s ? Vec(s) : null,
+          setsSpawn = w.SetsSpawn,
+        }),
+        cameraOffsets = CameraOffsets.ConvertAll(c => new
+        {
+          room = c.Room,
+          offset = Vec(c.Offset),
+        }),
+        bloomBaseAdd = BloomBaseAdd,
+        lightingAlphaAdd = LightingAlphaAdd,
+        ignoredStrawberries = IgnoredStrawberries.ConvertAll(b => new
+        {
+          room = b.Level,
+          id = b.ID,
+        }),
+        requiredStrawberries = RequiredStrawberries,
+        dashes = Dashes,
+        grabless = Grabless,
+      },
+      goals = new
+      {
+        bronze = Bronze,
+        silver = Silver,
+        gold = Gold,
+        diamond = Diamond,
+        grandmaster = Grandmaster,
+      },
+    };
+    return JsonSerializer.Serialize(trial, JsonOptions) + ",";
   }
 
-  private static double ToSeconds(long ticks) => (double)ticks / TimeSpan.TicksPerSecond;
+  private static float[] Vec(Vector2 v) => [v.X, v.Y];
 
-  private static string SecondsToString(double seconds) =>
-    seconds.ToString(CultureInfo.InvariantCulture);
+  public static string WaypointText(PlacedWaypoint waypoint) =>
+    $"{waypoint.Room} [{waypoint.Position.X}, {waypoint.Position.Y}]"
+    + (waypoint.Spawn is Vector2 s ? $" spawn [{s.X}, {s.Y}]" : "")
+    + (waypoint.SetsSpawn ? "" : " setsSpawn false");
+
+  public static string BerryText(EntityID id) => $"{id.Level} #{id.ID}";
+
+  private static double ToSeconds(long ticks) => (double)ticks / TimeSpan.TicksPerSecond;
 }

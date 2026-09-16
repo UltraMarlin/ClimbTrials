@@ -55,27 +55,39 @@ public class TrialRow : TextMenu.Item
 
     TrialRecord record = TrialRecords.Get(Trial.Id);
     float timeRight = rightEdge - RowLayout.MarkGap - RowLayout.MarkWidth;
+    string best = record == null ? null : TimeText.Format(record.BestTicks);
+    float width = TimeText.Width(
+      best ?? RowLayout.RankSlotTime,
+      TimeText.Hud.At(RowLayout.PbScale)
+    );
+    float medalCenter = timeRight - width - RowLayout.MedalGap;
     if (record == null)
-    {
       DrawWord("new", timeRight, rowStart.Y, alpha);
-      return;
+    else
+    {
+      Medal medal = Trial.Goals?.MedalFor(record.BestTicks) ?? Medal.None;
+      if (medal != Medal.None)
+        MedalIcon.Draw(
+          new Vector2(medalCenter, rowStart.Y),
+          medal,
+          RowLayout.MedalIconHeight,
+          alpha
+        );
+      TimeText.Draw(
+        new Vector2(timeRight - width, rowStart.Y + RowLayout.PbBaseline),
+        best,
+        TimeText.Hud.At(RowLayout.PbScale),
+        MedalIcon.TextColor(medal) * alpha
+      );
     }
 
-    string best = TimeText.Format(record.BestTicks);
-    float width = TimeText.Width(best, TimeText.Hud.At(RowLayout.PbScale));
-    Medal medal = Trial.Goals?.MedalFor(record.BestTicks) ?? Medal.None;
-    float medalCenter = timeRight - width - RowLayout.MedalGap;
-    if (medal != Medal.None)
-      MedalIcon.Draw(new Vector2(medalCenter, rowStart.Y), medal, RowLayout.MedalIconHeight, alpha);
-    TimeText.Draw(
-      new Vector2(timeRight - width, rowStart.Y + RowLayout.PbBaseline),
-      best,
-      TimeText.Hud.At(RowLayout.PbScale),
-      MedalIcon.TextColor(medal) * alpha
+    RankText.Draw(
+      Standings.For(Trial)?.Rank,
+      new Vector2(medalCenter, rowStart.Y + RowLayout.RankLift),
+      alpha
     );
-    DrawRank(new Vector2(medalCenter, rowStart.Y + 3f), alpha);
 
-    if (record.Submittable && ReplayStore.Exists(Trial.Id))
+    if (record == null || (record.Submittable && ReplayStore.Exists(Trial.Id)))
       return;
     Color mark = Colors.Warning * alpha;
     ActiveFont.DrawOutline(
@@ -86,22 +98,6 @@ public class TrialRow : TextMenu.Item
       mark,
       2f,
       TextOutline.StrokeFor(mark)
-    );
-  }
-
-  private void DrawRank(Vector2 position, float alpha)
-  {
-    if (Standings.For(Trial)?.Rank is not int rank)
-      return;
-    Color color = Color.White * alpha;
-    ActiveFont.DrawOutline(
-      "#" + rank,
-      position,
-      new Vector2(0.5f, 0.5f),
-      Vector2.One * RowLayout.RankScale,
-      color,
-      2f,
-      TextOutline.StrokeFor(color)
     );
   }
 

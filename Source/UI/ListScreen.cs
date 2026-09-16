@@ -40,6 +40,8 @@ public abstract class ListScreen : Oui
 
   protected virtual void FetchOnline() { }
 
+  protected virtual bool Reopen() => false;
+
   protected void SetDim(float value)
   {
     dim = value;
@@ -66,7 +68,9 @@ public abstract class ListScreen : Oui
     Scene.Add(menu);
     menu.Current?.OnEnter?.Invoke();
     Visible = true;
+    bool handedOver = Reopen();
     float side = DepthOf(from) > ScreenDepth ? -1f : 1f;
+
     for (float ease = 0f; ease < 1f; ease += Engine.DeltaTime * 4f)
     {
       x = OnScreenX + side * SlideWidth * (1f - Ease.CubeOut(ease));
@@ -75,10 +79,14 @@ public abstract class ListScreen : Oui
       menu.Alpha = alpha;
       yield return null;
     }
+
     x = OnScreenX;
     alpha = 1f;
     menu.X = x;
     menu.Alpha = alpha;
+    if (handedOver)
+      yield break;
+
     menu.Focused = true;
     Focused = true;
   }

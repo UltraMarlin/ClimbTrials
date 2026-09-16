@@ -6,12 +6,24 @@ using Celeste.Mod.ClimbTrials.UI;
 
 namespace Celeste.Mod.ClimbTrials.Replays;
 
-public sealed record TrialSpec(string Id, float SpawnX, float SpawnY, int ReplayLimitSeconds)
+public sealed record TrialSpec(
+  string Id,
+  float SpawnX,
+  float SpawnY,
+  int ReplayLimitSeconds,
+  byte[] DefinitionHash
+)
 {
   public static TrialSpec From(Trial trial) =>
     trial == null
       ? null
-      : new(trial.Id, trial.Run.Spawn.X, trial.Run.Spawn.Y, trial.ReplayLimitSeconds);
+      : new(
+        trial.Id,
+        trial.Run.Spawn.X,
+        trial.Run.Spawn.Y,
+        trial.ReplayLimitSeconds,
+        trial.DefinitionHash
+      );
 }
 
 public sealed class ValidationResult
@@ -37,6 +49,8 @@ public static class ReplayValidator
   public const double WallFlagAbove = 1.5;
   public const double FrozenFlagAbove = 0.5;
 
+  public const string TrialHashMismatch = "trial definition differs from the server's";
+
   public static ValidationResult Check(
     Replay replay,
     TrialSpec trial,
@@ -47,6 +61,11 @@ public static class ReplayValidator
     if (trial == null)
     {
       result.Rejections.Add($"unknown trial '{replay.TrialId}'");
+      return result;
+    }
+    if (!replay.TrialHash.AsSpan().SequenceEqual(trial.DefinitionHash))
+    {
+      result.Rejections.Add(TrialHashMismatch);
       return result;
     }
 

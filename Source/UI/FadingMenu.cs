@@ -7,11 +7,13 @@ public abstract class FadingMenu : TextMenu
 {
   private const float BackdropAlpha = 0.6f;
   private const float FadeSpeed = 5f;
+  private const float UnderDim = 0.05f;
 
   private float fade;
   private bool closing;
 
   public float Fade => fade;
+  public float DimUnder => 1f - (1f - UnderDim) * fade;
   public bool Closing => closing;
   public bool Closed => closing && fade <= 0f;
 

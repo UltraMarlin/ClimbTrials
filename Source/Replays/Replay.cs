@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
+using Celeste.Mod.ClimbTrials.Content;
 using Microsoft.Xna.Framework;
 
 namespace Celeste.Mod.ClimbTrials.Replays;
 
 public sealed class Replay
 {
-  public const int FormatVersion = 9;
+  public const int FormatVersion = 10;
   public const int ButtonCount = 15;
   public const int MaxFrames = 216_000;
   public const int MaxModules = 256;
@@ -20,6 +21,7 @@ public sealed class Replay
   private const int HashBytes = 32;
 
   public string TrialId;
+  public byte[] TrialHash = new byte[Trial.DefinitionHashBytes];
   public string CelesteVersion;
   public string EverestVersion;
   public List<ModuleRef> Modules = [];
@@ -99,6 +101,7 @@ public sealed class Replay
     w.Write(Magic);
     w.Write(FormatVersion);
     w.Write(TrialId);
+    w.Write(TrialHash);
     w.Write(CelesteVersion);
     w.Write(EverestVersion);
     w.Write(Modules.Count);
@@ -155,6 +158,7 @@ public sealed class Replay
     Replay replay = new()
     {
       TrialId = ReadString(r, MaxStringLength),
+      TrialHash = r.ReadBytes(Trial.DefinitionHashBytes),
       CelesteVersion = ReadString(r, MaxStringLength),
       EverestVersion = ReadString(r, MaxStringLength),
     };

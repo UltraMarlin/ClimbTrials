@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.Core;
 using Monocle;
 
@@ -32,13 +33,14 @@ public static class Recorder
     On.Monocle.MInput.Update -= OnMInputUpdate;
   }
 
-  public static void Begin(string trialId, int loadSeed, int runSeed, Level level)
+  public static void Begin(Trial trial, int loadSeed, int runSeed, Level level)
   {
     if (Stopped != StopReason.None)
       return;
     current = new Replay
     {
-      TrialId = trialId,
+      TrialId = trial?.Id,
+      TrialHash = trial?.DefinitionHash ?? new byte[Trial.DefinitionHashBytes],
       CelesteVersion = Celeste.Instance.Version.ToString(),
       EverestVersion = Everest.VersionString,
       Modules = ModCheck.Modules(),

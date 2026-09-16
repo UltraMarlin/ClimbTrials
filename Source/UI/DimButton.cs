@@ -5,21 +5,33 @@ namespace Celeste.Mod.ClimbTrials.UI;
 
 public class DimButton : TextMenu.Button
 {
-  private readonly bool live;
+  private const string InvalidSfx = "event:/ui/main/button_invalid";
+
+  private readonly Func<bool> live;
 
   public DimButton(string label, bool live, Action onPressed)
+    : this(label, () => live, onPressed) { }
+
+  public DimButton(string label, Func<bool> live, Action onPressed)
     : base(label)
   {
     this.live = live;
-    if (live)
-      Pressed(onPressed);
-    else
-      ConfirmSfx = "event:/ui/main/button_invalid";
+    Pressed(() =>
+    {
+      if (live())
+        onPressed();
+    });
+  }
+
+  public override void Update()
+  {
+    base.Update();
+    ConfirmSfx = live() ? SFX.ui_main_button_select : InvalidSfx;
   }
 
   public override void Render(Vector2 position, bool highlighted)
   {
-    if (live)
+    if (live())
     {
       base.Render(position, highlighted);
       return;

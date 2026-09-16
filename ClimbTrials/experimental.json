@@ -1,0 +1,407 @@
+{
+  "id": "c2",
+  "name": "Experimental Climb",
+  "description": "More advanced Trials to test the Trial Editor.",
+  "order": 3,
+  "trials": [
+    {
+      "id": "t10",
+      "name": "Test",
+      "difficulty": "Normal",
+      "replayLimitSeconds": 120,
+      "run": {
+        "sid": "Celeste/8-Epilogue",
+        "mode": "Normal",
+        "startRoom": "bridge",
+        "spawn": [200, 40],
+        "spawnFacing": null,
+        "finishRoom": "bridge",
+        "finish": [304, 24, 16, 16],
+        "waypoints": [],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 0,
+        "dashes": null,
+        "grabless": false
+      },
+      "goals": {
+        "bronze": 25,
+        "silver": 20,
+        "gold": 15,
+        "diamond": 10,
+        "grandmaster": 8
+      }
+    },
+    {
+      "id": "t11",
+      "name": "Temple Start Hub Exploration (WIP)",
+      "difficulty": "Normal",
+      "replayLimitSeconds": 120,
+      "run": {
+        "sid": "Celeste/5-MirrorTemple",
+        "mode": "Normal",
+        "startRoom": "a-01",
+        "spawn": [1728, 152],
+        "spawnFacing": null,
+        "finishRoom": "a-01",
+        "finish": [1752, -328, 24, 16],
+        "waypoints": [
+          {
+            "room": "a-01",
+            "position": [1584, -24]
+          },
+          {
+            "room": "a-01",
+            "position": [1664, -160]
+          },
+          {
+            "room": "a-01",
+            "position": [1824, -152]
+          },
+          {
+            "room": "a-01",
+            "position": [1704, -24]
+          },
+          {
+            "room": "a-01",
+            "position": [1688, 184]
+          },
+          {
+            "room": "a-01",
+            "position": [1824, 104]
+          },
+          {
+            "room": "a-01",
+            "position": [1520, -160]
+          },
+          {
+            "room": "a-01",
+            "position": [1616, 24]
+          }
+        ],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 0,
+        "dashes": null,
+        "grabless": false
+      },
+      "goals": {
+        "bronze": 25,
+        "silver": 20,
+        "gold": 15,
+        "diamond": 10,
+        "grandmaster": 9
+      }
+    },
+    {
+      "id": "t12",
+      "name": "Checking out Awake",
+      "difficulty": "Normal",
+      "replayLimitSeconds": 120,
+      "run": {
+        "sid": "Celeste/2-OldSite",
+        "mode": "Normal",
+        "startRoom": "end_3b",
+        "spawn": [2144, 1888],
+        "spawnFacing": "Right",
+        "finishRoom": "end_3",
+        "finish": [1136, 1808, 32, 56],
+        "waypoints": [
+          {
+            "room": "end_4",
+            "position": [1552, 1752],
+            "spawn": [1552, 1776]
+          },
+          {
+            "room": "end_4",
+            "position": [1584, 1808],
+            "spawn": [1584, 1832]
+          },
+          {
+            "room": "end_4",
+            "position": [1464, 1864],
+            "spawn": [1464, 1888]
+          },
+          {
+            "room": "end_4",
+            "position": [1680, 1808],
+            "spawn": [1680, 1880]
+          },
+          {
+            "room": "end_3b",
+            "position": [1968, 1776],
+            "spawn": [1968, 1800]
+          },
+          {
+            "room": "end_3b",
+            "position": [2160, 1768],
+            "spawn": [2160, 1792]
+          },
+          {
+            "room": "end_3b",
+            "position": [2264, 1784],
+            "spawn": [2264, 1808]
+          },
+          {
+            "room": "end_3b",
+            "position": [1984, 1864],
+            "spawn": [1984, 1888]
+          }
+        ],
+        "cameraOffsets": [
+          {
+            "room": "end_3b",
+            "offset": [-0.3, 0]
+          },
+          {
+            "room": "end_4",
+            "offset": [-0.3, 0]
+          }
+        ],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 0,
+        "dashes": null,
+        "grabless": false
+      },
+      "goals": {
+        "bronze": 15,
+        "silver": 13,
+        "gold": 11,
+        "diamond": 10,
+        "grandmaster": 9.8
+      }
+    },
+    {
+      "id": "t13",
+      "name": "1 Dash, 2 Berries, 1 Dream",
+      "difficulty": "Hard",
+      "replayLimitSeconds": 120,
+      "run": {
+        "sid": "Celeste/7-Summit",
+        "mode": "Normal",
+        "startRoom": "c-03",
+        "spawn": [6800, -5152],
+        "spawnFacing": null,
+        "finishRoom": "c-07",
+        "finish": [8168, -6104, 24, 64],
+        "waypoints": [],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [
+          {
+            "room": "b-08",
+            "id": 129
+          },
+          {
+            "room": "b-09",
+            "id": 167
+          }
+        ],
+        "requiredStrawberries": 2,
+        "dashes": 1,
+        "grabless": false
+      },
+      "goals": {
+        "bronze": 45,
+        "silver": 40,
+        "gold": 36,
+        "diamond": 31,
+        "grandmaster": 28
+      }
+    },
+    {
+      "id": "t14",
+      "name": "I have never seen this room before",
+      "difficulty": "Hard",
+      "replayLimitSeconds": 120,
+      "run": {
+        "sid": "Celeste/6-Reflection",
+        "mode": "Normal",
+        "startRoom": "b-00",
+        "spawn": [9440, -2784],
+        "spawnFacing": null,
+        "finishRoom": "b-00c",
+        "finish": [9296, -3256, 24, 40],
+        "waypoints": [],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 0,
+        "dashes": null,
+        "grabless": false
+      },
+      "goals": {
+        "bronze": 15,
+        "silver": 12,
+        "gold": 10,
+        "diamond": 8.5,
+        "grandmaster": 8
+      }
+    },
+    {
+      "id": "t15",
+      "name": "That's not how you play 1B",
+      "difficulty": "Expert",
+      "replayLimitSeconds": 120,
+      "run": {
+        "sid": "Celeste/1-ForsakenCity",
+        "mode": "BSide",
+        "startRoom": "00",
+        "spawn": [0, 144],
+        "spawnFacing": null,
+        "finishRoom": "02b",
+        "finish": [1080, -528, 32, 24],
+        "waypoints": [
+          {
+            "room": "00",
+            "position": [80, 24],
+            "setsSpawn": false
+          },
+          {
+            "room": "00",
+            "position": [176, 48],
+            "setsSpawn": false
+          },
+          {
+            "room": "01",
+            "position": [296, -144],
+            "setsSpawn": false
+          },
+          {
+            "room": "01",
+            "position": [504, -48],
+            "setsSpawn": false
+          },
+          {
+            "room": "02",
+            "position": [576, -280],
+            "setsSpawn": false
+          },
+          {
+            "room": "02",
+            "position": [792, -216],
+            "setsSpawn": false
+          },
+          {
+            "room": "02b",
+            "position": [872, -504],
+            "setsSpawn": false
+          },
+          {
+            "room": "02b",
+            "position": [992, -384],
+            "setsSpawn": false
+          }
+        ],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 0,
+        "dashes": null,
+        "grabless": false
+      },
+      "goals": {
+        "bronze": 42,
+        "silver": 30,
+        "gold": 26,
+        "diamond": 24,
+        "grandmaster": 22.5
+      }
+    },
+    {
+      "id": "t16",
+      "name": "Why do I hear 5B music?",
+      "difficulty": "Hard",
+      "replayLimitSeconds": 120,
+      "run": {
+        "sid": "Celeste/5-MirrorTemple",
+        "mode": "BSide",
+        "startRoom": "start",
+        "spawn": [-536, 88],
+        "spawnFacing": null,
+        "finishRoom": "start",
+        "finish": [-312, -56, 24, 48],
+        "waypoints": [
+          {
+            "room": "start",
+            "position": [-512, -16],
+            "setsSpawn": false
+          },
+          {
+            "room": "start",
+            "position": [-584, 8],
+            "setsSpawn": false
+          },
+          {
+            "room": "start",
+            "position": [-632, 80],
+            "setsSpawn": false
+          },
+          {
+            "room": "start",
+            "position": [-440, 8],
+            "setsSpawn": false
+          },
+          {
+            "room": "start",
+            "position": [-392, 80],
+            "setsSpawn": false
+          }
+        ],
+        "cameraOffsets": [],
+        "bloomBaseAdd": 0.25,
+        "lightingAlphaAdd": -0.1,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 0,
+        "dashes": null,
+        "grabless": false
+      },
+      "goals": {
+        "bronze": 10,
+        "silver": 8,
+        "gold": 6,
+        "diamond": 5,
+        "grandmaster": 4.5
+      }
+    },
+    {
+      "id": "t17",
+      "name": "1 Dash, 2 Berries, 1 Hotel",
+      "difficulty": "Hard",
+      "replayLimitSeconds": 120,
+      "run": {
+        "sid": "Celeste/7-Summit",
+        "mode": "Normal",
+        "startRoom": "d-01b",
+        "spawn": [10552, -7400],
+        "spawnFacing": null,
+        "finishRoom": "d-03",
+        "finish": [12072, -7392, 16, 48],
+        "waypoints": [],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 2,
+        "dashes": 1,
+        "grabless": false
+      },
+      "goals": {
+        "bronze": 40,
+        "silver": 30,
+        "gold": 26,
+        "diamond": 22,
+        "grandmaster": 21
+      }
+    }
+  ]
+}

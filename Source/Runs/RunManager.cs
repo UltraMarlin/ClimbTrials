@@ -475,7 +475,7 @@ public static class RunManager
     }
     int runSeed = Calc.Random.Next();
     Determinism.Reseed(runSeed);
-    Recorder.Begin(Trial?.Id, loadSeed, runSeed, level);
+    Recorder.Begin(Trial, loadSeed, runSeed, level);
   }
 
   private static void SuppressVanillaTimer(

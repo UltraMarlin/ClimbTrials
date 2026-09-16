@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Online;
 using Celeste.Mod.UI;
+using Microsoft.Xna.Framework;
 using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.UI;
@@ -11,11 +12,16 @@ public class OuiCampaigns : ListScreen
 {
   private const int NameMaxLength = 20;
   private const float NoticeSeconds = 5f;
+  private const float LoadErrorY = 300f;
+  private const float LoadErrorScale = 0.5f;
+  private const float OfflineY = 190f;
+  private const float OfflineScale = 0.45f;
 
   private static readonly Regex NameRule = new($"^[A-Za-z0-9 _.-]{{1,{NameMaxLength}}}$");
 
   private readonly List<CampaignRow> rows = [];
   private NameRow nameRow;
+  private LeaderboardView view;
 
   protected override int ScreenDepth => 1;
 
@@ -47,11 +53,104 @@ public class OuiCampaigns : ListScreen
     return built;
   }
 
-  protected override void FetchOnline() => Identity.EnsureRegistered();
+  protected override void FetchOnline()
+  {
+    Identity.EnsureRegistered();
+    Standings.EnsureFreshTotals();
+  }
+
+  protected override void RenderHeader()
+  {
+    if (menu == null)
+      return;
+    if (Standings.TotalsState == StandingsState.Offline)
+      ActiveFont.Draw(
+        Standings.OfflineNote,
+        new Vector2(menu.X, OfflineY + yOffset),
+        new Vector2(0.5f, 0.5f),
+        Vector2.One * OfflineScale,
+        RowLayout.Dim * menu.Alpha
+      );
+    if (Campaigns.LoadError == null)
+      return;
+    Color color = Colors.Warning * menu.Alpha;
+    ActiveFont.DrawOutline(
+      Campaigns.LoadError,
+      new Vector2(menu.X, LoadErrorY + yOffset),
+      new Vector2(0.5f, 0.5f),
+      Vector2.One * LoadErrorScale,
+      color,
+      2f,
+      TextOutline.StrokeFor(color)
+    );
+  }
+
+  protected override void RenderPrompts(float alpha)
+  {
+    if (menu?.Current is not CampaignRow)
+      return;
+    float shown = alpha * (1f - yOffset / LeaderboardView.SlideDistance);
+    ButtonRow.DrawCenter(Dialog.Clean("climbtrials_trials_leaderboard"), Input.MenuJournal, shown);
+  }
+
+  protected override void CancelTransitions()
+  {
+    if (view == null)
+      return;
+    view.Discard();
+    view = null;
+    SetBoardSlide(0f);
+  }
+
+  public override void Update()
+  {
+    base.Update();
+    if (
+      view == null
+      && menu != null
+      && menu.Focused
+      && Input.MenuJournal.Pressed
+      && menu.Current is CampaignRow row
+    )
+    {
+      Audio.Play(SFX.ui_main_button_select);
+      OpenBoard(row.Campaign);
+    }
+  }
+
+  private void OpenBoard(Campaign campaign)
+  {
+    menu.Focused = false;
+    Focused = false;
+    view = new LeaderboardView(BoardSubject.Of(campaign), SetBoardSlide, OnBoardClosed);
+    Scene.Add(view);
+  }
+
+  private void SetBoardSlide(float progress)
+  {
+    yOffset = progress * LeaderboardView.SlideDistance;
+    menu.YOffset = yOffset;
+  }
+
+  private void OnBoardClosed(BoardSubject shown)
+  {
+    view = null;
+    int index = rows.FindIndex(r => r.Campaign.Id == shown.Id);
+    if (index >= 0 && menu.Current != rows[index])
+    {
+      menu.Current?.OnLeave?.Invoke();
+      menu.Selection = menu.Items.IndexOf(rows[index]);
+      menu.Current?.OnEnter?.Invoke();
+    }
+    Standings.EnsureFreshTotals();
+    menu.Focused = true;
+    Focused = true;
+  }
 
   protected override int InitialSelection(Oui from)
   {
-    if (from is OuiModOptionString)
+    OuiTrials.ReturnBoard = null;
+    if (from is OuiModOptionString || rows.Count == 0)
       return menu.Items.IndexOf(nameRow);
     int index = from is OuiTrials trials ? rows.FindIndex(r => r.Campaign == trials.Campaign) : 0;
     return menu.Items.IndexOf(rows[index < 0 ? 0 : index]);

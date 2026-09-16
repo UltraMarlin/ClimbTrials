@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -20,11 +22,18 @@ public enum ServerError
   NameInvalid,
   Rejected,
   RateLimited,
+  Banned,
 }
 
 public readonly record struct ServerResult<T>(T Value, ServerError Error, string Message)
 {
   public bool Ok => Error == ServerError.None;
+}
+
+public sealed class DownloadedReplay
+{
+  public byte[] Bytes { get; init; }
+  public string OwnerName { get; init; }
 }
 
 public static class ServerClient
@@ -33,6 +42,7 @@ public static class ServerClient
   private const double TimeoutSeconds = 2;
   private const string VersionHeader = "X-ClimbTrials-Version";
   private const string ClientIdHeader = "X-Client-Id";
+  private const string PlayerNameHeader = "X-Player-Name";
   private const string UrlRefused = "server URL refused";
   private const string OfflineModeMessage = "offline mode";
 
@@ -94,6 +104,26 @@ public static class ServerClient
       passive: true
     );
 
+  public static void GetCampaignTotals(Action<ServerResult<CampaignTotals>> onDone) =>
+    Send("/v1/campaigns/totals", HttpMethod.Get, null, onDone, passive: true);
+
+  public static void GetCampaignBoard(
+    string campaignId,
+    int offset,
+    int limit,
+    Action<ServerResult<Board>> onDone
+  ) =>
+    Send(
+      $"/v1/campaigns/{campaignId}/board?offset={offset}&limit={limit}",
+      HttpMethod.Get,
+      null,
+      onDone,
+      passive: true
+    );
+
+  public static void Download(string replayId, Action<ServerResult<DownloadedReplay>> onDone) =>
+    Send($"/v1/replays/{replayId}", HttpMethod.Get, null, onDone, read: ReadReplay);
+
   public static void Submit(
     string trialId,
     byte[] replay,
@@ -116,7 +146,8 @@ public static class ServerClient
     HttpMethod method,
     HttpContent body,
     Action<ServerResult<T>> onDone,
-    bool passive = false
+    bool passive = false,
+    Func<HttpResponseMessage, Task<T>> read = null
   )
   {
     if (Settings.OfflineMode)
@@ -137,7 +168,7 @@ public static class ServerClient
 
     Task.Run(async () =>
     {
-      ServerResult<T> result = await Request<T>(url, method, body, clientId);
+      ServerResult<T> result = await Request(url, method, body, clientId, read ?? ReadJson<T>);
       await MainThreadHelper.Schedule(() =>
       {
         EndRequest();
@@ -183,7 +214,8 @@ public static class ServerClient
     Uri url,
     HttpMethod method,
     HttpContent body,
-    string clientId
+    string clientId,
+    Func<HttpResponseMessage, Task<T>> read
   )
   {
     try
@@ -192,11 +224,10 @@ public static class ServerClient
       if (clientId != null)
         request.Headers.Add(ClientIdHeader, clientId);
       using HttpResponseMessage response = await http.SendAsync(request);
-      string text = await response.Content.ReadAsStringAsync();
       if (!response.IsSuccessStatusCode)
-        return ReadError<T>(text);
+        return ReadError<T>(await response.Content.ReadAsStringAsync());
 
-      T value = JsonSerializer.Deserialize<T>(text, json);
+      T value = await read(response);
       if (value == null)
         return new ServerResult<T>(default, ServerError.Offline, "empty answer");
 
@@ -207,6 +238,18 @@ public static class ServerClient
       return new ServerResult<T>(default, ServerError.Offline, e.Message);
     }
   }
+
+  private static async Task<T> ReadJson<T>(HttpResponseMessage response) =>
+    JsonSerializer.Deserialize<T>(await response.Content.ReadAsStringAsync(), json);
+
+  private static async Task<DownloadedReplay> ReadReplay(HttpResponseMessage response) =>
+    new()
+    {
+      Bytes = await response.Content.ReadAsByteArrayAsync(),
+      OwnerName = response.Headers.TryGetValues(PlayerNameHeader, out IEnumerable<string> values)
+        ? values.FirstOrDefault()
+        : null,
+    };
 
   private static ServerResult<T> ReadError<T>(string text)
   {
@@ -224,6 +267,7 @@ public static class ServerClient
       "name_invalid" => ServerError.NameInvalid,
       "rejected" => ServerError.Rejected,
       "rate_limited" => ServerError.RateLimited,
+      "banned" => ServerError.Banned,
       _ => ServerError.Offline,
     };
     return new ServerResult<T>(default, code, error?.Message);
@@ -237,6 +281,10 @@ public static class ServerClient
   {
     if (result.Error == ServerError.UnknownClient)
       Identity.Forget();
+    if (result.Error == ServerError.Banned)
+      Identity.Banned = true;
+    else if (result.Ok)
+      Identity.Banned = false;
     try
     {
       onDone(result);

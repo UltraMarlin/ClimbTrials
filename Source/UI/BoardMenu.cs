@@ -12,6 +12,7 @@ public class BoardMenu : TextMenu
 {
   public Action<int> OnPage;
   public Action<int> OnSwitch;
+  public Action<BoardRow> OnEntry;
   public bool HeaderVisible = true;
   public float EntryOffsetX;
   public float EntryAlpha = 1f;
@@ -20,7 +21,7 @@ public class BoardMenu : TextMenu
   private readonly BoardPage page;
   private bool discarded;
 
-  public BoardMenu(Trial trial, BoardPage page, bool switchable)
+  public BoardMenu(BoardSubject subject, BoardPage page, bool switchable)
   {
     this.page = page;
     AutoScroll = false;
@@ -30,11 +31,11 @@ public class BoardMenu : TextMenu
     MinWidth = TrialsMenu.ListMinWidth;
     ItemSpacing = BoardLayout.ItemSpacing;
 
-    Add(new HeaderRow(trial, page, switchable));
+    Add(new HeaderRow(subject, page, switchable));
     if (page == null)
       return;
     foreach (BoardRow row in page.Rows)
-      Add(new EntryRow(row, trial));
+      Add(new EntryRow(row, subject));
   }
 
   public BoardPage Page => page;
@@ -111,7 +112,7 @@ public class BoardMenu : TextMenu
 
   public static void DrawRow(
     BoardRow row,
-    Trial trial,
+    BoardSubject subject,
     Vector2 left,
     float width,
     float alpha,
@@ -123,13 +124,12 @@ public class BoardMenu : TextMenu
     Vector2 scale = Vector2.One * BoardLayout.TextScale;
     Color stroke = TextOutline.StrokeFor(color);
     Vector2 rankAt = left + new Vector2(BoardLayout.RankX, 0f);
-    ActiveFont.DrawOutline($"#{row.Rank}", rankAt, justify, scale, color, 2f, stroke);
+    ActiveFont.DrawOutline(RankText.Format(row.Rank), rankAt, justify, scale, color, 2f, stroke);
     Vector2 nameAt = left + new Vector2(BoardLayout.NameX, 0f);
     ActiveFont.DrawOutline(row.Name, nameAt, justify, scale, color, 2f, stroke);
 
     string time = TimeText.Format(row.Ticks);
-    long viewerBest = TrialRecords.Get(trial.Id)?.BestTicks ?? long.MaxValue;
-    Medal medal = trial.Goals?.VisibleMedalFor(row.Ticks, viewerBest) ?? Medal.None;
+    Medal medal = subject.MedalFor(row);
     float timeWidth = TimeText.Width(time, Style);
     Vector2 baseline = new(left.X + width - timeWidth, left.Y + TimeText.Height(Style) / 2f);
     TimeText.Draw(baseline, time, Style, MedalIcon.TextColor(medal) * alpha);
@@ -137,15 +137,17 @@ public class BoardMenu : TextMenu
 
   private class HeaderRow : Item
   {
-    private readonly Trial trial;
+    private readonly BoardSubject subject;
     private readonly BoardPage page;
     private readonly bool switchable;
 
-    private MTexture Skull => GFX.Gui[trial.SkullTexture];
+    private MTexture Skull => subject.Skull;
 
-    public HeaderRow(Trial trial, BoardPage page, bool switchable)
+    private float SkullSpan => Skull == null ? 0f : Skull.Width + BoardLayout.IconGap;
+
+    public HeaderRow(BoardSubject subject, BoardPage page, bool switchable)
     {
-      this.trial = trial;
+      this.subject = subject;
       this.page = page;
       this.switchable = switchable;
       Selectable = true;
@@ -154,7 +156,7 @@ public class BoardMenu : TextMenu
     public override float Height() => BoardLayout.HeaderHeight;
 
     public override float LeftWidth() =>
-      Skull.Width + BoardLayout.IconGap + ActiveFont.Measure(trial.Name).X * BoardLayout.NameScale;
+      SkullSpan + ActiveFont.Measure(subject.Name).X * BoardLayout.NameScale;
 
     public override void LeftPressed() => (Container as BoardMenu)?.OnSwitch?.Invoke(-1);
 
@@ -170,11 +172,11 @@ public class BoardMenu : TextMenu
       float nameY = top + BoardLayout.NameY;
       float width = LeftWidth();
       float left = centerX - width / 2f;
-      Skull.DrawCentered(new Vector2(left + Skull.Width / 2f, nameY), Color.White * alpha);
+      Skull?.DrawCentered(new Vector2(left + Skull.Width / 2f, nameY), Color.White * alpha);
       Color nameColor = (highlighted ? Container.HighlightColor : Color.White) * alpha;
       ActiveFont.DrawOutline(
-        trial.Name,
-        new Vector2(left + Skull.Width + BoardLayout.IconGap, nameY),
+        subject.Name,
+        new Vector2(left + SkullSpan, nameY),
         new Vector2(0f, 0.5f),
         Vector2.One * BoardLayout.NameScale,
         nameColor,
@@ -193,9 +195,7 @@ public class BoardMenu : TextMenu
 
       if (page == null)
         return;
-      string runners = Dialog
-        .Get("climbtrials_board_runners")
-        .Replace("{0}", page.Total.ToString());
+      string runners = Dialog.Get(subject.CountKey).Replace("{0}", page.Total.ToString());
       Vector2 runnersAt = new(centerX, top + BoardLayout.RunnersY);
       Vector2 runnersScale = Vector2.One * BoardLayout.RunnersScale;
       ActiveFont.Draw(
@@ -211,15 +211,18 @@ public class BoardMenu : TextMenu
   private class EntryRow : Item
   {
     private readonly BoardRow row;
-    private readonly Trial trial;
+    private readonly BoardSubject subject;
     private readonly string time;
 
-    public EntryRow(BoardRow row, Trial trial)
+    public EntryRow(BoardRow row, BoardSubject subject)
     {
       this.row = row;
-      this.trial = trial;
+      this.subject = subject;
       time = TimeText.Format(row.Ticks);
       Selectable = true;
+
+      if (subject.Trial != null)
+        Pressed(() => (Container as BoardMenu)?.OnEntry?.Invoke(row));
     }
 
     public override float Height() => BoardLayout.RowHeight;
@@ -237,7 +240,7 @@ public class BoardMenu : TextMenu
     {
       BoardMenu menu = (BoardMenu)Container;
       Vector2 left = position + new Vector2(menu.EntryOffsetX, 0f);
-      DrawRow(row, trial, left, Container.Width, Container.Alpha * menu.EntryAlpha, highlighted);
+      DrawRow(row, subject, left, Container.Width, Container.Alpha * menu.EntryAlpha, highlighted);
     }
   }
 }

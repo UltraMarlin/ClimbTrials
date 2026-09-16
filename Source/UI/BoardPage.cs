@@ -36,7 +36,7 @@ public sealed class BoardPage
 
   public static BoardPage From(Board chunk, int page)
   {
-    int start = (page - 1) * BoardLayout.PageRows - chunk.Offset;
+    int start = Math.Clamp((page - 1) * BoardLayout.PageRows - chunk.Offset, 0, chunk.Rows.Count);
     int count = Math.Clamp(chunk.Rows.Count - start, 0, BoardLayout.PageRows);
     List<BoardRow> rows = chunk.Rows.GetRange(start, count);
     return new BoardPage(page, CountFor(chunk.Total), chunk.Total, rows, chunk.Me);

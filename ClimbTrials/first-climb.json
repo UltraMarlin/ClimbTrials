@@ -1,0 +1,168 @@
+{
+  "id": "c1",
+  "name": "First Climb",
+  "description": "",
+  "order": 2,
+  "trials": [
+    {
+      "id": "t06",
+      "name": "Berry City",
+      "difficulty": "Normal",
+      "replayLimitSeconds": 120,
+      "run": {
+        "sid": "Celeste/1-ForsakenCity",
+        "mode": "Normal",
+        "startRoom": "1",
+        "spawn": [19, 144],
+        "spawnFacing": null,
+        "finishRoom": "5",
+        "finish": [1220, -896, 16, 24],
+        "waypoints": [],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 2,
+        "dashes": null,
+        "grabless": false
+      },
+      "goals": {
+        "bronze": 54,
+        "silver": 48,
+        "gold": 44,
+        "diamond": 40,
+        "grandmaster": 34
+      }
+    },
+    {
+      "id": "t07",
+      "name": "City Crossing",
+      "difficulty": "Normal",
+      "replayLimitSeconds": 120,
+      "run": {
+        "sid": "Celeste/1-ForsakenCity",
+        "mode": "Normal",
+        "startRoom": "6b",
+        "spawn": [2283, -1232],
+        "spawnFacing": null,
+        "finishRoom": "6a",
+        "finish": [1864, -1168, 16, 24],
+        "waypoints": [
+          {
+            "room": "6b",
+            "position": [2168, -1200],
+            "setsSpawn": false
+          },
+          {
+            "room": "6a",
+            "position": [1700, -1052]
+          }
+        ],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 0,
+        "dashes": null,
+        "grabless": false
+      },
+      "goals": {
+        "bronze": 25,
+        "silver": 20,
+        "gold": 15,
+        "diamond": 12,
+        "grandmaster": 8
+      }
+    },
+    {
+      "id": "t08",
+      "name": "Shrine Waypoint Frenzy",
+      "difficulty": "Normal",
+      "replayLimitSeconds": 120,
+      "run": {
+        "sid": "Celeste/4-GoldenRidge",
+        "mode": "Normal",
+        "startRoom": "b-00",
+        "spawn": [4416, -1016],
+        "spawnFacing": null,
+        "finishRoom": "b-00",
+        "finish": [4384, -1040, 64, 24],
+        "waypoints": [
+          {
+            "room": "b-00",
+            "position": [4312, -1068]
+          },
+          {
+            "room": "b-00",
+            "position": [4428, -1370]
+          },
+          {
+            "room": "b-00",
+            "position": [4550, -1298]
+          },
+          {
+            "room": "b-00",
+            "position": [4512, -1216]
+          },
+          {
+            "room": "b-00",
+            "position": [4314, -1246]
+          },
+          {
+            "room": "b-00",
+            "position": [4374, -1288]
+          }
+        ],
+        "cameraOffsets": [
+          {
+            "room": "b-00",
+            "offset": [0, 0]
+          }
+        ],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 0,
+        "dashes": 2,
+        "grabless": false
+      },
+      "goals": {
+        "bronze": 26,
+        "silver": 22,
+        "gold": 20,
+        "diamond": 18,
+        "grandmaster": 12
+      }
+    },
+    {
+      "id": "t09",
+      "name": "Wake Up",
+      "difficulty": "Normal",
+      "replayLimitSeconds": 120,
+      "run": {
+        "sid": "Celeste/2-OldSite",
+        "mode": "Normal",
+        "startRoom": "end_3",
+        "spawn": [1015, 1888],
+        "spawnFacing": null,
+        "finishRoom": "end_1",
+        "finish": [414, 1656, 16, 24],
+        "waypoints": [],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 0,
+        "dashes": 0,
+        "grabless": false
+      },
+      "goals": {
+        "bronze": 18,
+        "silver": 16,
+        "gold": 14,
+        "diamond": 12,
+        "grandmaster": 10
+      }
+    }
+  ]
+}

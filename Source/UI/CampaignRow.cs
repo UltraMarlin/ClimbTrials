@@ -1,4 +1,5 @@
 using Celeste.Mod.ClimbTrials.Content;
+using Celeste.Mod.ClimbTrials.Online;
 using Celeste.Mod.ClimbTrials.Runs;
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -67,24 +68,34 @@ public class CampaignRow : TextMenu.Item
     );
 
     CampaignRecord record = TrialRecords.Get(Campaign);
-    if (record.TotalTicks is not long total)
-      return;
+    string text = record.TotalTicks is long total ? TimeText.Format(total) : null;
+    float width = TimeText.Width(
+      text ?? RowLayout.RankSlotTime,
+      TimeText.Hud.At(RowLayout.PbScale)
+    );
+    float medalCenter = rightEdge - width - RowLayout.MedalGap;
+    if (text != null)
+    {
+      if (record.Medal != Medal.None)
+        MedalIcon.Draw(
+          new Vector2(medalCenter, rowStart.Y),
+          record.Medal,
+          RowLayout.MedalIconHeight,
+          alpha
+        );
 
-    string text = TimeText.Format(total);
-    float width = TimeText.Width(text, TimeText.Hud.At(RowLayout.PbScale));
-    if (record.Medal != Medal.None)
-      MedalIcon.Draw(
-        new Vector2(rightEdge - width - RowLayout.MedalGap, rowStart.Y),
-        record.Medal,
-        RowLayout.MedalIconHeight,
-        alpha
+      TimeText.Draw(
+        new Vector2(rightEdge - width, rowStart.Y + RowLayout.PbBaseline),
+        text,
+        TimeText.Hud.At(RowLayout.PbScale),
+        MedalIcon.TextColor(record.Medal) * alpha
       );
+    }
 
-    TimeText.Draw(
-      new Vector2(rightEdge - width, rowStart.Y + RowLayout.PbBaseline),
-      text,
-      TimeText.Hud.At(RowLayout.PbScale),
-      MedalIcon.TextColor(record.Medal) * alpha
+    RankText.Draw(
+      Standings.TotalFor(Campaign)?.Rank,
+      new Vector2(medalCenter, rowStart.Y + RowLayout.RankLift),
+      alpha
     );
   }
 }

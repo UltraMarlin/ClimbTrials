@@ -15,6 +15,8 @@ public class OuiTrials : ListScreen
   public const Overworld.StartMode ReturnStartMode = (Overworld.StartMode)5602393;
   public static Trial ReturnTrial;
 
+  public static LeaderboardView.Bookmark? ReturnBoard;
+
   public const float SwitchDuration = 0.3f;
   public const float SwitchDistance = 640f;
   private const float NameY = TitleY + 70f;
@@ -27,7 +29,6 @@ public class OuiTrials : ListScreen
   private const float OfflineScale = 0.45f;
   private const float TrialsListTop = 280f;
   private const float NoticeSeconds = 5f;
-  private const float ListDim = 0.05f;
 
   private int campaignIndex;
   private Campaign outgoingCampaign;
@@ -36,6 +37,7 @@ public class OuiTrials : ListScreen
   private TrialModeMenu open;
   private LeaderboardView view;
   private readonly List<TrialRow> rows = [];
+  private LeaderboardView.Bookmark? resumeBoard;
 
   protected override int ScreenDepth => 2;
 
@@ -72,6 +74,8 @@ public class OuiTrials : ListScreen
   {
     Trial trial = ReturnTrial;
     ReturnTrial = null;
+    resumeBoard = ReturnBoard;
+    ReturnBoard = null;
     int index = rows.FindIndex(r => r.Trial == trial);
     return menu.Items.IndexOf(rows[index < 0 ? 0 : index]);
   }
@@ -211,7 +215,7 @@ public class OuiTrials : ListScreen
   {
     base.Update();
     if (open != null)
-      SetDim(1f - (1f - ListDim) * open.Fade);
+      SetDim(open.DimUnder);
     if (
       BoardPromptShown
       && outgoing == null
@@ -227,12 +231,38 @@ public class OuiTrials : ListScreen
 
   private bool BoardPromptShown => menu != null && open == null && view == null;
 
-  private void OpenBoard(Trial trial)
+  private void OpenBoard(Trial trial, LeaderboardView.Bookmark? resume = null)
   {
     menu.Focused = false;
     Focused = false;
-    view = new LeaderboardView(trial, SetBoardSlide, OnBoardClosed);
+    view = new LeaderboardView(
+      BoardSubject.Of(trial),
+      SetBoardSlide,
+      OnBoardClosed,
+      StartGhost,
+      resume
+    );
     Scene.Add(view);
+  }
+
+  private void StartGhost(Trial trial, Replay replay, bool race)
+  {
+    view.Focused = false;
+    ReturnBoard = view.Showing;
+    Add(new Coroutine(StartRoutine(trial, replay, race, fromBoard: true)));
+  }
+
+  protected override bool Reopen()
+  {
+    if (
+      resumeBoard is not LeaderboardView.Bookmark place
+      || menu.Current is not TrialRow row
+      || place.SubjectId != row.Trial.Id
+    )
+      return false;
+    resumeBoard = null;
+    OpenBoard(row.Trial, place);
+    return true;
   }
 
   private void SetBoardSlide(float progress)
@@ -241,10 +271,10 @@ public class OuiTrials : ListScreen
     menu.YOffset = yOffset;
   }
 
-  private void OnBoardClosed(Trial shown)
+  private void OnBoardClosed(BoardSubject shown)
   {
     view = null;
-    int index = rows.FindIndex(r => r.Trial == shown);
+    int index = rows.FindIndex(r => r.Trial.Id == shown.Id);
     if (index >= 0 && menu.Current != rows[index])
     {
       menu.Current?.OnLeave?.Invoke();
@@ -302,8 +332,15 @@ public class OuiTrials : ListScreen
     return false;
   }
 
-  private IEnumerator StartRoutine(Trial trial, Replay replay = null, bool race = false)
+  private IEnumerator StartRoutine(
+    Trial trial,
+    Replay replay = null,
+    bool race = false,
+    bool fromBoard = false
+  )
   {
+    if (!fromBoard)
+      ReturnBoard = null;
     FinishSwitch();
     menu.Focused = false;
     Focused = false;

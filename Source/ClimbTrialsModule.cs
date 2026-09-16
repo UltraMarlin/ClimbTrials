@@ -33,7 +33,7 @@ public class ClimbTrialsModule : EverestModule
 
   public override void Load()
   {
-    Campaigns.Validate();
+    Campaigns.Load();
     ServerClient.Load();
     MainMenuEntry.Load();
     PauseMenu.Load();

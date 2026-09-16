@@ -83,7 +83,7 @@ public static class EditorCommands
     }
     TrialDraft.PlacedWaypoint removed = TrialDraft.Waypoints[^1];
     TrialDraft.Waypoints.RemoveAt(TrialDraft.Waypoints.Count - 1);
-    Engine.Commands.Log($"removed waypoint {TrialDraft.WaypointCode(removed)}");
+    Engine.Commands.Log($"removed waypoint {TrialDraft.WaypointText(removed)}");
   }
 
   [Command(
@@ -112,11 +112,11 @@ public static class EditorCommands
       EntityID id = new(room, entity.ID);
       if (TrialDraft.IgnoredStrawberries.Contains(id))
       {
-        Engine.Commands.Log($"already listed {TrialDraft.BerryCode(id)}");
+        Engine.Commands.Log($"already listed {TrialDraft.BerryText(id)}");
         continue;
       }
       TrialDraft.IgnoredStrawberries.Add(id);
-      Engine.Commands.Log($"ignoring {TrialDraft.BerryCode(id)}");
+      Engine.Commands.Log($"ignoring {TrialDraft.BerryText(id)}");
     }
     if (found == 0)
       Engine.Commands.Log($"no berries in room '{room}'");
@@ -132,7 +132,7 @@ public static class EditorCommands
     }
     EntityID removed = TrialDraft.IgnoredStrawberries[^1];
     TrialDraft.IgnoredStrawberries.RemoveAt(TrialDraft.IgnoredStrawberries.Count - 1);
-    Engine.Commands.Log($"removed {TrialDraft.BerryCode(removed)}");
+    Engine.Commands.Log($"removed {TrialDraft.BerryText(removed)}");
   }
 
   [Command("ct_fin", "ClimbTrials: draw the finish in a trial draft")]
@@ -144,7 +144,7 @@ public static class EditorCommands
 
   [Command(
     "ct_exp",
-    "ClimbTrials: export the trial draft and copy it from the log.txt file. ct_exp [id] [name]"
+    "ClimbTrials: export the trial draft as JSON, copy it from log.txt. ct_exp [id] [name]"
   )]
   public static void DraftExport(string id = null, string name = null)
   {
@@ -152,7 +152,7 @@ public static class EditorCommands
       TrialDraft.Id = id;
     if (name != null)
       TrialDraft.Name = name;
-    ConsoleOutput.Log(LogTag, TrialDraft.TrialCode());
+    ConsoleOutput.Log(LogTag, TrialDraft.TrialJson());
     TrialDraft.Reset();
   }
 

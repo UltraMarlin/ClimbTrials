@@ -1,0 +1,344 @@
+using System;
+using System.Collections.Generic;
+using System.Text.Json;
+using Celeste.Mod.ClimbTrials.Runs;
+using Microsoft.Xna.Framework;
+
+namespace Celeste.Mod.ClimbTrials.Content;
+
+public sealed class TrialFileException(string message) : Exception(message);
+
+public static class TrialFile
+{
+  public const string LogTag = "ClimbTrials/Trials";
+  public const string Folder = "ClimbTrials";
+
+  private static readonly Dictionary<string, AreaMode> Modes = new()
+  {
+    ["Normal"] = AreaMode.Normal,
+    ["BSide"] = AreaMode.BSide,
+    ["CSide"] = AreaMode.CSide,
+  };
+
+  private static readonly Dictionary<string, Facings> FacingNames = new()
+  {
+    ["Left"] = Facings.Left,
+    ["Right"] = Facings.Right,
+  };
+
+  public static IReadOnlyList<Campaign> Load()
+  {
+    if (!Everest.Content.TryGet(Folder, out ModAsset folder, includeDirs: true))
+      throw new TrialFileException($"The mod's campaign folder '{Folder}' is missing");
+
+    List<(Campaign Campaign, int Order)> loaded = [];
+    foreach (ModAsset asset in folder.Children)
+    {
+      if (!asset.PathVirtual.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+        continue;
+      string file = asset.PathVirtual[(Folder.Length + 1)..];
+      using JsonDocument document = Parse(asset.Data, file);
+      loaded.Add(ReadCampaign(document.RootElement, file));
+    }
+    if (loaded.Count == 0)
+      throw new TrialFileException($"Folder '{Folder}' holds no campaign file");
+
+    loaded.Sort(
+      (a, b) =>
+        a.Order != b.Order
+          ? a.Order.CompareTo(b.Order)
+          : string.CompareOrdinal(a.Campaign.Id, b.Campaign.Id)
+    );
+
+    List<Campaign> campaigns = [];
+    int trials = 0;
+    foreach ((Campaign campaign, int _) in loaded)
+    {
+      campaigns.Add(campaign);
+      trials += campaign.Trials.Count;
+    }
+    Logger.Log(LogLevel.Info, LogTag, $"loaded {campaigns.Count} campaigns, {trials} trials");
+    return campaigns;
+  }
+
+  private static JsonDocument Parse(byte[] bytes, string file)
+  {
+    try
+    {
+      return JsonDocument.Parse(bytes);
+    }
+    catch (JsonException e)
+    {
+      throw new TrialFileException($"{file}: not valid JSON, {e.Message}");
+    }
+  }
+
+  private static (Campaign Campaign, int Order) ReadCampaign(JsonElement element, string file)
+  {
+    Object(element, file);
+    string id = String(element, "id", file);
+    string at = $"{file}: campaign '{id}'";
+    JsonElement trials = Field(element, "trials", at);
+    if (trials.ValueKind != JsonValueKind.Array || trials.GetArrayLength() == 0)
+      throw new TrialFileException($"{at}, field 'trials': expected a non-empty array");
+    List<Trial> list = [];
+    int index = 0;
+    foreach (JsonElement trial in trials.EnumerateArray())
+      list.Add(ReadTrial(trial, $"{at}, trial [{index++}]", file));
+    Campaign campaign = new()
+    {
+      Id = id,
+      Name = String(element, "name", at),
+      Description = OptionalString(element, "description", at) ?? "",
+      Trials = list,
+    };
+    return (campaign, OptionalInt(element, "order", at) ?? 0);
+  }
+
+  private static Trial ReadTrial(JsonElement element, string where, string file)
+  {
+    Object(element, where);
+    string id = String(element, "id", where);
+    string at = $"{file}: trial '{id}'";
+    string difficultyName = String(element, "difficulty", at);
+    if (!Enum.TryParse(difficultyName, out Difficulty difficulty) || !Enum.IsDefined(difficulty))
+      throw new TrialFileException($"{at}, field 'difficulty': expected Normal, Hard or Expert");
+    JsonElement goals = Field(element, "goals", at);
+    Object(goals, $"{at}, field 'goals'");
+    return new Trial
+    {
+      Id = id,
+      Name = String(element, "name", at),
+      Difficulty = difficulty,
+      ReplayLimitSeconds =
+        OptionalInt(element, "replayLimitSeconds", at) ?? Trial.DefaultReplayLimitSeconds,
+      Run = ReadRun(Field(element, "run", at), at),
+      Goals = GoalTimes.FromSeconds(
+        bronze: Seconds(goals, "bronze", at),
+        silver: Seconds(goals, "silver", at),
+        gold: Seconds(goals, "gold", at),
+        diamond: Seconds(goals, "diamond", at),
+        grandmaster: Seconds(goals, "grandmaster", at)
+      ),
+    };
+  }
+
+  private static RunDefinition ReadRun(JsonElement run, string at)
+  {
+    Object(run, $"{at}, field 'run'");
+    string modeName = OptionalString(run, "mode", at) ?? "Normal";
+    if (!Modes.TryGetValue(modeName, out AreaMode mode))
+      throw new TrialFileException($"{at}, field 'run.mode': expected Normal, BSide or CSide");
+    string facingName = OptionalString(run, "spawnFacing", at);
+    Facings? facing = null;
+    if (facingName != null)
+    {
+      if (!FacingNames.TryGetValue(facingName, out Facings parsed))
+        throw new TrialFileException(
+          $"{at}, field 'run.spawnFacing': expected Left, Right or null"
+        );
+      facing = parsed;
+    }
+    int[] finish = Integers(Field(run, "finish", at), 4, $"{at}, field 'run.finish'");
+    int? dashes = OptionalInt(run, "dashes", at);
+    if (dashes is < 0 or > 2)
+      throw new TrialFileException($"{at}, field 'run.dashes': expected 0, 1, 2 or null");
+    try
+    {
+      return new RunDefinition
+      {
+        Sid = String(run, "sid", at),
+        Mode = mode,
+        StartRoom = String(run, "startRoom", at),
+        Spawn = Vector(Field(run, "spawn", at), $"{at}, field 'run.spawn'"),
+        SpawnFacing = facing,
+        FinishRoom = String(run, "finishRoom", at),
+        Finish = new Rectangle(finish[0], finish[1], finish[2], finish[3]),
+        Waypoints = List(run, "waypoints", at, ReadWaypoint),
+        CameraOffsets = List(
+          run,
+          "cameraOffsets",
+          at,
+          (e, w) =>
+            new CameraOffsetDef(String(e, "room", w), Vector(Field(e, "offset", w), $"{w}.offset"))
+        ),
+        BloomBaseAdd = OptionalFloat(run, "bloomBaseAdd", at),
+        LightingAlphaAdd = OptionalFloat(run, "lightingAlphaAdd", at),
+        IgnoredStrawberries = List(
+          run,
+          "ignoredStrawberries",
+          at,
+          (e, w) => new EntityID(String(e, "room", w), Int(e, "id", w))
+        ),
+        RequiredStrawberries = OptionalInt(run, "requiredStrawberries", at) ?? 0,
+        Dashes = dashes,
+        Grabless = OptionalBool(run, "grabless", at) ?? false,
+      };
+    }
+    catch (ArgumentOutOfRangeException e)
+    {
+      throw new TrialFileException($"{at}: {e.Message}");
+    }
+  }
+
+  private static WaypointDef ReadWaypoint(JsonElement element, string where)
+  {
+    Vector2? spawn = null;
+    if (
+      element.TryGetProperty("spawn", out JsonElement spawnElement)
+      && spawnElement.ValueKind != JsonValueKind.Null
+    )
+      spawn = Vector(spawnElement, $"{where}.spawn");
+    return new WaypointDef(
+      String(element, "room", where),
+      Vector(Field(element, "position", where), $"{where}.position"),
+      spawn,
+      OptionalBool(element, "setsSpawn", where) ?? true
+    );
+  }
+
+  private static IReadOnlyList<T> List<T>(
+    JsonElement parent,
+    string key,
+    string at,
+    Func<JsonElement, string, T> read
+  )
+  {
+    if (!parent.TryGetProperty(key, out JsonElement array) || array.ValueKind == JsonValueKind.Null)
+      return [];
+    if (array.ValueKind != JsonValueKind.Array)
+      throw new TrialFileException($"{at}, field 'run.{key}': expected an array");
+    List<T> list = [];
+    int index = 0;
+    foreach (JsonElement element in array.EnumerateArray())
+    {
+      string where = $"{at}, field 'run.{key}[{index++}]'";
+      Object(element, where);
+      list.Add(read(element, where));
+    }
+    return list;
+  }
+
+  private static void Object(JsonElement element, string where)
+  {
+    if (element.ValueKind != JsonValueKind.Object)
+      throw new TrialFileException($"{where}: expected an object");
+  }
+
+  private static JsonElement Field(JsonElement parent, string key, string at)
+  {
+    if (!parent.TryGetProperty(key, out JsonElement value) || value.ValueKind == JsonValueKind.Null)
+      throw new TrialFileException($"{at}, field '{key}': missing");
+    return value;
+  }
+
+  private static string String(JsonElement parent, string key, string at)
+  {
+    JsonElement value = Field(parent, key, at);
+    if (value.ValueKind != JsonValueKind.String || value.GetString().Length == 0)
+      throw new TrialFileException($"{at}, field '{key}': expected a non-empty string");
+    return value.GetString();
+  }
+
+  private static string OptionalString(JsonElement parent, string key, string at)
+  {
+    if (!parent.TryGetProperty(key, out JsonElement value) || value.ValueKind == JsonValueKind.Null)
+      return null;
+    if (value.ValueKind != JsonValueKind.String)
+      throw new TrialFileException($"{at}, field '{key}': expected a string or null");
+    return value.GetString();
+  }
+
+  private const double MaxMagnitude = 1_000_000;
+
+  private static float Number(JsonElement value, string where)
+  {
+    if (
+      value.ValueKind != JsonValueKind.Number
+      || !value.TryGetDouble(out double number)
+      || Math.Abs(number) > MaxMagnitude
+    )
+      throw new TrialFileException($"{where}: expected a number within ±{MaxMagnitude:F0}");
+    return (float)number;
+  }
+
+  private static int Bounded(int number, string where) =>
+    Math.Abs(number) <= MaxMagnitude
+      ? number
+      : throw new TrialFileException($"{where}: expected a number within ±{MaxMagnitude:F0}");
+
+  private static int[] Integers(JsonElement value, int count, string where)
+  {
+    if (value.ValueKind != JsonValueKind.Array || value.GetArrayLength() != count)
+      throw new TrialFileException($"{where}: expected {count} whole numbers");
+    int[] numbers = new int[count];
+    int index = 0;
+    foreach (JsonElement element in value.EnumerateArray())
+    {
+      if (element.ValueKind != JsonValueKind.Number || !element.TryGetInt32(out numbers[index]))
+        throw new TrialFileException($"{where}: expected {count} whole numbers");
+      Bounded(numbers[index++], where);
+    }
+    return numbers;
+  }
+
+  private static float[] Numbers(JsonElement value, int count, string where)
+  {
+    if (value.ValueKind != JsonValueKind.Array || value.GetArrayLength() != count)
+      throw new TrialFileException($"{where}: expected {count} numbers");
+    float[] numbers = new float[count];
+    int index = 0;
+    foreach (JsonElement element in value.EnumerateArray())
+      numbers[index++] = Number(element, where);
+    return numbers;
+  }
+
+  private static Vector2 Vector(JsonElement value, string where)
+  {
+    float[] xy = Numbers(value, 2, where);
+    return new Vector2(xy[0], xy[1]);
+  }
+
+  private static int Int(JsonElement parent, string key, string at)
+  {
+    JsonElement value = Field(parent, key, at);
+    if (value.ValueKind != JsonValueKind.Number || !value.TryGetInt32(out int number))
+      throw new TrialFileException($"{at}, field '{key}': expected a whole number");
+    return Bounded(number, $"{at}, field '{key}'");
+  }
+
+  private static int? OptionalInt(JsonElement parent, string key, string at)
+  {
+    if (!parent.TryGetProperty(key, out JsonElement value) || value.ValueKind == JsonValueKind.Null)
+      return null;
+    return Int(parent, key, at);
+  }
+
+  private static float? OptionalFloat(JsonElement parent, string key, string at)
+  {
+    if (!parent.TryGetProperty(key, out JsonElement value) || value.ValueKind == JsonValueKind.Null)
+      return null;
+    return Number(value, $"{at}, field '{key}'");
+  }
+
+  private static bool? OptionalBool(JsonElement parent, string key, string at)
+  {
+    if (!parent.TryGetProperty(key, out JsonElement value) || value.ValueKind == JsonValueKind.Null)
+      return null;
+    if (value.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+      throw new TrialFileException($"{at}, field '{key}': expected true or false");
+    return value.GetBoolean();
+  }
+
+  private static double Seconds(JsonElement goals, string key, string at)
+  {
+    JsonElement value = Field(goals, key, at);
+    if (
+      value.ValueKind != JsonValueKind.Number
+      || !value.TryGetDouble(out double seconds)
+      || seconds <= 0
+    )
+      throw new TrialFileException($"{at}, field 'goals.{key}': expected seconds above 0");
+    return seconds;
+  }
+}

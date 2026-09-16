@@ -1,7 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using Celeste.Mod.ClimbTrials.Runs;
+using Microsoft.Xna.Framework;
 
 namespace Celeste.Mod.ClimbTrials.Content;
 
@@ -15,6 +19,7 @@ public enum Difficulty
 public sealed class Trial
 {
   public const int DefaultReplayLimitSeconds = 120;
+  public const int DefinitionHashBytes = 32;
 
   public string Id { get; init; }
   public string Name { get; init; }
@@ -22,6 +27,10 @@ public sealed class Trial
   public RunDefinition Run { get; init; }
   public GoalTimes Goals { get; init; }
   public int ReplayLimitSeconds { get; init; } = DefaultReplayLimitSeconds;
+
+  public byte[] DefinitionHash =>
+    definitionHash ??= SHA256.HashData(Encoding.UTF8.GetBytes(DefinitionText()));
+  private byte[] definitionHash;
 
   public string SkullTexture =>
     Difficulty switch
@@ -31,6 +40,45 @@ public sealed class Trial
       Difficulty.Expert => "collectables/skullGold",
       _ => "collectables/skullBlue",
     };
+
+  public string DefinitionText()
+  {
+    RunDefinition run = Run;
+    string[] lines =
+    [
+      run.Sid,
+      Int((int)run.Mode),
+      run.StartRoom,
+      Vec(run.Spawn),
+      run.SpawnFacing is Facings facing ? Int((int)facing) : "",
+      run.FinishRoom,
+      $"{Int(run.Finish.X)},{Int(run.Finish.Y)},{Int(run.Finish.Width)},{Int(run.Finish.Height)}",
+      string.Join(
+        ";",
+        run.Waypoints.Select(w =>
+          $"{w.Room}|{Vec(w.Position)}|{(w.Spawn is Vector2 s ? Vec(s) : "")}|{Bool(w.SetsSpawn)}"
+        )
+      ),
+      string.Join(";", run.CameraOffsets.Select(c => $"{c.Room}|{Vec(c.Offset)}")),
+      run.BloomBaseAdd is float bloom ? Float(bloom) : "",
+      run.LightingAlphaAdd is float lighting ? Float(lighting) : "",
+      string.Join(";", run.IgnoredStrawberries.Select(b => $"{b.Level}|{Int(b.ID)}")),
+      Int(run.RequiredStrawberries),
+      run.Dashes is int dashes ? Int(dashes) : "",
+      Bool(run.Grabless),
+      Int(ReplayLimitSeconds),
+    ];
+    return string.Join("\n", lines);
+  }
+
+  private static string Int(int value) => value.ToString(CultureInfo.InvariantCulture);
+
+  private static string Vec(Vector2 v) => $"{Float(v.X)},{Float(v.Y)}";
+
+  private static string Bool(bool value) => value ? "true" : "false";
+
+  private static string Float(float value) =>
+    (value == 0f ? 0f : value).ToString("R", CultureInfo.InvariantCulture);
 }
 
 public sealed class Campaign
@@ -43,12 +91,24 @@ public sealed class Campaign
 
 public static class Campaigns
 {
-  public static readonly IReadOnlyList<Campaign> All =
-  [
-    Classics.Definition,
-    FirstCampaign.Definition,
-    SecondCampaign.Definition,
-  ];
+  public static IReadOnlyList<Campaign> All { get; private set; } = [];
+  public static string LoadError { get; private set; }
+
+  public static void Load()
+  {
+    try
+    {
+      All = TrialFile.Load();
+      Validate();
+      LoadError = null;
+    }
+    catch (Exception e)
+    {
+      All = [];
+      LoadError = e.Message;
+      Logger.Log(LogLevel.Error, TrialFile.LogTag, e.Message);
+    }
+  }
 
   public static Trial FindTrial(string id) =>
     All.SelectMany(c => c.Trials).FirstOrDefault(t => t.Id == id);
@@ -71,17 +131,15 @@ public static class Campaigns
     foreach (Campaign campaign in All)
     {
       if (!campaignIds.Add(campaign.Id))
-        throw new InvalidOperationException($"ClimbTrials: duplicate campaign id '{campaign.Id}'");
+        throw new InvalidOperationException($"duplicate campaign id '{campaign.Id}'");
       if (campaign.Trials.Count == 0)
-        throw new InvalidOperationException($"ClimbTrials: campaign '{campaign.Id}' has no trials");
+        throw new InvalidOperationException($"campaign '{campaign.Id}' has no trials");
       foreach (Trial trial in campaign.Trials)
       {
         if (!trialIds.Add(trial.Id))
-          throw new InvalidOperationException($"ClimbTrials: duplicate trial id '{trial.Id}'");
+          throw new InvalidOperationException($"duplicate trial id '{trial.Id}'");
         if (trial.ReplayLimitSeconds < 1)
-          throw new InvalidOperationException(
-            $"ClimbTrials: trial '{trial.Id}' has a replay limit below 1 s"
-          );
+          throw new InvalidOperationException($"trial '{trial.Id}' has a replay limit below 1 s");
       }
     }
   }

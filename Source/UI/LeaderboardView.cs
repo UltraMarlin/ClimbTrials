@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Online;
+using Celeste.Mod.ClimbTrials.Replays;
 using Microsoft.Xna.Framework;
 using Monocle;
 
@@ -11,6 +13,11 @@ public class LeaderboardView : Entity
 {
   public const float SlideDistance = 1080f;
   private const float MessageScale = 0.8f;
+  private const float NoticeY = 975f;
+  private const float NoticeScale = 0.6f;
+  private const float NoticeSeconds = 5f;
+
+  public readonly record struct Bookmark(string SubjectId, int Page, int Selection);
 
   private enum BoardState
   {
@@ -19,9 +26,9 @@ public class LeaderboardView : Entity
     Offline,
   }
 
-  private sealed class Shown(Trial trial)
+  private sealed class Shown(BoardSubject subject)
   {
-    public readonly Trial Trial = trial;
+    public readonly BoardSubject Subject = subject;
     public Board Chunk;
     public BoardState State = BoardState.Loading;
     public BoardMenu Menu;
@@ -34,12 +41,18 @@ public class LeaderboardView : Entity
   private const int HeaderRow = 0;
   private const int FirstEntry = 1;
 
-  private readonly Campaign campaign;
+  private readonly IReadOnlyList<BoardSubject> siblings;
   private readonly Action<float> slid;
-  private readonly Action<Trial> closed;
+  private readonly Action<BoardSubject> closed;
+  private readonly Action<Trial, Replay, bool> ghost;
+  private readonly TransientText notice = new();
+  private readonly Bookmark? resume;
   private Shown current;
   private Shown outgoing;
-  private int trialIndex;
+  private GhostMenu ghostMenu;
+  private float dim = 1f;
+  private bool downloading;
+  private int subjectIndex;
   private int page = 1;
   private int requestSequence;
   private int selectAfter;
@@ -47,25 +60,38 @@ public class LeaderboardView : Entity
   private bool sliding;
   private float slideY = -SlideDistance;
 
-  private bool Switchable => campaign.Trials.Count > 1;
+  public bool Focused { get; set; } = true;
+
+  private bool Switchable => siblings.Count > 1;
 
   private static bool RetryAllowed => !ClimbTrialsModule.Settings.OfflineMode;
 
-  public LeaderboardView(Trial trial, Action<float> slid, Action<Trial> closed)
+  public LeaderboardView(
+    BoardSubject subject,
+    Action<float> slid,
+    Action<BoardSubject> closed,
+    Action<Trial, Replay, bool> ghost = null,
+    Bookmark? resume = null
+  )
   {
     this.slid = slid;
     this.closed = closed;
-    campaign = Campaigns.CampaignOf(trial);
-    trialIndex = IndexOf(trial);
-    current = new Shown(trial);
+    this.ghost = ghost;
+    this.resume = resume;
+    siblings = subject.Siblings;
+    subjectIndex = IndexOf(subject);
+    current = new Shown(subject);
+    page = resume?.Page ?? 1;
     Tag = Tags.HUD;
     Depth = -1;
   }
 
-  private int IndexOf(Trial trial)
+  public Bookmark Showing => new(current.Subject.Id, page, current.Menu?.Selection ?? HeaderRow);
+
+  private int IndexOf(BoardSubject subject)
   {
-    for (int i = 0; i < campaign.Trials.Count; i++)
-      if (campaign.Trials[i] == trial)
+    for (int i = 0; i < siblings.Count; i++)
+      if (siblings[i].Id == subject.Id)
         return i;
     return 0;
   }
@@ -73,9 +99,12 @@ public class LeaderboardView : Entity
   public override void Added(Scene scene)
   {
     base.Added(scene);
-    Fetch(FirstEntry);
+    Fetch(resume?.Selection ?? FirstEntry);
     ShowHeaderWhileLoading(current);
-    Add(new Coroutine(Slide(opening: true)));
+    if (resume == null)
+      Add(new Coroutine(Slide(opening: true)));
+    else
+      SetSlide(1f);
   }
 
   private IEnumerator Slide(bool opening)
@@ -92,7 +121,7 @@ public class LeaderboardView : Entity
     if (opening)
       yield break;
     Discard();
-    closed(current.Trial);
+    closed(current.Subject);
   }
 
   private void SetSlide(float progress)
@@ -115,13 +144,13 @@ public class LeaderboardView : Entity
     if (shown.Menu != null)
     {
       shown.Menu.Position = at;
-      shown.Menu.Alpha = shown.Alpha;
-      shown.Menu.Focused = !sliding && shown == current;
+      shown.Menu.Alpha = shown.Alpha * dim;
+      shown.Menu.Focused = Focused && !sliding && ghostMenu == null && shown == current;
     }
     if (shown.Leaving != null)
     {
       shown.Leaving.Position = at;
-      shown.Leaving.Alpha = shown.Alpha;
+      shown.Leaving.Alpha = shown.Alpha * dim;
       shown.Leaving.Focused = false;
     }
   }
@@ -131,10 +160,11 @@ public class LeaderboardView : Entity
     int index = select == KeepSelection ? shown.Menu?.Selection ?? HeaderRow : select;
     BoardPage shownPage = shown.Chunk == null ? null : BoardPage.From(shown.Chunk, page);
     BoardMenu previous = shown.Menu;
-    shown.Menu = new BoardMenu(shown.Trial, shownPage, Switchable)
+    shown.Menu = new BoardMenu(shown.Subject, shownPage, Switchable)
     {
       OnPage = TurnPage,
       OnSwitch = Switch,
+      OnEntry = OpenGhostMenu,
     };
     shown.Menu.Select(index);
     Scene.Add(shown.Menu);
@@ -198,8 +228,7 @@ public class LeaderboardView : Entity
     int sequence = ++requestSequence;
     selectAfter = select;
     target.State = BoardState.Loading;
-    Standings.FetchBoard(
-      target.Trial,
+    target.Subject.Fetch(
       BoardPage.ChunkOf(page),
       result =>
       {
@@ -222,6 +251,16 @@ public class LeaderboardView : Entity
 
     target.Chunk = result.Value;
     target.State = BoardState.Ready;
+    int pages = BoardPage.CountFor(result.Value.Total);
+    if (page > pages)
+    {
+      page = pages;
+      if (!BoardPage.Covers(result.Value, page))
+      {
+        Fetch(selectAfter);
+        return;
+      }
+    }
     ShowMenu(target, selectAfter, pageDirection);
     pageDirection = 0;
     PrefetchNextChunk();
@@ -237,7 +276,7 @@ public class LeaderboardView : Entity
     if (next * Standings.ChunkRows >= chunk.Total)
       return;
 
-    Standings.FetchBoard(current.Trial, next, _ => { });
+    current.Subject.Fetch(next, _ => { });
   }
 
   private void TurnPage(int direction)
@@ -261,13 +300,13 @@ public class LeaderboardView : Entity
   {
     if (outgoing != null || !Switchable)
       return;
-    int count = campaign.Trials.Count;
-    trialIndex = (trialIndex + direction + count) % count;
+    int count = siblings.Count;
+    subjectIndex = (subjectIndex + direction + count) % count;
     Audio.Play(
       direction > 0 ? "event:/ui/main/button_toggle_on" : "event:/ui/main/button_toggle_off"
     );
     outgoing = current;
-    current = new Shown(campaign.Trials[trialIndex]) { Alpha = 0f };
+    current = new Shown(siblings[subjectIndex]) { Alpha = 0f };
     page = 1;
     Fetch(HeaderRow);
     ShowHeaderWhileLoading(current);
@@ -298,6 +337,8 @@ public class LeaderboardView : Entity
   public void Discard()
   {
     requestSequence++;
+    ghostMenu?.Discard();
+    ghostMenu = null;
     current.Menu?.Discard();
     current.Leaving?.Discard();
     outgoing?.Menu?.Discard();
@@ -315,8 +356,10 @@ public class LeaderboardView : Entity
   public override void Update()
   {
     base.Update();
+    notice.Update(Engine.RawDeltaTime);
+    dim = ghostMenu?.DimUnder ?? 1f;
     Place();
-    if (sliding)
+    if (!Focused || sliding || ghostMenu != null)
       return;
 
     if (Input.MenuCancel.Pressed || Input.ESC.Pressed || Input.MenuJournal.Pressed)
@@ -337,8 +380,87 @@ public class LeaderboardView : Entity
     DrawUnderMenu(current);
     if (outgoing != null)
       DrawUnderMenu(outgoing);
-    if (!sliding && outgoing == null && current.State == BoardState.Offline && RetryAllowed)
-      ButtonRow.DrawCenter(Dialog.Clean("climbtrials_board_retry"), Input.MenuConfirm, 1f);
+    if (sliding)
+      return;
+
+    notice.Render(new Vector2(current.X, NoticeY), NoticeScale, 1f);
+    if (outgoing == null && current.State == BoardState.Offline && RetryAllowed)
+      ButtonRow.DrawCenter(Dialog.Clean("climbtrials_board_retry"), Input.MenuConfirm, dim);
+  }
+
+  private void OpenGhostMenu(BoardRow row)
+  {
+    if (ghost == null || current.Subject.Trial == null || ghostMenu != null)
+      return;
+
+    Audio.Play(SFX.ui_main_button_select);
+    Replay local = LocalPb(row);
+    ghostMenu = new GhostMenu(
+      row,
+      current.Subject,
+      () => GhostReason(row, local),
+      watch: () => ChooseGhost(row, local, race: false),
+      race: () => ChooseGhost(row, local, race: true),
+      closed: () => ghostMenu = null
+    );
+    Scene.Add(ghostMenu);
+    Place();
+  }
+
+  private Replay LocalPb(BoardRow row)
+  {
+    Trial trial = current.Subject.Trial;
+    if (!row.Me || !ReplayStore.Exists(trial.Id))
+      return null;
+    if (!ReplayStore.TryLoad(trial.Id, out Replay replay, out string _))
+      return null;
+    return replay.Ticks == row.Ticks ? replay : null;
+  }
+
+  private string GhostReason(BoardRow row, Replay local)
+  {
+    if (local != null)
+      return null;
+    if (row.ReplayId == null || row.ReplayFormat != Replay.FormatVersion)
+      return Dialog.Clean("climbtrials_ghost_old_format");
+    if (ClimbTrialsModule.Settings.OfflineMode)
+      return Dialog.Clean("climbtrials_offline_mode");
+    return downloading ? Dialog.Clean("climbtrials_ghost_downloading") : null;
+  }
+
+  private void ChooseGhost(BoardRow row, Replay local, bool race)
+  {
+    Trial trial = current.Subject.Trial;
+    if (local != null)
+    {
+      Chosen(trial, local, race);
+      return;
+    }
+    downloading = true;
+    GhostCache.Get(
+      row.ReplayId,
+      row.Me,
+      replay =>
+      {
+        downloading = false;
+        if (Scene == null || ghostMenu == null || ghostMenu.Closing)
+          return;
+
+        if (replay == null)
+        {
+          notice.Show(Dialog.Clean("climbtrials_ghost_failed"), NoticeSeconds);
+          return;
+        }
+
+        Chosen(trial, replay, race);
+      }
+    );
+  }
+
+  private void Chosen(Trial trial, Replay replay, bool race)
+  {
+    ghostMenu?.Dismiss();
+    ghost(trial, replay, race);
   }
 
   private void DrawUnderMenu(Shown shown)
@@ -361,15 +483,16 @@ public class LeaderboardView : Entity
     float pageBottom = shown.Menu.Position.Y + BoardLayout.HeaderHeight + BoardMenu.EntriesSpan;
     float ruleY = pageBottom + BoardLayout.RuleGap;
     float left = shown.X - shown.Menu.Width / 2f;
-    Color rule = Color.White * (BoardLayout.RuleAlpha * shown.Alpha);
+    float alpha = shown.Alpha * dim;
+    Color rule = Color.White * (BoardLayout.RuleAlpha * alpha);
     Draw.Rect(left, ruleY, shown.Menu.Width, 1f, rule);
     Vector2 rowLeft = new(left, ruleY + BoardLayout.RuleGap + BoardLayout.RowHeight / 2f);
-    BoardMenu.DrawRow(shownPage.Me, shown.Trial, rowLeft, shown.Menu.Width, shown.Alpha, false);
+    BoardMenu.DrawRow(shownPage.Me, shown.Subject, rowLeft, shown.Menu.Width, alpha, false);
   }
 
   private void DrawMessage(string key, Shown shown)
   {
-    Color color = Color.White * shown.Alpha;
+    Color color = Color.White * (shown.Alpha * dim);
     ActiveFont.DrawOutline(
       Dialog.Clean(key),
       new Vector2(shown.X, BoardLayout.MessageY + slideY),

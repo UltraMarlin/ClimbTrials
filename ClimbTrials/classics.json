@@ -1,0 +1,188 @@
+{
+  "id": "cl1",
+  "name": "Classics",
+  "description": "These might feel familiar.",
+  "order": 1,
+  "trials": [
+    {
+      "id": "t01",
+      "name": "Resort Start Coins Room",
+      "difficulty": "Normal",
+      "replayLimitSeconds": 120,
+      "run": {
+        "sid": "Celeste/3-CelestialResort",
+        "mode": "Normal",
+        "startRoom": "06-c",
+        "spawn": [4208, -328],
+        "spawnFacing": "Right",
+        "finishRoom": "08-c",
+        "finish": [4616, -320, 16, 8],
+        "waypoints": [],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 0,
+        "dashes": null,
+        "grabless": false
+      },
+      "goals": {
+        "bronze": 7.5,
+        "silver": 6.5,
+        "gold": 6,
+        "diamond": 5.8,
+        "grandmaster": 5.6
+      }
+    },
+    {
+      "id": "t02",
+      "name": "Big Chaos",
+      "difficulty": "Normal",
+      "replayLimitSeconds": 120,
+      "run": {
+        "sid": "Celeste/3-CelestialResort",
+        "mode": "Normal",
+        "startRoom": "08-a",
+        "spawn": [4360, 0],
+        "spawnFacing": null,
+        "finishRoom": "09-b",
+        "finish": [5248, 52, 32, 16],
+        "waypoints": [],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 0,
+        "dashes": null,
+        "grabless": false
+      },
+      "goals": {
+        "bronze": 20,
+        "silver": 18,
+        "gold": 16.4,
+        "diamond": 15.5,
+        "grandmaster": 15
+      }
+    },
+    {
+      "id": "t03",
+      "name": "Depths Cornerboost",
+      "difficulty": "Normal",
+      "replayLimitSeconds": 120,
+      "run": {
+        "sid": "Celeste/5-MirrorTemple",
+        "mode": "Normal",
+        "startRoom": "b-00",
+        "spawn": [2296, 32],
+        "spawnFacing": null,
+        "finishRoom": "b-01b",
+        "finish": [3832, -240, 16, 32],
+        "waypoints": [],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 0,
+        "dashes": null,
+        "grabless": false
+      },
+      "goals": {
+        "bronze": 15,
+        "silver": 13,
+        "gold": 11,
+        "diamond": 10,
+        "grandmaster": 9.6
+      }
+    },
+    {
+      "id": "t04",
+      "name": "7A 1000M the fun part",
+      "difficulty": "Normal",
+      "replayLimitSeconds": 120,
+      "run": {
+        "sid": "Celeste/7-Summit",
+        "mode": "Normal",
+        "startRoom": "e-02",
+        "spawn": [15120, -8888],
+        "spawnFacing": "Right",
+        "finishRoom": "e-05",
+        "finish": [16928, -8968, 56, 24],
+        "waypoints": [],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 0,
+        "dashes": null,
+        "grabless": false
+      },
+      "goals": {
+        "bronze": 16,
+        "silver": 14,
+        "gold": 12,
+        "diamond": 11.5,
+        "grandmaster": 11
+      }
+    },
+    {
+      "id": "t18",
+      "name": "No throwing allowed",
+      "difficulty": "Normal",
+      "replayLimitSeconds": 120,
+      "run": {
+        "sid": "Celeste/7-Summit",
+        "mode": "Normal",
+        "startRoom": "g-03",
+        "spawn": [26752, -24688],
+        "spawnFacing": null,
+        "finishRoom": "g-03",
+        "finish": [27728, -25648, 56, 80],
+        "waypoints": [],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 0,
+        "dashes": null,
+        "grabless": false
+      },
+      "goals": {
+        "bronze": 12,
+        "silver": 10.5,
+        "gold": 9.1,
+        "diamond": 8.7,
+        "grandmaster": 8.5
+      }
+    },
+    {
+      "id": "t05",
+      "name": "It's just 7B Flag 10",
+      "difficulty": "Normal",
+      "replayLimitSeconds": 120,
+      "run": {
+        "sid": "Celeste/7-Summit",
+        "mode": "BSide",
+        "startRoom": "g-01",
+        "spawn": [14336, -13920],
+        "spawnFacing": null,
+        "finishRoom": "g-01",
+        "finish": [14040, -14520, 32, 72],
+        "waypoints": [],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 0,
+        "dashes": null,
+        "grabless": false
+      },
+      "goals": {
+        "bronze": 14,
+        "silver": 12,
+        "gold": 10,
+        "diamond": 9,
+        "grandmaster": 8.5
+      }
+    }
+  ]
+}

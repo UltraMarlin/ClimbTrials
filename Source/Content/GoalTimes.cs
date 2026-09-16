@@ -53,9 +53,9 @@ public sealed class GoalTimes
     return Medal.None;
   }
 
-  public Medal VisibleMedalFor(long ticks, long viewerBest)
-  {
-    Medal medal = MedalFor(ticks);
-    return medal == Medal.Grandmaster && viewerBest > GrandmasterTicks ? Medal.Diamond : medal;
-  }
+  public Medal VisibleMedalFor(long ticks, long viewerBest) =>
+    VisibleFor(MedalFor(ticks), MedalFor(viewerBest));
+
+  public static Medal VisibleFor(Medal medal, Medal viewerMedal) =>
+    medal == Medal.Grandmaster && viewerMedal != Medal.Grandmaster ? Medal.Diamond : medal;
 }

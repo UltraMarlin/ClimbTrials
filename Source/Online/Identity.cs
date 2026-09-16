@@ -29,6 +29,8 @@ public static class Identity
 
   public static string Key => string.IsNullOrEmpty(Settings.Key) ? null : Settings.Key;
 
+  public static bool Banned { get; set; }
+
   public static RegistrationState Registration =>
     Registered ? RegistrationState.Registered
     : registering ? RegistrationState.Registering
