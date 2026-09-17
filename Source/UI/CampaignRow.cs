@@ -18,7 +18,7 @@ public class CampaignRow : TextMenu.Item
   }
 
   private string CountText =>
-    TrialText.Count(
+    TrialText.Pluralize(
       Campaign.Trials.Count,
       null,
       "climbtrials_campaign_trial",
@@ -67,7 +67,7 @@ public class CampaignRow : TextMenu.Item
       RowLayout.Dim * alpha
     );
 
-    CampaignRecord record = TrialRecords.Get(Campaign);
+    CampaignRecord record = TrialRecords.Totals(Campaign);
     string text = record.TotalTicks is long total ? TimeText.Format(total) : null;
     float width = TimeText.Width(
       text ?? RowLayout.RankSlotTime,

@@ -317,7 +317,7 @@ public static class TrialFile
     return (float)number;
   }
 
-  private static int Bounded(int number, string where) =>
+  private static int RequireInRange(int number, string where) =>
     Math.Abs(number) <= MaxMagnitude
       ? number
       : throw new TrialFileException($"{where}: expected a number within ±{MaxMagnitude:F0}");
@@ -332,7 +332,7 @@ public static class TrialFile
     {
       if (element.ValueKind != JsonValueKind.Number || !element.TryGetInt32(out numbers[index]))
         throw new TrialFileException($"{where}: expected {count} whole numbers");
-      Bounded(numbers[index++], where);
+      RequireInRange(numbers[index++], where);
     }
     return numbers;
   }
@@ -359,7 +359,7 @@ public static class TrialFile
     JsonElement value = Field(parent, key, at);
     if (value.ValueKind != JsonValueKind.Number || !value.TryGetInt32(out int number))
       throw new TrialFileException($"{at}, field '{key}': expected a whole number");
-    return Bounded(number, $"{at}, field '{key}'");
+    return RequireInRange(number, $"{at}, field '{key}'");
   }
 
   private static int? OptionalInt(JsonElement parent, string key, string at)

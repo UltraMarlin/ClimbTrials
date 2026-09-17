@@ -95,7 +95,7 @@ public class LeaderboardDisplay : Entity
     Trial trial = RunManager.Trial;
     if (trial == null)
       return;
-    TrialStanding standing = Standings.For(trial);
+    TrialStanding standing = Standings.StandingFor(trial);
     StandingsState state = Standings.State(Campaigns.CampaignOf(trial));
     LeaderboardMode mode = Mode;
     long best = TrialRecords.Get(trial.Id)?.BestTicks ?? long.MaxValue;

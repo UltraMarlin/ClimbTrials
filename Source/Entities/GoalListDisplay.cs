@@ -60,7 +60,7 @@ public class GoalListDisplay : Entity
     {
       if (best <= goals.GoldTicks)
         rows.Add(Goal(Medal.Diamond, goals.DiamondTicks, best));
-      rows.Add(Pb(best, goals.MedalFor(best)));
+      rows.Add(Pb(best, goals.MedalReached(best)));
     }
     return rows.OrderBy(r => r.Ticks).ThenBy(r => r.IsPb).ToList();
   }

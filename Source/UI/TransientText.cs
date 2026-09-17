@@ -21,7 +21,7 @@ public sealed class TransientText
     color = warning ? Colors.Warning : Color.White;
 
     if (warning)
-      Audio.Play("event:/ui/main/button_invalid");
+      Audio.Play(SFX.ui_main_button_invalid);
   }
 
   public void Clear() => age = -1f;

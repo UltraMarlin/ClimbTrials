@@ -65,7 +65,7 @@ public class TrialRow : TextMenu.Item
       DrawWord("new", timeRight, rowStart.Y, alpha);
     else
     {
-      Medal medal = Trial.Goals?.MedalFor(record.BestTicks) ?? Medal.None;
+      Medal medal = Trial.Goals?.MedalReached(record.BestTicks) ?? Medal.None;
       if (medal != Medal.None)
         MedalIcon.Draw(
           new Vector2(medalCenter, rowStart.Y),
@@ -82,7 +82,7 @@ public class TrialRow : TextMenu.Item
     }
 
     RankText.Draw(
-      Standings.For(Trial)?.Rank,
+      Standings.StandingFor(Trial)?.Rank,
       new Vector2(medalCenter, rowStart.Y + RowLayout.RankLift),
       alpha
     );

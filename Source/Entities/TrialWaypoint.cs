@@ -11,7 +11,7 @@ public class TrialWaypoint : Entity
 {
   private const string ContainerTexture = "objects/touchswitch/container";
   private const string IconTexture = "objects/touchswitch/icon";
-  private const string TouchSound = "event:/game/general/touchswitch_any";
+  private const string TouchSound = SFX.game_gen_touchswitch_any;
   private static readonly Color IdleColor = Calc.HexToColor("6ded87");
   private static readonly Color TakenColor = Color.White;
   private const int BufferSize = 32;

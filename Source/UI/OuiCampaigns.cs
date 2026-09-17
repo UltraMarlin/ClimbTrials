@@ -166,7 +166,7 @@ public class OuiCampaigns : ListScreen
 
   private void Open(Campaign campaign)
   {
-    Audio.Play("event:/ui/main/button_select");
+    Audio.Play(SFX.ui_main_button_select);
     menu.Focused = false;
     Overworld.Goto<OuiTrials>().Campaign = campaign;
   }
@@ -175,16 +175,16 @@ public class OuiCampaigns : ListScreen
   {
     if (Settings.OfflineMode)
     {
-      Audio.Play("event:/ui/main/button_invalid");
+      Audio.Play(SFX.ui_main_button_invalid);
       return;
     }
     if (!Identity.Registered)
     {
-      Audio.Play("event:/ui/main/button_select");
+      Audio.Play(SFX.ui_main_button_select);
       Identity.EnsureRegistered();
       return;
     }
-    Audio.Play("event:/ui/main/savefile_rename_start");
+    Audio.Play(SFX.ui_main_savefile_rename_start);
     menu.Focused = false;
     OuiModOptionString input = Overworld.Goto<OuiModOptionString>();
     input.Init<OuiCampaigns>(

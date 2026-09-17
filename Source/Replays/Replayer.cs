@@ -19,10 +19,10 @@ public enum ReplayState
 public static class Replayer
 {
   private const string LogTag = "ClimbTrials/Replay";
-  private const string DesyncSound = "event:/ui/main/button_invalid";
-  private const string PauseSound = "event:/game/general/cassette_block_switch_1";
-  private const string ResumeSound = "event:/game/general/cassette_block_switch_2";
-  private const string RestartSound = "event:/ui/main/button_select";
+  private const string DesyncSound = SFX.ui_main_button_invalid;
+  private const string PauseSound = SFX.game_gen_cassetteblock_switch_1;
+  private const string ResumeSound = SFX.game_gen_cassetteblock_switch_2;
+  private const string RestartSound = SFX.ui_main_button_select;
   private const float WatcherThreshold = 0.2f;
   private const float StepThreshold = 0.4f;
   private const float MenuThreshold = 0.4f;

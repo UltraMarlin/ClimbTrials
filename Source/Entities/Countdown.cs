@@ -19,8 +19,8 @@ public class Countdown : Entity
     };
   }
 
-  private const string BeatSound = "event:/game/general/cassette_block_switch_1";
-  private const string GoSound = "event:/game/general/cassette_block_switch_2";
+  private const string BeatSound = SFX.game_gen_cassetteblock_switch_1;
+  private const string GoSound = SFX.game_gen_cassetteblock_switch_2;
   private static readonly Color GoColor = Calc.HexToColor("6ded87");
   private const float RestScale = 3f,
     PeakScale = 5.0f;

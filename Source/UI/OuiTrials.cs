@@ -101,9 +101,7 @@ public class OuiTrials : ListScreen
     outgoingCampaign = Campaign;
     campaignIndex = (campaignIndex + direction + count) % count;
     Standings.EnsureFresh(Campaign);
-    Audio.Play(
-      direction > 0 ? "event:/ui/main/button_toggle_on" : "event:/ui/main/button_toggle_off"
-    );
+    Audio.Play(direction > 0 ? SFX.ui_main_button_toggle_on : SFX.ui_main_button_toggle_off);
     outgoing = menu;
     outgoing.Focused = false;
     menu = BuildMenu();
@@ -322,7 +320,7 @@ public class OuiTrials : ListScreen
     replay = null;
     if (!ReplayStore.Exists(trial.Id))
     {
-      Audio.Play("event:/ui/main/button_invalid");
+      Audio.Play(SFX.ui_main_button_invalid);
       return false;
     }
     if (ReplayStore.TryLoad(trial, out replay, out string failure))
@@ -399,7 +397,7 @@ public class OuiTrials : ListScreen
       arrow.DrawCentered(new Vector2(atX + half, nameY), arrows);
       arrow.DrawCentered(new Vector2(atX - half, nameY), arrows, new Vector2(-1f, 1f));
     }
-    CampaignRecord record = TrialRecords.Get(campaign);
+    CampaignRecord record = TrialRecords.Totals(campaign);
     if (Standings.State(campaign) == StandingsState.Offline)
       ActiveFont.Draw(
         Standings.OfflineNote,

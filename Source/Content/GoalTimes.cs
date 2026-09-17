@@ -38,7 +38,7 @@ public sealed class GoalTimes
 
   private static long Ticks(double seconds) => (long)(seconds * TimeSpan.TicksPerSecond);
 
-  public Medal MedalFor(long ticks)
+  public Medal MedalReached(long ticks)
   {
     if (ticks <= GrandmasterTicks)
       return Medal.Grandmaster;
@@ -53,9 +53,6 @@ public sealed class GoalTimes
     return Medal.None;
   }
 
-  public Medal VisibleMedalFor(long ticks, long viewerBest) =>
-    VisibleFor(MedalFor(ticks), MedalFor(viewerBest));
-
-  public static Medal VisibleFor(Medal medal, Medal viewerMedal) =>
+  public static Medal HideUnreachedGrandmaster(Medal medal, Medal viewerMedal) =>
     medal == Medal.Grandmaster && viewerMedal != Medal.Grandmaster ? Medal.Diamond : medal;
 }

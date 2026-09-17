@@ -252,7 +252,7 @@ public static class Standings
     );
   }
 
-  public static TrialStanding For(Trial trial)
+  public static TrialStanding StandingFor(Trial trial)
   {
     Campaign campaign = Campaigns.CampaignOf(trial);
     if (campaign == null)

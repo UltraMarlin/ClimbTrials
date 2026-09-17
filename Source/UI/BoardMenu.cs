@@ -129,7 +129,7 @@ public class BoardMenu : TextMenu
     ActiveFont.DrawOutline(row.Name, nameAt, justify, scale, color, 2f, stroke);
 
     string time = TimeText.Format(row.Ticks);
-    Medal medal = subject.MedalFor(row);
+    Medal medal = subject.ShownMedal(row);
     float timeWidth = TimeText.Width(time, Style);
     Vector2 baseline = new(left.X + width - timeWidth, left.Y + TimeText.Height(Style) / 2f);
     TimeText.Draw(baseline, time, Style, MedalIcon.TextColor(medal) * alpha);

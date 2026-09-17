@@ -114,7 +114,7 @@ public class GhostMenu : FadingMenu
         left + LabelWidth + LabelGap,
         position.Y + TimeText.Height(Style) / 2f
       );
-      TimeText.Draw(baseline, time, Style, MedalIcon.TextColor(subject.MedalFor(row)) * alpha);
+      TimeText.Draw(baseline, time, Style, MedalIcon.TextColor(subject.ShownMedal(row)) * alpha);
     }
   }
 }

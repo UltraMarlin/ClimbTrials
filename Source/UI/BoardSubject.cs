@@ -16,7 +16,7 @@ public abstract class BoardSubject
   public abstract string CountKey { get; }
   public abstract IReadOnlyList<BoardSubject> Siblings { get; }
   public abstract void Fetch(int chunk, Action<ServerResult<Board>> onDone);
-  public abstract Medal MedalFor(BoardRow row);
+  public abstract Medal ShownMedal(BoardRow row);
   public virtual Trial Trial => null;
 
   public static BoardSubject Of(Trial trial) => new TrialSubject(trial);
@@ -39,12 +39,13 @@ public abstract class BoardSubject
     public override void Fetch(int chunk, Action<ServerResult<Board>> onDone) =>
       Standings.FetchTrialBoard(trial, chunk, onDone);
 
-    public override Medal MedalFor(BoardRow row) =>
-      trial.Goals?.VisibleMedalFor(
-        row.Ticks,
-        TrialRecords.Get(trial.Id)?.BestTicks ?? long.MaxValue
-      )
-      ?? Medal.None;
+    public override Medal ShownMedal(BoardRow row) =>
+      trial.Goals == null
+        ? Medal.None
+        : GoalTimes.HideUnreachedGrandmaster(
+          trial.Goals.MedalReached(row.Ticks),
+          trial.Goals.MedalReached(TrialRecords.Get(trial.Id)?.BestTicks ?? long.MaxValue)
+        );
   }
 
   private sealed class CampaignSubject(Campaign campaign) : BoardSubject
@@ -60,7 +61,10 @@ public abstract class BoardSubject
     public override void Fetch(int chunk, Action<ServerResult<Board>> onDone) =>
       Standings.FetchCampaignBoard(campaign, chunk, onDone);
 
-    public override Medal MedalFor(BoardRow row) =>
-      GoalTimes.VisibleFor(row.Medal ?? Medal.None, TrialRecords.Get(campaign).Medal);
+    public override Medal ShownMedal(BoardRow row) =>
+      GoalTimes.HideUnreachedGrandmaster(
+        row.Medal ?? Medal.None,
+        TrialRecords.Totals(campaign).Medal
+      );
   }
 }

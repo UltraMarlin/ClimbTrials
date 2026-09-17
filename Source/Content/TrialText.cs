@@ -14,7 +14,12 @@ public static class TrialText
       parts.Add(Dialog.Clean("climbtrials_mod_norefills"));
     if (run.Dashes is int dashes)
       parts.Add(
-        Count(dashes, "climbtrials_mod_dashless", "climbtrials_mod_dash", "climbtrials_mod_dashes")
+        Pluralize(
+          dashes,
+          "climbtrials_mod_dashless",
+          "climbtrials_mod_dash",
+          "climbtrials_mod_dashes"
+        )
       );
     return string.Join(", ", parts);
   }
@@ -26,11 +31,16 @@ public static class TrialText
       parts.Add(Modifiers(run));
     if (run.Waypoints.Count > 0)
       parts.Add(
-        Count(run.Waypoints.Count, null, "climbtrials_req_waypoint", "climbtrials_req_waypoints")
+        Pluralize(
+          run.Waypoints.Count,
+          null,
+          "climbtrials_req_waypoint",
+          "climbtrials_req_waypoints"
+        )
       );
     if (run.RequiredStrawberries > 0)
       parts.Add(
-        Count(
+        Pluralize(
           run.RequiredStrawberries,
           null,
           "climbtrials_req_strawberry",
@@ -39,7 +49,7 @@ public static class TrialText
       );
     if (run.RequiredSummitGems > 0)
       parts.Add(
-        Count(
+        Pluralize(
           run.RequiredSummitGems,
           null,
           "climbtrials_req_summitgem",
@@ -54,7 +64,7 @@ public static class TrialText
     return string.Join(". ", parts) + ".";
   }
 
-  public static string Count(int n, string zeroKey, string oneKey, string manyKey)
+  public static string Pluralize(int n, string zeroKey, string oneKey, string manyKey)
   {
     if (n == 0 && zeroKey != null)
       return Dialog.Clean(zeroKey);

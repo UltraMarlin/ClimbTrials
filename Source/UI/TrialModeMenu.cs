@@ -39,7 +39,7 @@ public class TrialModeMenu : FadingMenu
 
     Campaign campaign = Campaigns.CampaignOf(trial);
     TrialRecord record = TrialRecords.Get(trial.Id);
-    TrialStanding standing = Standings.For(trial);
+    TrialStanding standing = Standings.StandingFor(trial);
     StandingsState state = Standings.State(campaign);
 
     Add(new TitleItem(trial));
@@ -71,7 +71,7 @@ public class TrialModeMenu : FadingMenu
 
   private void AddSubmitRow(Trial trial, TrialRecord record, StandingsState state, Action submit)
   {
-    Upload upload = Uploader.For(trial.Id);
+    Upload upload = Uploader.UploadFor(trial.Id);
     bool hasReplay = ReplayStore.Exists(trial.Id);
     bool submitting = upload.State == UploadState.Submitting;
     bool offlineMode = ClimbTrialsModule.Settings.OfflineMode;

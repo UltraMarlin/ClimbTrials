@@ -251,7 +251,7 @@ public class LeaderboardView : Entity
 
     target.Chunk = result.Value;
     target.State = BoardState.Ready;
-    int pages = BoardPage.CountFor(result.Value.Total);
+    int pages = BoardPage.PageCount(result.Value.Total);
     if (page > pages)
     {
       page = pages;
@@ -285,7 +285,7 @@ public class LeaderboardView : Entity
       return;
     page += direction;
     pageDirection = direction;
-    Audio.Play(direction > 0 ? "event:/ui/main/rollover_down" : "event:/ui/main/rollover_up");
+    Audio.Play(direction > 0 ? SFX.ui_main_roll_down : SFX.ui_main_roll_up);
     if (current.Chunk != null && BoardPage.Covers(current.Chunk, page))
     {
       ShowMenu(current, KeepSelection, direction);
@@ -302,9 +302,7 @@ public class LeaderboardView : Entity
       return;
     int count = siblings.Count;
     subjectIndex = (subjectIndex + direction + count) % count;
-    Audio.Play(
-      direction > 0 ? "event:/ui/main/button_toggle_on" : "event:/ui/main/button_toggle_off"
-    );
+    Audio.Play(direction > 0 ? SFX.ui_main_button_toggle_on : SFX.ui_main_button_toggle_off);
     outgoing = current;
     current = new Shown(siblings[subjectIndex]) { Alpha = 0f };
     page = 1;
@@ -440,7 +438,7 @@ public class LeaderboardView : Entity
       return;
     }
     downloading = true;
-    GhostCache.Get(
+    GhostCache.Fetch(
       row.ReplayId,
       row.Me,
       replay =>

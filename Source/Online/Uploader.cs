@@ -24,7 +24,7 @@ public static class Uploader
   private static readonly Dictionary<string, Upload> uploads = [];
   private static readonly Dictionary<string, int> versions = [];
 
-  public static Upload For(string trialId) => uploads.GetValueOrDefault(trialId);
+  public static Upload UploadFor(string trialId) => uploads.GetValueOrDefault(trialId);
 
   public static void Start(Trial trial, Replay replay, Action<Upload> report)
   {
@@ -39,12 +39,12 @@ public static class Uploader
 
     if (!built)
     {
-      Set(trial.Id, new Upload(UploadState.Failed, null, check.Describe()), report);
+      StoreAndReport(trial.Id, new Upload(UploadState.Failed, null, check.Describe()), report);
       return;
     }
 
-    Set(trial.Id, new Upload(UploadState.Submitting, null, null), report);
-    Try(trial.Id, submission.ReplayBytes, attempt: 1, version, report);
+    StoreAndReport(trial.Id, new Upload(UploadState.Submitting, null, null), report);
+    TryToPublish(trial.Id, submission.ReplayBytes, attempt: 1, version, report);
   }
 
   public static (string Text, bool Warning) Describe(Upload upload) =>
@@ -55,13 +55,13 @@ public static class Uploader
       _ => (upload.Message, true),
     };
 
-  private static void Set(string trialId, Upload upload, Action<Upload> report)
+  private static void StoreAndReport(string trialId, Upload upload, Action<Upload> report)
   {
     uploads[trialId] = upload;
     report(upload);
   }
 
-  private static void Try(
+  private static void TryToPublish(
     string trialId,
     byte[] bytes,
     int attempt,
@@ -80,7 +80,11 @@ public static class Uploader
         if (result.Ok)
         {
           Standings.Replace(result.Value.Standing);
-          Set(trialId, new Upload(UploadState.Accepted, result.Value.Standing?.Rank, null), report);
+          StoreAndReport(
+            trialId,
+            new Upload(UploadState.Accepted, result.Value.Standing?.Rank, null),
+            report
+          );
           return;
         }
 
@@ -88,12 +92,14 @@ public static class Uploader
         {
           Task.Delay(RetryDelayMs)
             .ContinueWith(_ =>
-              MainThreadHelper.Schedule(() => Try(trialId, bytes, attempt + 1, version, report))
+              MainThreadHelper.Schedule(() =>
+                TryToPublish(trialId, bytes, attempt + 1, version, report)
+              )
             );
           return;
         }
 
-        Set(trialId, new Upload(UploadState.Failed, null, MessageFor(result)), report);
+        StoreAndReport(trialId, new Upload(UploadState.Failed, null, MessageFor(result)), report);
       }
     );
   }

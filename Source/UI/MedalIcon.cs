@@ -24,7 +24,7 @@ public static class MedalIcon
 
   public readonly record struct Burst(int Count, int ShineCount, float SpeedMax, float LifeMax);
 
-  public static Burst BurstFor(Medal medal) =>
+  public static Burst PickBurst(Medal medal) =>
     medal switch
     {
       Medal.Silver => new Burst(28, 10, 180f, 1.0f),

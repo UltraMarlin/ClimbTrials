@@ -58,10 +58,10 @@ public class TrialDesigner : Entity
   private static void OnLoadLevel(Level level, Player.IntroTypes playerIntro, bool isFromLoader)
   {
     if (TrialDraft.Sid != null)
-      Get(level);
+      GetOrAddDesigner(level);
   }
 
-  public static TrialDesigner Get(Level level)
+  public static TrialDesigner GetOrAddDesigner(Level level)
   {
     TrialDesigner designer = level.Tracker.GetEntity<TrialDesigner>();
     if (designer == null)

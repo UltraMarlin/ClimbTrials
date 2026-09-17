@@ -13,7 +13,7 @@ public static class GhostCache
   private static readonly Dictionary<string, Replay> replays = [];
   private static readonly List<string> order = [];
 
-  public static void Get(string replayId, bool own, Action<Replay> onDone)
+  public static void Fetch(string replayId, bool own, Action<Replay> onDone)
   {
     if (string.IsNullOrEmpty(replayId))
     {

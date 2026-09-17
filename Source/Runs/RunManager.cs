@@ -14,7 +14,7 @@ namespace Celeste.Mod.ClimbTrials.Runs;
 public static class RunManager
 {
   private const string LogTag = "ClimbTrials/Run";
-  private const string ReplayLimitSound = "event:/ui/game/lookout_off";
+  private const string ReplayLimitSound = SFX.ui_game_lookout_off;
   private const string TrialFlagPrefix = "ClimbTrials:trial:";
 
   public static Trial Trial { get; private set; }

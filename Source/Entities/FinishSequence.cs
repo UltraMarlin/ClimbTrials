@@ -28,13 +28,13 @@ public class FinishSequence : Entity
   private const float MedalY = 640f;
   private const float MedalHeight = 256f;
   private const float MedalSpacing = 110f;
-  private const string BronzeMedalSound = "event:/game/07_summit/gem_unlock_1";
-  private const string SilverMedalSound = "event:/game/07_summit/gem_unlock_3";
-  private const string GoldMedalSound = "event:/game/07_summit/gem_unlock_4";
-  private const string DiamondMedalSound = "event:/game/07_summit/gem_unlock_5";
-  private const string MasterMedalSound = "event:/game/07_summit/gem_unlock_6";
-  private const string PbSound = "event:/ui/postgame/strawberry_total";
-  private const string FinishSound = "event:/game/07_summit/checkpoint_confetti";
+  private const string BronzeMedalSound = SFX.game_07_gem_unlock_1;
+  private const string SilverMedalSound = SFX.game_07_gem_unlock_3;
+  private const string GoldMedalSound = SFX.game_07_gem_unlock_4;
+  private const string DiamondMedalSound = SFX.game_07_gem_unlock_5;
+  private const string MasterMedalSound = SFX.game_07_gem_unlock_6;
+  private const string PbSound = SFX.ui_postgame_strawberry_total;
+  private const string FinishSound = SFX.game_07_checkpointconfetti;
   private const float ConfettiLift = 8f;
 
   private static readonly Color DeltaColor = Calc.HexToColor("6ded87");
@@ -173,7 +173,7 @@ public class FinishSequence : Entity
 
     if (Input.MenuJournal.Pressed && RunManager.LastReplay != null)
     {
-      Audio.Play("event:/ui/main/button_select");
+      Audio.Play(SFX.ui_main_button_select);
       RunManager.StartReplay(RunManager.LastReplay);
       return;
     }
@@ -252,7 +252,7 @@ public class FinishSequence : Entity
   private void Burst(int i)
   {
     Medal medal = medals[i];
-    MedalIcon.Burst burst = MedalIcon.BurstFor(medal);
+    MedalIcon.Burst burst = MedalIcon.PickBurst(medal);
     Vector2 center = MedalCenter(i) / GamePixel;
     Color tint = MedalIcon.Tint(medal);
     Color shine = MedalIcon.Shine(medal);

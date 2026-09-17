@@ -38,7 +38,10 @@ public static class EditorCommands
   public static void DraftSpawn()
   {
     if (ConsoleOutput.TryGetLevel(out Level level))
-      Begin(TrialDesigner.Get(level).BeginSpawn, "left click to place the spawn point");
+      Begin(
+        TrialDesigner.GetOrAddDesigner(level).BeginSpawn,
+        "left click to place the spawn point"
+      );
   }
 
   [Command(
@@ -70,7 +73,7 @@ public static class EditorCommands
   {
     if (ConsoleOutput.TryGetLevel(out Level level))
       Begin(
-        TrialDesigner.Get(level).BeginWaypoint,
+        TrialDesigner.GetOrAddDesigner(level).BeginWaypoint,
         "left click to place the waypoint, shift-click to save the player position as its spawn, control-click for no spawn"
       );
   }
@@ -141,7 +144,10 @@ public static class EditorCommands
   public static void DraftFinish()
   {
     if (ConsoleOutput.TryGetLevel(out Level level))
-      Begin(TrialDesigner.Get(level).BeginFinish, "draw the finish rectangle with the mouse");
+      Begin(
+        TrialDesigner.GetOrAddDesigner(level).BeginFinish,
+        "draw the finish rectangle with the mouse"
+      );
   }
 
   [Command(

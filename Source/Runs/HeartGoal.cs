@@ -6,7 +6,7 @@ namespace Celeste.Mod.ClimbTrials.Runs;
 
 public static class HeartGoal
 {
-  private const string BounceSound = "event:/game/general/crystalheart_bounce";
+  private const string BounceSound = SFX.game_gen_crystalheart_bounce;
   private static HeartGem pendingCut;
   private static bool poemPending;
 

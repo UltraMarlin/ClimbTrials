@@ -5,8 +5,6 @@ namespace Celeste.Mod.ClimbTrials.UI;
 
 public class DimButton : TextMenu.Button
 {
-  private const string InvalidSfx = "event:/ui/main/button_invalid";
-
   private readonly Func<bool> live;
 
   public DimButton(string label, bool live, Action onPressed)
@@ -26,7 +24,7 @@ public class DimButton : TextMenu.Button
   public override void Update()
   {
     base.Update();
-    ConfirmSfx = live() ? SFX.ui_main_button_select : InvalidSfx;
+    ConfirmSfx = live() ? SFX.ui_main_button_select : SFX.ui_main_button_invalid;
   }
 
   public override void Render(Vector2 position, bool highlighted)

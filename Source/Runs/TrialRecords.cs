@@ -14,7 +14,7 @@ public static class TrialRecords
   public static TrialRecord Get(string trialId) =>
     ClimbTrialsModule.SaveData?.PersonalBests.GetValueOrDefault(trialId);
 
-  public static CampaignRecord Get(Campaign campaign)
+  public static CampaignRecord Totals(Campaign campaign)
   {
     long total = 0;
     Medal medal = Medal.Grandmaster;
@@ -24,7 +24,7 @@ public static class TrialRecords
       if (record == null)
         return new CampaignRecord(Medal.None, null);
       total += record.BestTicks;
-      Medal earned = trial.Goals?.MedalFor(record.BestTicks) ?? Medal.None;
+      Medal earned = trial.Goals?.MedalReached(record.BestTicks) ?? Medal.None;
       if (earned < medal)
         medal = earned;
     }
@@ -82,8 +82,8 @@ public static class TrialRecords
     Medal newMedal = Medal.None;
     if (trial.Goals != null)
     {
-      before = previous == null ? Medal.None : trial.Goals.MedalFor(previous.BestTicks);
-      Medal after = trial.Goals.MedalFor(ticks);
+      before = previous == null ? Medal.None : trial.Goals.MedalReached(previous.BestTicks);
+      Medal after = trial.Goals.MedalReached(ticks);
       if (isPb && after > before)
         newMedal = after;
     }
