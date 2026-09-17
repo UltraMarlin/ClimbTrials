@@ -80,8 +80,11 @@ public class GoalListDisplay : Entity
     if (player != null)
     {
       Vector2 screen = level.WorldToScreen(player.Center);
-      float floorY = RunHudLayout.GoalListBottom(rows.Count) + RunHudLayout.DuckMargin;
-      target = RunHudLayout.DuckTarget(screen, floorY);
+      target = RunHudLayout.DuckTarget(
+        screen,
+        widest + RunHudLayout.BoxPaddingRight,
+        RunHudLayout.GoalListBottom(rows.Count)
+      );
     }
     duck = Calc.Approach(duck, target, Engine.RawDeltaTime / RunHudLayout.DuckTime);
     foreach (FadeBuffer layer in layers)

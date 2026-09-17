@@ -24,6 +24,7 @@ public sealed class RunDefinition
   public Vector2 Spawn { get; init; }
   public Facings? SpawnFacing { get; init; }
   public string FinishRoom { get; init; }
+  public FinishKind FinishKind { get; init; } = FinishKind.Zone;
   public Rectangle Finish { get; init; }
 
   public IReadOnlyList<WaypointDef> Waypoints { get; init; } = [];
@@ -34,6 +35,7 @@ public sealed class RunDefinition
 
   public IReadOnlyList<EntityID> IgnoredStrawberries { get; init; } = [];
   public int RequiredStrawberries { get; init; }
+  public int RequiredSummitGems { get; init; }
 
   public int? Dashes
   {
@@ -48,10 +50,25 @@ public sealed class RunDefinition
 
   private readonly int? dashes;
   public bool Grabless { get; init; }
+  public bool NoRefills { get; init; }
+
+  public Session.CoreModes? CoreMode { get; init; }
+  public bool? DreamDash { get; init; }
+  public Player.IntroTypes IntroType { get; init; } = Player.IntroTypes.Respawn;
+
+  public static readonly Player.IntroTypes[] AllowedIntroTypes =
+  [
+    Player.IntroTypes.Respawn,
+    Player.IntroTypes.WalkInRight,
+    Player.IntroTypes.WalkInLeft,
+    Player.IntroTypes.Jump,
+    Player.IntroTypes.WakeUp,
+    Player.IntroTypes.None,
+  ];
 
   public AreaKey Area => AreaData.Get(Sid).ToKey(Mode);
   public Vector2 FinishCenter => new(Finish.Center.X, Finish.Center.Y);
-  public bool HasModifiers => Dashes != null || Grabless;
+  public bool HasModifiers => Dashes != null || Grabless || NoRefills;
 
   public Vector2? CameraOffsetFor(string room)
   {

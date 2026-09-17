@@ -10,6 +10,8 @@ public static class TrialText
     List<string> parts = [];
     if (run.Grabless)
       parts.Add(Dialog.Clean("climbtrials_mod_grabless"));
+    if (run.NoRefills)
+      parts.Add(Dialog.Clean("climbtrials_mod_norefills"));
     if (run.Dashes is int dashes)
       parts.Add(
         Count(dashes, "climbtrials_mod_dashless", "climbtrials_mod_dash", "climbtrials_mod_dashes")
@@ -35,7 +37,20 @@ public static class TrialText
           "climbtrials_req_strawberries"
         )
       );
-    parts.Add(Dialog.Clean("climbtrials_req_goal"));
+    if (run.RequiredSummitGems > 0)
+      parts.Add(
+        Count(
+          run.RequiredSummitGems,
+          null,
+          "climbtrials_req_summitgem",
+          "climbtrials_req_summitgems"
+        )
+      );
+    parts.Add(
+      Dialog.Clean(
+        run.FinishKind == FinishKind.Heart ? "climbtrials_req_heart" : "climbtrials_req_goal"
+      )
+    );
     return string.Join(". ", parts) + ".";
   }
 

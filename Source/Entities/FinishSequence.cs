@@ -34,6 +34,8 @@ public class FinishSequence : Entity
   private const string DiamondMedalSound = "event:/game/07_summit/gem_unlock_5";
   private const string MasterMedalSound = "event:/game/07_summit/gem_unlock_6";
   private const string PbSound = "event:/ui/postgame/strawberry_total";
+  private const string FinishSound = "event:/game/07_summit/checkpoint_confetti";
+  private const float ConfettiLift = 8f;
 
   private static readonly Color DeltaColor = Calc.HexToColor("6ded87");
 
@@ -85,6 +87,23 @@ public class FinishSequence : Entity
   {
     base.Added(scene);
     level = SceneAs<Level>();
+  }
+
+  public static void Confetti(Level level, Player player)
+  {
+    Vector2 position = player.TopCenter + new Vector2(0f, -ConfettiLift);
+    Audio.Play(FinishSound, position);
+    SummitCheckpoint.ConfettiRenderer confetti = new(position);
+    confetti.Tag |= Tags.FrozenUpdate | Tags.Persistent | Tags.TransitionUpdate;
+    confetti.Depth = player.Depth - 1;
+    level.Add(confetti);
+  }
+
+  public static void Begin(Level level, Player player)
+  {
+    player.StateMachine.State = Player.StDummy;
+    if (RunManager.LastFinish != null)
+      level.Add(new FinishSequence(RunManager.LastFinish));
   }
 
   private IEnumerator Routine()

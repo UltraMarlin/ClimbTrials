@@ -4,13 +4,14 @@ using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using Celeste.Mod.ClimbTrials.Content;
+using Celeste.Mod.ClimbTrials.Runs;
 using Microsoft.Xna.Framework;
 
 namespace Celeste.Mod.ClimbTrials.Replays;
 
 public sealed class Replay
 {
-  public const int FormatVersion = 10;
+  public const int FormatVersion = 11;
   public const int ButtonCount = 15;
   public const int MaxFrames = 216_000;
   public const int MaxModules = 256;
@@ -33,6 +34,7 @@ public sealed class Replay
   public DebugCause DebugCauses;
   public bool DebugMode;
   public Vector2 LastAim;
+  public Player.IntroTypes IntroType = Player.IntroTypes.Respawn;
   public float TimeActive;
   public float RawTimeActive;
   public float RawDeltaTime;
@@ -118,6 +120,7 @@ public sealed class Replay
     w.Write((int)DebugCauses);
     w.Write(DebugMode);
     ReplayColumns.WriteVector(w, LastAim);
+    w.Write((byte)IntroType);
     w.Write(TimeActive);
     w.Write(RawTimeActive);
     w.Write(RawDeltaTime);
@@ -177,6 +180,9 @@ public sealed class Replay
     replay.DebugCauses = (DebugCause)r.ReadInt32();
     replay.DebugMode = r.ReadBoolean();
     replay.LastAim = ReplayColumns.ReadVector(r);
+    replay.IntroType = (Player.IntroTypes)r.ReadByte();
+    if (Array.IndexOf(RunDefinition.AllowedIntroTypes, replay.IntroType) < 0)
+      throw new InvalidDataException("unknown intro type");
     replay.TimeActive = r.ReadSingle();
     replay.RawTimeActive = r.ReadSingle();
     replay.RawDeltaTime = r.ReadSingle();

@@ -27,20 +27,29 @@ public class GoalIndicator : Entity
   private const float EdgeMargin = 10f;
   private static readonly Color WaypointColor = Calc.HexToColor("b2ebbe");
   private static readonly Color StrawberryColor = Calc.HexToColor("f76f6f");
+  private static readonly Color SummitGemColor = Calc.HexToColor("c2f0ff");
   private static readonly Color FinishColor = Calc.HexToColor("f7d472");
 
   private enum TargetKind
   {
     Waypoint,
     Strawberry,
+    SummitGem,
     Finish,
   }
 
-  private static readonly TargetKind[] Rings = [TargetKind.Waypoint, TargetKind.Strawberry];
+  private static readonly TargetKind[] Rings =
+  [
+    TargetKind.Waypoint,
+    TargetKind.Strawberry,
+    TargetKind.SummitGem,
+  ];
 
   private readonly record struct Target(Vector2 Position, TargetKind Kind);
 
   private readonly record struct Berry(EntityID Id, Vector2 World);
+
+  private readonly record struct Gem(int Id, Vector2 World);
 
   private sealed class Arrow
   {
@@ -54,6 +63,9 @@ public class GoalIndicator : Entity
 
   private readonly MTexture texture = GFX.Game[ArrowTexture];
   private readonly List<Berry> berries = [];
+  private readonly List<Gem> gems = [];
+  private Vector2? heart;
+  private Vector2? goalRoomCenter;
   private readonly Arrow[] arrows = new Arrow[Rings.Length];
   private readonly float arrowHalf;
   private readonly Target?[] targets = new Target?[Rings.Length];
@@ -79,16 +91,29 @@ public class GoalIndicator : Entity
   {
     base.Added(scene);
     MapData map = SceneAs<Level>().Session.MapData;
+    RunDefinition run = RunManager.Run;
+    if (run.FinishKind == FinishKind.RoomEnter && map.Get(run.FinishRoom) is LevelData goal)
+      goalRoomCenter = new Vector2(goal.Bounds.Center.X, goal.Bounds.Center.Y);
     foreach (LevelData room in map.Levels)
     {
       foreach (EntityData entity in room.Entities)
       {
+        Vector2 world = entity.Position + room.Position;
+        if (entity.Name == "summitgem")
+          gems.Add(new Gem(entity.Int("gem"), world));
+        else if (
+          run.FinishKind == FinishKind.Heart
+          && room.Name == run.FinishRoom
+          && entity.Name == "blackGem"
+          && !entity.Bool("fake")
+        )
+          heart = world;
         if (!RunDefinition.IsTargetBerry(entity))
           continue;
         EntityID id = new(room.Name, entity.ID);
-        if (RunManager.Run.IgnoredStrawberries.Contains(id))
+        if (run.IgnoredStrawberries.Contains(id))
           continue;
-        berries.Add(new Berry(id, entity.Position + room.Position));
+        berries.Add(new Berry(id, world));
       }
     }
   }
@@ -146,6 +171,7 @@ public class GoalIndicator : Entity
     arrow.Color = target.Kind switch
     {
       TargetKind.Strawberry => StrawberryColor,
+      TargetKind.SummitGem => SummitGemColor,
       TargetKind.Finish => FinishColor,
       _ => WaypointColor,
     };
@@ -192,7 +218,8 @@ public class GoalIndicator : Entity
     RunProgress progress = RunManager.Progress;
     if (progress.Met(run))
     {
-      targets[0] = new Target(run.FinishCenter, TargetKind.Finish);
+      if (FinishTarget(run) is Vector2 finish)
+        targets[0] = new Target(finish, TargetKind.Finish);
       return;
     }
     if (ClimbTrialsModule.Settings.GoalIndicatorTargets == GoalIndicatorTargets.Nearest)
@@ -203,6 +230,14 @@ public class GoalIndicator : Entity
     for (int ring = 0; ring < Rings.Length; ring++)
       targets[ring] = Nearest(run, player, progress, Rings[ring]);
   }
+
+  private Vector2? FinishTarget(RunDefinition run) =>
+    run.FinishKind switch
+    {
+      FinishKind.Heart => heart,
+      FinishKind.RoomEnter when run.Finish.IsEmpty => goalRoomCenter,
+      _ => run.FinishCenter,
+    };
 
   private Target? Nearest(RunDefinition run, Player player, RunProgress progress, TargetKind? only)
   {
@@ -242,6 +277,17 @@ public class GoalIndicator : Entity
           if (!session.Strawberries.Contains(berry.Id) && !carried.Contains(berry.Id))
             Consider(berry.World, TargetKind.Strawberry);
         }
+      }
+    }
+
+    if (only is null or TargetKind.SummitGem && progress.SummitGems < run.RequiredSummitGems)
+    {
+      bool[] taken = SceneAs<Level>().Session.SummitGems;
+      foreach (Gem gem in gems)
+      {
+        bool collected = gem.Id >= 0 && gem.Id < taken.Length && taken[gem.Id];
+        if (!collected)
+          Consider(gem.World, TargetKind.SummitGem);
       }
     }
 

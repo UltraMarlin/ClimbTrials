@@ -35,6 +35,7 @@ public static class RunManager
   private static bool awaitingLoad;
   private static bool awaitingControl;
   private static bool countdownOnControl;
+  private static Player.IntroTypes introType;
   private static int loadSeed;
   private static string pendingNotice;
   private static string pendingRestart;
@@ -52,6 +53,7 @@ public static class RunManager
     On.Celeste.Level.Reload += OnLevelReload;
     On.Celeste.SaveData.AssistModeChecks += OnAssistModeChecks;
     On.Celeste.Strawberry.OnCollect += OnStrawberryCollect;
+    On.Celeste.SaveData.RegisterSummitGem += OnSummitGemCollect;
     On.Celeste.SpeedrunTimerDisplay.Render += SuppressVanillaTimer;
     On.Celeste.TotalStrawberriesDisplay.Render += SuppressVanillaBerryCounter;
     Everest.Events.Player.OnAfterUpdate += OnPlayerAfterUpdate;
@@ -68,6 +70,7 @@ public static class RunManager
     On.Celeste.Level.Reload -= OnLevelReload;
     On.Celeste.SaveData.AssistModeChecks -= OnAssistModeChecks;
     On.Celeste.Strawberry.OnCollect -= OnStrawberryCollect;
+    On.Celeste.SaveData.RegisterSummitGem -= OnSummitGemCollect;
     On.Celeste.SpeedrunTimerDisplay.Render -= SuppressVanillaTimer;
     On.Celeste.TotalStrawberriesDisplay.Render -= SuppressVanillaBerryCounter;
     Everest.Events.Player.OnAfterUpdate -= OnPlayerAfterUpdate;
@@ -112,12 +115,16 @@ public static class RunManager
       RespawnPoint = run.Spawn,
       FirstLevel = false,
     };
+    PlayerInventory inventory = session.Inventory;
     if (run.Dashes is int dashes)
-    {
-      PlayerInventory inventory = session.Inventory;
       inventory.Dashes = dashes;
-      session.Inventory = inventory;
-    }
+    if (run.NoRefills)
+      inventory.NoRefills = true;
+    if (run.DreamDash is bool dreamDash)
+      inventory.DreamDash = dreamDash;
+    session.Inventory = inventory;
+    if (run.CoreMode is Session.CoreModes coreMode)
+      session.CoreMode = coreMode;
     if (run.BloomBaseAdd is float bloomAdd)
       session.BloomBaseAdd = bloomAdd;
     if (run.LightingAlphaAdd is float lightingAdd)
@@ -145,8 +152,11 @@ public static class RunManager
     awaitingLoad = true;
 
     loadSeed = replay?.LoadSeed ?? Calc.Random.Next();
+    introType = replay?.IntroType ?? (countdown ? run.IntroType : Player.IntroTypes.Respawn);
     Logger.Log(LogLevel.Info, LogTag, $"StartRun: trial '{Trial?.Id}', replay {replay != null}");
-    return Determinism.CreateSeededLoader(loadSeed, session, run.Spawn);
+    LevelLoader loader = Determinism.CreateSeededLoader(loadSeed, session, run.Spawn);
+    loader.PlayerIntroTypeOverride = introType;
+    return loader;
   }
 
   public static void StartRun(RunDefinition run, bool countdown = true)
@@ -262,6 +272,8 @@ public static class RunManager
     LastFinish = null;
     Attempt.Reset();
     Progress.Reset();
+    HeartGoal.Reset();
+    RoomGoal.Reset();
     awaitingLoad = false;
     awaitingControl = false;
     countdownOnControl = true;
@@ -358,8 +370,8 @@ public static class RunManager
       if (Run.Waypoints[i].Room == room)
         level.Add(new TrialWaypoint(i, Run.Waypoints[i]));
 
-    if (room == Run.FinishRoom && level.Tracker.GetEntity<FinishZone>() == null)
-      level.Add(new FinishZone(Run.Finish));
+    if (room == Run.FinishRoom)
+      SpawnFinish(level);
   }
 
   private static void ApplyCameraOffset(Level level, string room, Player.IntroTypes playerIntro)
@@ -385,6 +397,19 @@ public static class RunManager
       SpotlightWipe.FocusPoint = respawn - level.Camera.Position;
   }
 
+  private static void SpawnFinish(Level level)
+  {
+    switch (Run.FinishKind)
+    {
+      case FinishKind.Zone when level.Tracker.GetEntity<FinishZone>() == null:
+        level.Add(new FinishZone(Run.Finish));
+        break;
+      case FinishKind.Heart
+        when !level.Session.LevelData.Entities.Exists(e => e.Name == "blackGem" && !e.Bool("fake")):
+        break;
+    }
+  }
+
   private static void OnAfterUpdate(Level level)
   {
     if (Run == null)
@@ -403,6 +428,8 @@ public static class RunManager
     )
       StopRecording(StopReason.State);
     Attempt.Tick(Engine.RawDeltaTime);
+    HeartGoal.AfterUpdate(level);
+    RoomGoal.AfterUpdate(level);
     if (level.Tracker.GetEntity<RaceGhost>() is RaceGhost ghost)
     {
       if (Attempt.State != AttemptState.Finished)
@@ -435,13 +462,17 @@ public static class RunManager
   private static void OnPlayerAdded(On.Celeste.Player.orig_Added orig, Player self, Scene scene)
   {
     orig(self, scene);
+    if (scene is Level level && level.Session.RespawnPoint == Run?.Spawn)
+      ApplySpawnFacing(self);
+  }
+
+  private static void ApplySpawnFacing(Player player)
+  {
     if (Run?.SpawnFacing is not Facings facing)
       return;
-    if (scene is not Level level || level.Session.RespawnPoint != Run.Spawn)
-      return;
-    self.Facing = facing;
-    self.Hair.Facing = facing;
-    self.Hair.Start();
+    player.Facing = facing;
+    player.Hair.Facing = facing;
+    player.Hair.Start();
   }
 
   private static void OnPlayerAfterUpdate(Player player)
@@ -449,6 +480,7 @@ public static class RunManager
     if (!awaitingControl || Run == null || player.Dead || player.IsIntroState)
       return;
     awaitingControl = false;
+    ApplySpawnFacing(player);
     BeginAttempt(player.SceneAs<Level>());
   }
 
@@ -475,7 +507,7 @@ public static class RunManager
     }
     int runSeed = Calc.Random.Next();
     Determinism.Reseed(runSeed);
-    Recorder.Begin(Trial, loadSeed, runSeed, level);
+    Recorder.Begin(Trial, loadSeed, runSeed, introType, level);
   }
 
   private static void SuppressVanillaTimer(
@@ -628,6 +660,18 @@ public static class RunManager
     if (Run == null || Attempt.State != AttemptState.Running || self.Golden || self.Moon)
       return;
     Progress.AddStrawberry();
+  }
+
+  private static void OnSummitGemCollect(
+    On.Celeste.SaveData.orig_RegisterSummitGem orig,
+    SaveData self,
+    int id
+  )
+  {
+    orig(self, id);
+    if (Run == null || Attempt.State != AttemptState.Running)
+      return;
+    Progress.AddSummitGem();
   }
 
   private static void OnExit(

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Runs;
 using Celeste.Mod.ClimbTrials.UI;
@@ -21,6 +22,10 @@ public class RunInfoDisplay : Entity
     "ClimbTrials/mod_dash2",
   ];
   private const string GrablessIcon = "ClimbTrials/mod_grabless";
+  private const string NoRefillsIcon = "ClimbTrials/mod_norefills";
+
+  // TODO: Replace with custom icon?
+  private const string SummitGemSprite = "collectables/summitgems/0/gem";
 
   public RunInfoDisplay()
   {
@@ -41,6 +46,8 @@ public class RunInfoDisplay : Entity
       float x = ModifierListX;
       if (run.Grabless)
         x = DrawModifierIcon(GFX.Gui[GrablessIcon], x, y);
+      if (run.NoRefills)
+        x = DrawModifierIcon(GFX.Gui[NoRefillsIcon], x, y);
       if (run.Dashes is int dashes)
         DrawModifierIcon(GFX.Gui[DashIcons[dashes]], x, y);
       y += ModifierListHeight;
@@ -55,6 +62,14 @@ public class RunInfoDisplay : Entity
     {
       DrawIcon(GFX.Gui[StrawberryIcon], y);
       DrawText($"{progress.Strawberries}/{run.RequiredStrawberries}", y);
+      y += RunHudLayout.RowHeight;
+    }
+    if (run.RequiredSummitGems > 0)
+    {
+      List<MTexture> frames = GFX.Game.GetAtlasSubtextures(SummitGemSprite);
+      if (frames.Count > 0)
+        DrawIcon(frames[0], y);
+      DrawText($"{progress.SummitGems}/{run.RequiredSummitGems}", y);
     }
   }
 

@@ -16,7 +16,7 @@ public static class TrialDraft
     bool SetsSpawn = true
   );
 
-  public readonly record struct PlacedFinish(string Room, Rectangle Rect);
+  public readonly record struct PlacedFinish(string Room, FinishKind Kind, Rectangle? Rect);
 
   public static string Id;
   public static string Name;
@@ -29,7 +29,12 @@ public static class TrialDraft
   public static int ReplayLimitSeconds = Trial.DefaultReplayLimitSeconds;
   public static int? Dashes;
   public static bool Grabless;
+  public static bool NoRefills;
+  public static Session.CoreModes? CoreMode;
+  public static bool? DreamDash;
+  public static Player.IntroTypes IntroType = Player.IntroTypes.Respawn;
   public static int RequiredStrawberries;
+  public static int RequiredSummitGems;
 
   public static string Sid;
   public static AreaMode Mode;
@@ -52,7 +57,12 @@ public static class TrialDraft
     ReplayLimitSeconds = Trial.DefaultReplayLimitSeconds;
     Dashes = null;
     Grabless = false;
+    NoRefills = false;
+    CoreMode = null;
+    DreamDash = null;
+    IntroType = Player.IntroTypes.Respawn;
     RequiredStrawberries = 0;
+    RequiredSummitGems = 0;
     Sid = null;
     Mode = AreaMode.Normal;
     StartRoom = null;
@@ -84,7 +94,12 @@ public static class TrialDraft
     RunDefinition run = trial.Run;
     Dashes = run.Dashes;
     Grabless = run.Grabless;
+    NoRefills = run.NoRefills;
+    CoreMode = run.CoreMode;
+    DreamDash = run.DreamDash;
+    IntroType = run.IntroType;
     RequiredStrawberries = run.RequiredStrawberries;
+    RequiredSummitGems = run.RequiredSummitGems;
     Sid = run.Sid;
     Mode = run.Mode;
     StartRoom = run.StartRoom;
@@ -94,7 +109,11 @@ public static class TrialDraft
       Waypoints.Add(
         new PlacedWaypoint(waypoint.Room, waypoint.Position, waypoint.Spawn, waypoint.SetsSpawn)
       );
-    Finish = new PlacedFinish(run.FinishRoom, run.Finish);
+    Finish = new PlacedFinish(
+      run.FinishRoom,
+      run.FinishKind,
+      run.FinishKind == FinishKind.Heart || run.Finish.IsEmpty ? null : run.Finish
+    );
     IgnoredStrawberries.AddRange(run.IgnoredStrawberries);
     CameraOffsets.AddRange(run.CameraOffsets);
     BloomBaseAdd = run.BloomBaseAdd;
@@ -114,7 +133,9 @@ public static class TrialDraft
   public static string TrialJson()
   {
     PlacedFinish? finish = Finish;
-    Rectangle rect = finish?.Rect ?? new Rectangle(0, 0, 16, 24);
+    FinishKind kind = finish?.Kind ?? FinishKind.Zone;
+    Rectangle? drawn = finish?.Rect;
+    Rectangle rect = drawn ?? new Rectangle(0, 0, 16, 24);
     var trial = new
     {
       id = Id,
@@ -129,7 +150,10 @@ public static class TrialDraft
         spawn = Vec(Spawn ?? Vector2.Zero),
         spawnFacing = SpawnFacing?.ToString(),
         finishRoom = finish?.Room,
-        finish = new[] { rect.X, rect.Y, rect.Width, rect.Height },
+        finishKind = char.ToLowerInvariant(kind.ToString()[0]) + kind.ToString()[1..],
+        finish = kind == FinishKind.Heart || (kind == FinishKind.RoomEnter && drawn == null)
+          ? null
+          : new[] { rect.X, rect.Y, rect.Width, rect.Height },
         waypoints = Waypoints.ConvertAll(w => new
         {
           room = w.Room,
@@ -150,8 +174,13 @@ public static class TrialDraft
           id = b.ID,
         }),
         requiredStrawberries = RequiredStrawberries,
+        requiredSummitGems = RequiredSummitGems,
         dashes = Dashes,
         grabless = Grabless,
+        noRefills = NoRefills,
+        coreMode = CoreMode?.ToString(),
+        dreamDash = DreamDash,
+        introType = IntroType.ToString(),
       },
       goals = new
       {

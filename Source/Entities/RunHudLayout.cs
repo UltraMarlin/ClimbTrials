@@ -12,8 +12,6 @@ public static class RunHudLayout
   public const float TimeScale = 0.7f;
   public const float IconHeight = 48f;
 
-  public const float DuckX = 380f;
-
   public const float DuckMargin = 80f;
   public const float DuckAlpha = 0.15f;
   public const float DuckTime = 0.2f;
@@ -24,8 +22,8 @@ public static class RunHudLayout
   public const float BoxPaddingBottom = 14f;
   public const int RowPad = 4;
 
-  public static float DuckTarget(Vector2 screen, float floorY) =>
-    screen.X < DuckX && screen.Y < floorY ? DuckAlpha : 1f;
+  public static float DuckTarget(Vector2 screen, float boxRight, float boxBottom) =>
+    screen.X < boxRight + DuckMargin && screen.Y < boxBottom + DuckMargin ? DuckAlpha : 1f;
 
   public static float GoalListBottom(int rowCount) =>
     ListY + rowCount * RowHeight + BoxPaddingBottom;

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using Celeste.Mod.ClimbTrials.Runs;
 using Microsoft.Xna.Framework;
@@ -25,6 +26,22 @@ public static class TrialFile
     ["Left"] = Facings.Left,
     ["Right"] = Facings.Right,
   };
+
+  private static readonly Dictionary<string, FinishKind> FinishKinds = new()
+  {
+    ["zone"] = FinishKind.Zone,
+    ["heart"] = FinishKind.Heart,
+    ["roomEnter"] = FinishKind.RoomEnter,
+  };
+
+  private static readonly Dictionary<string, Session.CoreModes> CoreModeNames = new()
+  {
+    ["Hot"] = Session.CoreModes.Hot,
+    ["Cold"] = Session.CoreModes.Cold,
+  };
+
+  private static readonly Dictionary<string, Player.IntroTypes> IntroNames =
+    RunDefinition.AllowedIntroTypes.ToDictionary(intro => intro.ToString());
 
   public static IReadOnlyList<Campaign> Load()
   {
@@ -139,10 +156,42 @@ public static class TrialFile
         );
       facing = parsed;
     }
-    int[] finish = Integers(Field(run, "finish", at), 4, $"{at}, field 'run.finish'");
+    string kindName = OptionalString(run, "finishKind", at) ?? "zone";
+    if (!FinishKinds.TryGetValue(kindName, out FinishKind kind))
+      throw new TrialFileException(
+        $"{at}, field 'run.finishKind': expected zone, heart or roomEnter"
+      );
+    Rectangle finishRect = Rectangle.Empty;
+    bool finishSet =
+      run.TryGetProperty("finish", out JsonElement finishValue)
+      && finishValue.ValueKind != JsonValueKind.Null;
+    if (kind == FinishKind.Zone || (kind == FinishKind.RoomEnter && finishSet))
+    {
+      int[] finish = Integers(Field(run, "finish", at), 4, $"{at}, field 'run.finish'");
+      finishRect = new Rectangle(finish[0], finish[1], finish[2], finish[3]);
+    }
+    else if (finishSet)
+      throw new TrialFileException($"{at}, field 'run.finish': a heart goal has no rectangle");
     int? dashes = OptionalInt(run, "dashes", at);
     if (dashes is < 0 or > 2)
       throw new TrialFileException($"{at}, field 'run.dashes': expected 0, 1, 2 or null");
+    int gems = OptionalInt(run, "requiredSummitGems", at) ?? 0;
+    if (gems is < 0 or > 6)
+      throw new TrialFileException($"{at}, field 'run.requiredSummitGems': expected 0 to 6");
+    string coreModeName = OptionalString(run, "coreMode", at);
+    Session.CoreModes? coreMode = null;
+    if (coreModeName != null)
+    {
+      if (!CoreModeNames.TryGetValue(coreModeName, out Session.CoreModes parsedMode))
+        throw new TrialFileException($"{at}, field 'run.coreMode': expected Hot, Cold or null");
+      coreMode = parsedMode;
+    }
+    string introName = OptionalString(run, "introType", at);
+    Player.IntroTypes intro = Player.IntroTypes.Respawn;
+    if (introName != null && !IntroNames.TryGetValue(introName, out intro))
+      throw new TrialFileException(
+        $"{at}, field 'run.introType': expected {string.Join(", ", IntroNames.Keys)} or null"
+      );
     try
     {
       return new RunDefinition
@@ -153,7 +202,8 @@ public static class TrialFile
         Spawn = Vector(Field(run, "spawn", at), $"{at}, field 'run.spawn'"),
         SpawnFacing = facing,
         FinishRoom = String(run, "finishRoom", at),
-        Finish = new Rectangle(finish[0], finish[1], finish[2], finish[3]),
+        FinishKind = kind,
+        Finish = finishRect,
         Waypoints = List(run, "waypoints", at, ReadWaypoint),
         CameraOffsets = List(
           run,
@@ -171,8 +221,13 @@ public static class TrialFile
           (e, w) => new EntityID(String(e, "room", w), Int(e, "id", w))
         ),
         RequiredStrawberries = OptionalInt(run, "requiredStrawberries", at) ?? 0,
+        RequiredSummitGems = gems,
         Dashes = dashes,
         Grabless = OptionalBool(run, "grabless", at) ?? false,
+        NoRefills = OptionalBool(run, "noRefills", at) ?? false,
+        CoreMode = coreMode,
+        DreamDash = OptionalBool(run, "dreamDash", at),
+        IntroType = intro,
       };
     }
     catch (ArgumentOutOfRangeException e)

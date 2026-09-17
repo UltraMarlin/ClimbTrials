@@ -79,7 +79,7 @@ public class LeaderboardDisplay : Entity
     if (player != null)
     {
       Vector2 screen = level.WorldToScreen(player.Center);
-      target = RunHudLayout.DuckTarget(screen, BoxBottom + RunHudLayout.DuckMargin);
+      target = RunHudLayout.DuckTarget(screen, widest + RunHudLayout.BoxPaddingRight, BoxBottom);
     }
     duck = Calc.Approach(duck, target, Engine.RawDeltaTime / RunHudLayout.DuckTime);
     foreach (FadeBuffer layer in layers)

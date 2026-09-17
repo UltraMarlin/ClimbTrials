@@ -33,7 +33,13 @@ public static class Recorder
     On.Monocle.MInput.Update -= OnMInputUpdate;
   }
 
-  public static void Begin(Trial trial, int loadSeed, int runSeed, Level level)
+  public static void Begin(
+    Trial trial,
+    int loadSeed,
+    int runSeed,
+    Player.IntroTypes introType,
+    Level level
+  )
   {
     if (Stopped != StopReason.None)
       return;
@@ -51,6 +57,7 @@ public static class Recorder
       ModOptionsInPauseMenu = CoreModule.Settings.ShowModOptionsInGame,
       DebugMode = Celeste.PlayMode == Celeste.PlayModes.Debug,
       LastAim = Input.LastAim,
+      IntroType = introType,
       TimeActive = level.TimeActive,
       RawTimeActive = level.RawTimeActive,
       RawDeltaTime = Engine.RawDeltaTime,

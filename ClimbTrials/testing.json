@@ -38,7 +38,7 @@
       "id": "t08",
       "name": "Shrine Hub Waypoints",
       "difficulty": "Normal",
-      "replayLimitSeconds": 120,
+      "replayLimitSeconds": 90,
       "run": {
         "sid": "Celeste/4-GoldenRidge",
         "mode": "Normal",

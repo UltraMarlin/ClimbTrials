@@ -412,8 +412,11 @@ public class LeaderboardView : Entity
     Trial trial = current.Subject.Trial;
     if (!row.Me || !ReplayStore.Exists(trial.Id))
       return null;
-    if (!ReplayStore.TryLoad(trial.Id, out Replay replay, out string _))
+    if (!ReplayStore.TryLoad(trial, out Replay replay, out string failure))
+    {
+      notice.Show(Dialog.Get("climbtrials_replay_deleted").Replace("{0}", failure), NoticeSeconds);
       return null;
+    }
     return replay.Ticks == row.Ticks ? replay : null;
   }
 

@@ -203,8 +203,7 @@ public class RaceGhost : Entity
     Alpha = Calc.ClampedMap(distance, DuckNear, DuckFar, NearAlpha, FarAlpha) * fadeAlpha;
     layer.Alpha = Alpha;
     base.Render();
-    if (!Subtle)
-      DrawSlash();
+    DrawSlash();
   }
 
   private string FirstKnownAnimation()

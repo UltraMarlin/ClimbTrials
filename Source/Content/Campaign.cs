@@ -52,6 +52,7 @@ public sealed class Trial
       Vec(run.Spawn),
       run.SpawnFacing is Facings facing ? Int((int)facing) : "",
       run.FinishRoom,
+      Int((int)run.FinishKind),
       $"{Int(run.Finish.X)},{Int(run.Finish.Y)},{Int(run.Finish.Width)},{Int(run.Finish.Height)}",
       string.Join(
         ";",
@@ -64,8 +65,13 @@ public sealed class Trial
       run.LightingAlphaAdd is float lighting ? Float(lighting) : "",
       string.Join(";", run.IgnoredStrawberries.Select(b => $"{b.Level}|{Int(b.ID)}")),
       Int(run.RequiredStrawberries),
+      Int(run.RequiredSummitGems),
       run.Dashes is int dashes ? Int(dashes) : "",
       Bool(run.Grabless),
+      Bool(run.NoRefills),
+      run.CoreMode is Session.CoreModes coreMode ? Int((int)coreMode) : "",
+      run.DreamDash is bool dreamDash ? Bool(dreamDash) : "",
+      Int((int)run.IntroType),
       Int(ReplayLimitSeconds),
     ];
     return string.Join("\n", lines);

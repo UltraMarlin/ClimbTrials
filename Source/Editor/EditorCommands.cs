@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using Celeste.Mod.ClimbTrials.Commands;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Runs;
+using Microsoft.Xna.Framework;
 using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.Editor;
@@ -140,6 +142,50 @@ public static class EditorCommands
   {
     if (ConsoleOutput.TryGetLevel(out Level level))
       Begin(TrialDesigner.Get(level).BeginFinish, "draw the finish rectangle with the mouse");
+  }
+
+  [Command(
+    "ct_fin_heart",
+    "ClimbTrials: make the current room's heart the finish of a trial draft"
+  )]
+  public static void DraftFinishHeart()
+  {
+    if (!ConsoleOutput.TryGetLevel(out Level level))
+      return;
+    string room = level.Session.Level;
+    List<EntityData> hearts = level.Session.LevelData.Entities.FindAll(e =>
+      e.Name == "blackGem" && !e.Bool("fake")
+    );
+    if (hearts.Count != 1)
+    {
+      Engine.Commands.Log(
+        hearts.Count == 0
+          ? $"no heart in room '{room}'"
+          : $"{hearts.Count} hearts in room '{room}', draw a zone instead"
+      );
+      return;
+    }
+    TrialDraft.Finish = new TrialDraft.PlacedFinish(room, FinishKind.Heart, null);
+    Engine.Commands.Log($"finish: the heart in '{room}'");
+  }
+
+  [Command(
+    "ct_fin_enter",
+    "ClimbTrials: make entering the current room the finish of a trial draft; optionally a finish drawn with ct_fin is used as the goal indicator target"
+  )]
+  public static void DraftFinishEnter()
+  {
+    if (!ConsoleOutput.TryGetLevel(out Level level))
+      return;
+    string room = level.Session.Level;
+    Rectangle? target =
+      TrialDraft.Finish is { Rect: Rectangle rect } drawn && drawn.Room == room ? rect : null;
+    TrialDraft.Finish = new TrialDraft.PlacedFinish(room, FinishKind.RoomEnter, target);
+    Engine.Commands.Log(
+      target == null
+        ? $"finish: entering '{room}', indicator points at the room's centre"
+        : $"finish: entering '{room}', indicator points at the finish rectangle"
+    );
   }
 
   [Command(

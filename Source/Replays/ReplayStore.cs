@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using Celeste.Mod.ClimbTrials.Content;
 
 namespace Celeste.Mod.ClimbTrials.Replays;
 
@@ -53,9 +54,10 @@ public static class ReplayStore
     );
   }
 
-  public static bool TryLoad(string trialId, out Replay replay, out string failure)
+  public static bool TryLoad(Trial trial, out Replay replay, out string failure)
   {
     replay = null;
+    string trialId = trial.Id;
     if (!File.Exists(PathFor(trialId)))
     {
       failure = "replay file is missing";
@@ -66,6 +68,8 @@ public static class ReplayStore
     {
       Stopwatch clock = Stopwatch.StartNew();
       replay = Replay.FromBytes(File.ReadAllBytes(PathFor(trialId)));
+      if (!replay.TrialHash.AsSpan().SequenceEqual(trial.DefinitionHash))
+        throw new InvalidDataException("the trial has changed since this replay");
       replay.IsOwn = true;
       Logger.Log(
         LogLevel.Info,
@@ -78,6 +82,7 @@ public static class ReplayStore
     }
     catch (Exception e)
     {
+      replay = null;
       failure = e.Message;
       Logger.Log(LogLevel.Warn, LogTag, $"deleting unreadable replay for '{trialId}': {failure}");
       Delete(trialId);

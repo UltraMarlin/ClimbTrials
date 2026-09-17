@@ -1,4 +1,5 @@
 using Celeste.Mod.ClimbTrials.Entities;
+using Celeste.Mod.ClimbTrials.Runs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
@@ -132,7 +133,7 @@ public class TrialDesigner : Entity
         if (dragStart is Vector2 start && MInput.Mouse.ReleasedLeftButton)
         {
           Rectangle rect = SquaresBetween(start, raw);
-          TrialDraft.Finish = new TrialDraft.PlacedFinish(room, rect);
+          TrialDraft.Finish = new TrialDraft.PlacedFinish(room, FinishKind.Zone, rect);
           Begin(Mode.Idle);
         }
         break;
@@ -168,8 +169,8 @@ public class TrialDesigner : Entity
   {
     base.Render();
     string room = SceneAs<Level>().Session.Level;
-    if (TrialDraft.Finish is TrialDraft.PlacedFinish finish && finish.Room == room)
-      Draw.HollowRect(finish.Rect, FinishColor * KeptAlpha);
+    if (TrialDraft.Finish is { Rect: Rectangle finishRect } finish && finish.Room == room)
+      Draw.HollowRect(finishRect, FinishColor * KeptAlpha);
     foreach (TrialDraft.PlacedWaypoint waypoint in TrialDraft.Waypoints)
       if (waypoint.Room == room)
         TrialWaypoint.DrawPreview(waypoint.Position, KeptAlpha);

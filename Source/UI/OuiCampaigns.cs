@@ -12,7 +12,7 @@ public class OuiCampaigns : ListScreen
 {
   private const int NameMaxLength = 20;
   private const float NoticeSeconds = 5f;
-  private const float LoadErrorY = 300f;
+  private const float LoadErrorY = 240f;
   private const float LoadErrorScale = 0.5f;
   private const float OfflineY = 190f;
   private const float OfflineScale = 0.45f;

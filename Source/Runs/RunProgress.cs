@@ -11,6 +11,7 @@ public sealed class RunProgress
 
   public int WaypointsTaken => touched.Count;
   public int Strawberries { get; private set; }
+  public int SummitGems { get; private set; }
   public bool RespawnMoved { get; private set; }
 
   public bool IsTaken(int index) => touched.Contains(index);
@@ -19,8 +20,12 @@ public sealed class RunProgress
 
   public void AddStrawberry() => Strawberries++;
 
+  public void AddSummitGem() => SummitGems++;
+
   public bool Met(RunDefinition run) =>
-    WaypointsTaken >= run.Waypoints.Count && Strawberries >= run.RequiredStrawberries;
+    WaypointsTaken >= run.Waypoints.Count
+    && Strawberries >= run.RequiredStrawberries
+    && SummitGems >= run.RequiredSummitGems;
 
   public void ObserveRespawn(Vector2? respawnPoint)
   {
@@ -41,5 +46,6 @@ public sealed class RunProgress
     respawnSeen = null;
     RespawnMoved = false;
     Strawberries = 0;
+    SummitGems = 0;
   }
 }

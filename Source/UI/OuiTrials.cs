@@ -325,7 +325,7 @@ public class OuiTrials : ListScreen
       Audio.Play("event:/ui/main/button_invalid");
       return false;
     }
-    if (ReplayStore.TryLoad(trial.Id, out replay, out string failure))
+    if (ReplayStore.TryLoad(trial, out replay, out string failure))
       return true;
     string text = Dialog.Get("climbtrials_replay_deleted").Replace("{0}", failure);
     notice.Show(text, NoticeSeconds);

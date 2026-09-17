@@ -5,6 +5,7 @@ namespace Celeste.Mod.ClimbTrials.Entities;
 
 public class RaceGhostTag : Entity
 {
+  private const float AlphaMultiplier = 0.5f;
   private readonly RaceGhost ghost;
 
   public RaceGhostTag(RaceGhost ghost)
@@ -23,7 +24,7 @@ public class RaceGhostTag : Entity
       at,
       new Vector2(0.5f, 1f),
       Vector2.One * RaceGhost.TagScale,
-      Color.White * ghost.Alpha
+      Color.White * ghost.Alpha * ghost.Alpha * AlphaMultiplier
     );
   }
 }
