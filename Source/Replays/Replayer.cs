@@ -3,6 +3,7 @@ using Celeste.Mod.ClimbTrials.Runs;
 using Celeste.Mod.ClimbTrials.UI;
 using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.Replays;
@@ -307,6 +308,10 @@ public static class Replayer
 
     if (State == ReplayState.Idle && menu == null)
       orig(self, gameTime);
+    else if (Engine.Commands.Open)
+      Engine.Commands.UpdateOpen();
+    else if (Engine.Commands.Enabled)
+      Engine.Commands.UpdateClosed();
   }
 
   private static void DriveMenu()
@@ -458,7 +463,7 @@ public static class Replayer
     if ((State == ReplayState.Playing || stepping) && InputCapture.Counts())
       Step();
     orig();
-    if (State != ReplayState.Idle)
+    if (State != ReplayState.Idle && !Engine.Commands.Open)
       HandleWatcherControls();
   }
 
@@ -497,6 +502,10 @@ public static class Replayer
 
   private static void HandleWatcherControls()
   {
+    if (MInput.Keyboard.Pressed(Keys.F8))
+    {
+      GameplayRenderer.RenderDebug = !GameplayRenderer.RenderDebug;
+    }
     if (WatcherPressed(Settings.Instance.Pause) || WatcherPressed(EscapeBinding()))
     {
       OpenMenu();
@@ -513,12 +522,12 @@ public static class Replayer
       if (State == ReplayState.Paused)
       {
         State = ReplayState.Playing;
-        Audio.Play(PauseSound);
+        Audio.Play(ResumeSound);
       }
       else
       {
         State = ReplayState.Paused;
-        Audio.Play(ResumeSound);
+        Audio.Play(PauseSound);
       }
     }
   }

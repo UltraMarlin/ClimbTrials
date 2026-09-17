@@ -104,6 +104,8 @@ public static class RunManager
     RunBinds.Blank();
     Run = run;
     Replay = replay;
+    if (replay == null)
+      GameplayRenderer.RenderDebug = false;
     countdownOnControl = countdown;
 
     ownSaveData = new SaveData { Name = "ClimbTrials" };
@@ -245,6 +247,7 @@ public static class RunManager
   {
     ResetRunState();
     RunBinds.Restore();
+    GameplayRenderer.RenderDebug = false;
     if (Run != null && SaveData.Instance?.FileSlot == -1)
       SaveData.Instance.Assists.NoGrabbing = false;
     Trial = null;

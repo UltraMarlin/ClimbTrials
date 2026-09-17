@@ -81,6 +81,7 @@ CLIMBTRIALS_CONNECTING=                Connecting...
 CLIMBTRIALS_OFFLINE=                   offline
 CLIMBTRIALS_NAME_ROW=                  Name: {0}
 CLIMBTRIALS_NAME_INVALID=              Allowed symbols: Letters, digits, space, - _ .
+CLIMBTRIALS_NAME_RESERVED=             Guest names are not allowed
 CLIMBTRIALS_NAME_TAKEN=                That name is taken
 CLIMBTRIALS_NAME_OFFLINE=              Name change failed, try again later
 CLIMBTRIALS_UPDATE_REQUIRED=           Update ClimbTrials to submit

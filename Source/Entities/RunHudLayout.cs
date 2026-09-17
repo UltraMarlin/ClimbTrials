@@ -6,15 +6,15 @@ public static class RunHudLayout
 {
   public const float ConditionsY = 110f;
   public const float RowHeight = 46f;
-  public const float ListY = 340f;
+  public const float ListY = 280f;
   public const float IconX = 36f;
   public const float TimeX = 64f;
   public const float TimeScale = 0.7f;
   public const float IconHeight = 48f;
 
-  public const float DuckMargin = 80f;
-  public const float DuckAlpha = 0.15f;
-  public const float DuckTime = 0.2f;
+  public const float DuckMargin = 120f;
+  public const float DuckAlpha = 0.1f;
+  public const float DuckTime = 0.1f;
 
   public const float BoxAlpha = 0.5f;
   public const float BoxPaddingTop = 14f;

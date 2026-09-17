@@ -220,6 +220,7 @@ public class OuiCampaigns : ListScreen
           ServerError.None => null,
           ServerError.NameTaken => Dialog.Clean("climbtrials_name_taken"),
           ServerError.NameInvalid => Dialog.Clean("climbtrials_name_invalid"),
+          ServerError.NameReserved => Dialog.Clean("climbtrials_name_reserved"),
           _ => Dialog.Clean("climbtrials_name_offline"),
         };
         if (text != null)

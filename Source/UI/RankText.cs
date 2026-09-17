@@ -1,4 +1,3 @@
-using System;
 using Microsoft.Xna.Framework;
 using Monocle;
 
@@ -16,7 +15,7 @@ public static class RankText
       return;
 
     string text = Format(place);
-    float fit = Math.Min(1f, ActiveFont.Measure(WidestOnMedal).X / ActiveFont.Measure(text).X);
+    float fit = TextFit.Scale(text, ActiveFont.Measure(WidestOnMedal).X);
     Color color = Color.White * alpha;
     ActiveFont.DrawOutline(
       text,

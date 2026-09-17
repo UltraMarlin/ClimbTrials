@@ -20,6 +20,8 @@ public class LeaderboardDisplay : Entity
   private const float GapBelowGoals = 12f;
   private const float RankX = 16f;
   private const float ColumnGapPerScale = 36f;
+  private const int NameFullChars = 10;
+  private const float NameMinFit = 0.6f;
   private const string Ellipsis = "...";
 
   private readonly Color boxColor = Colors.ForChapter(RunManager.Run.Area).Dark;
@@ -46,7 +48,8 @@ public class LeaderboardDisplay : Entity
     string Name,
     string Time,
     Color Color,
-    bool Message = false
+    bool Message = false,
+    float NameFit = 1f
   );
 
   public LeaderboardDisplay()
@@ -150,10 +153,23 @@ public class LeaderboardDisplay : Entity
       if (rows.Count == 3 && row.Rank > 4)
         rows.Add(new Row(Ellipsis, "", "", Color.White));
       Color color = row.Me ? myTimeColor : Color.White;
-      rows.Add(new Row($"#{row.Rank}", row.Name, TimeText.Format(row.Ticks), color));
+      rows.Add(
+        new Row(
+          $"#{row.Rank}",
+          row.Name,
+          TimeText.Format(row.Ticks),
+          color,
+          NameFit: NameFitFor(row.Name)
+        )
+      );
     }
     return rows;
   }
+
+  private static float NameFitFor(string name) =>
+    name.Length <= NameFullChars
+      ? 1f
+      : TextFit.Scale(name, ActiveFont.Measure(name[..NameFullChars]).X, NameMinFit);
 
   private static Row Message(string key) =>
     new(Dialog.Clean(key), "", "", Colors.DimText, Message: true);
@@ -171,7 +187,7 @@ public class LeaderboardDisplay : Entity
       widest = Math.Max(widest, RankX + rank);
       if (!row.Message)
         rankColumn = Math.Max(rankColumn, rank);
-      widestName = Math.Max(widestName, ActiveFont.Measure(row.Name).X * textScale);
+      widestName = Math.Max(widestName, ActiveFont.Measure(row.Name).X * textScale * row.NameFit);
       widestTime = Math.Max(widestTime, TimeText.Width(row.Time, timeStyle));
     }
     nameX = RankX + rankColumn + columnGap;
@@ -223,7 +239,7 @@ public class LeaderboardDisplay : Entity
         row.Name,
         new Vector2(nameX, y),
         justify,
-        scale,
+        scale * row.NameFit,
         row.Color,
         1.35f,
         Color.Black
