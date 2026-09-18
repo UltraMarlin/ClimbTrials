@@ -40,7 +40,7 @@ public sealed class DownloadedReplay
 public static class ServerClient
 {
   private const string LogTag = "ClimbTrials/Server";
-  private const double TimeoutSeconds = 2;
+  private const double TimeoutSeconds = 5;
   private const string VersionHeader = "X-ClimbTrials-Version";
   private const string ClientIdHeader = "X-Client-Id";
   private const string PlayerNameHeader = "X-Player-Name";

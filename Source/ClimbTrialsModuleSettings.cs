@@ -96,7 +96,7 @@ public class ClimbTrialsModuleSettings : EverestModuleSettings
   public string Key { get; set; } = "";
 
   [SettingIgnore]
-  public string ServerUrl { get; set; } = "http://localhost:3000";
+  public string ServerUrl { get; set; } = "https://climb-trials-server.mabidev.de";
 
   [DefaultButtonBinding(Buttons.Back, Keys.F7)]
   public ButtonBinding Retry { get; set; }
