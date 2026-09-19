@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.Runs;
 using Microsoft.Xna.Framework;
 
@@ -27,6 +28,8 @@ public sealed class Trial
   public RunDefinition Run { get; init; }
   public GoalTimes Goals { get; init; }
   public int ReplayLimitSeconds { get; init; } = DefaultReplayLimitSeconds;
+
+  public bool FitsReplayLimit(long ticks) => TrialSpec.FitsReplayLimit(ReplayLimitSeconds, ticks);
 
   public byte[] DefinitionHash =>
     definitionHash ??= SHA256.HashData(Encoding.UTF8.GetBytes(DefinitionText()));

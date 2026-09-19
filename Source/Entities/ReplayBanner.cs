@@ -93,10 +93,10 @@ public class ReplayBanner : Entity
       Replayer.State == ReplayState.Paused
         ? "climbtrials_replay_resume"
         : "climbtrials_replay_pause";
-    List<(string, VirtualButton)> prompts =
-    [
-      (Dialog.Clean("climbtrials_replay_restart"), Input.MenuJournal),
-    ];
+    List<(string, VirtualButton)> prompts = [];
+    if (Replayer.State == ReplayState.Finished)
+      prompts.Add((Dialog.Clean("climbtrials_finish_back"), Input.MenuCancel));
+    prompts.Add((Dialog.Clean("climbtrials_replay_restart"), Input.MenuJournal));
     if (Replayer.State == ReplayState.Paused)
       prompts.Add((Dialog.Clean("climbtrials_replay_step"), Input.MenuRight));
     if (Replayer.State != ReplayState.Finished)

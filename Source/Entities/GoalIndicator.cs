@@ -25,6 +25,9 @@ public class GoalIndicator : Entity
   private const float TurnTime = 0.3f;
   private const float FollowTime = 0.2f;
   private const float EdgeMargin = 10f;
+  private const int LightStartRadius = 12;
+  private const int LightEndRadius = 26;
+  private const float LightAlpha = 0.4f;
   private static readonly Color WaypointColor = Calc.HexToColor("b2ebbe");
   private static readonly Color StrawberryColor = Calc.HexToColor("f76f6f");
   private static readonly Color SummitGemColor = Calc.HexToColor("c2f0ff");
@@ -59,6 +62,7 @@ public class GoalIndicator : Entity
     public Color Color = WaypointColor;
     public Vector2 Position;
     public FadeBuffer Layer;
+    public VertexLight Light;
   }
 
   private readonly MTexture texture = GFX.Game[ArrowTexture];
@@ -83,6 +87,8 @@ public class GoalIndicator : Entity
       Arrow arrow = new();
       arrow.Layer = new FadeBuffer("climbtrials-goal-arrow", side, side, () => DrawArrow(arrow));
       Add(arrow.Layer);
+      arrow.Light = new VertexLight(Color.White, 0.8f, LightStartRadius, LightEndRadius);
+      Add(arrow.Light);
       arrows[ring] = arrow;
     }
   }
@@ -163,6 +169,8 @@ public class GoalIndicator : Entity
     {
       arrow.Layer.Visible = arrow.Visible;
       arrow.Layer.Origin = arrow.Position.Round() - Vector2.One * arrowHalf;
+      arrow.Light.Position = arrow.Position.Round();
+      arrow.Light.Alpha = arrow.Visible && arrow.Alpha >= MinAlpha ? arrow.Alpha * LightAlpha : 0f;
     }
   }
 

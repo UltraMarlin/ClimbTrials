@@ -87,8 +87,13 @@ public class TrialRow : TextMenu.Item
       alpha
     );
 
-    if (record == null || (record.Submittable && ReplayStore.Exists(Trial.Id)))
+    if (record == null)
       return;
+
+    bool needsReplay = Trial.FitsReplayLimit(record.BestTicks);
+    if (record.Submittable && (!needsReplay || ReplayStore.Exists(Trial.Id)))
+      return;
+
     Color mark = Colors.Warning * alpha;
     ActiveFont.DrawOutline(
       RowLayout.Mark,

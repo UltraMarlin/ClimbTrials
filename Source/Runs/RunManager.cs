@@ -426,7 +426,7 @@ public static class RunManager
     if (
       !Replaying
       && AttemptInProgress
-      && Recorder.Stopped == StopReason.None
+      && Recorder.Stopped is StopReason.None or StopReason.Limit
       && !SaveData.Instance.Assists.Equals(ExpectedAssists())
     )
       StopRecording(StopReason.State);
@@ -444,7 +444,7 @@ public static class RunManager
       Recorder.Recording
       && !level.Paused
       && Attempt.State == AttemptState.Running
-      && Attempt.ElapsedTicks >= Trial.ReplayLimitSeconds * TimeSpan.TicksPerSecond
+      && !Trial.FitsReplayLimit(Attempt.ElapsedTicks)
     )
       StopRecording(StopReason.Limit);
     if (
@@ -457,8 +457,9 @@ public static class RunManager
 
   private static void StopRecording(StopReason reason)
   {
+    if (Recorder.Recording)
+      Audio.Play(ReplayLimitSound);
     Recorder.Stop(reason);
-    Audio.Play(ReplayLimitSound);
     Logger.Log(LogLevel.Info, LogTag, $"recording stopped: {reason}, attempt {Attempt.State}");
   }
 
@@ -551,22 +552,31 @@ public static class RunManager
 
     Replay recorded = Recorder.Finish(Attempt.ElapsedTicks);
     bool submittable = false;
-    if (recorded != null && Trial != null)
-    {
-      ValidationResult check = ReplayValidator.Check(
-        recorded,
-        TrialSpec.From(Trial),
-        ModCheck.Allowed
-      );
-      submittable = check.Passes;
-      Logger.Log(LogLevel.Info, LogTag, $"replay check: {check.Describe()}");
-    }
     if (Trial != null)
     {
-      LastFinish = TrialRecords.Record(Trial, Attempt.ElapsedTicks, submittable);
-      if (LastFinish.IsPersonalBest && recorded != null)
+      if (recorded != null)
       {
-        ReplayStore.Save(recorded);
+        ValidationResult check = ReplayValidator.Check(
+          recorded,
+          TrialSpec.From(Trial),
+          ModCheck.Allowed
+        );
+        submittable = check.Passes;
+        Logger.Log(LogLevel.Info, LogTag, $"replay check: {check.Describe()}");
+      }
+      else if (Recorder.Stopped == StopReason.Limit)
+      {
+        ValidationResult check = ReplayValidator.CheckAttempt(ModCheck.Allowed);
+        submittable = check.Passes;
+        Logger.Log(LogLevel.Info, LogTag, $"attempt check without replay: {check.Describe()}");
+      }
+      LastFinish = TrialRecords.Record(Trial, Attempt.ElapsedTicks, submittable);
+      if (LastFinish.IsPersonalBest)
+      {
+        if (recorded != null)
+          ReplayStore.Save(recorded);
+        else
+          ReplayStore.Delete(Trial.Id);
         ClimbTrialsModuleSettings settings = ClimbTrialsModule.Settings;
         if (settings.PbAutoSubmit && submittable && !settings.OfflineMode)
         {
@@ -575,11 +585,9 @@ public static class RunManager
           else
             ShowNotice("climbtrials_not_connected");
         }
+        if (RaceReplay?.IsOwn == true)
+          RaceReplay = recorded;
       }
-      else if (LastFinish.IsPersonalBest)
-        ReplayStore.Delete(Trial.Id);
-      if (LastFinish.IsPersonalBest && RaceReplay?.IsOwn == true)
-        RaceReplay = recorded;
     }
     Logger.Log(
       LogLevel.Info,

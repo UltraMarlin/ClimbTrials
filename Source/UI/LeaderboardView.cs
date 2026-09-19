@@ -422,7 +422,9 @@ public class LeaderboardView : Entity
   {
     if (local != null)
       return null;
-    if (row.ReplayId == null || row.ReplayFormat != Replay.FormatVersion)
+    if (row.ReplayId == null)
+      return Dialog.Clean("climbtrials_ghost_no_replay");
+    if (row.ReplayFormat != Replay.FormatVersion)
       return Dialog.Clean("climbtrials_ghost_old_format");
     if (ClimbTrialsModule.Settings.OfflineMode)
       return Dialog.Clean("climbtrials_offline_mode");

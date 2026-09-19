@@ -303,7 +303,12 @@ public class OuiTrials : ListScreen
 
   private void SubmitPb(Trial trial)
   {
-    if (TryLoadPb(trial, out Replay replay))
+    TrialRecord record = TrialRecords.Get(trial.Id);
+    bool bareTime =
+      record != null && !ReplayStore.Exists(trial.Id) && !trial.FitsReplayLimit(record.BestTicks);
+    if (bareTime)
+      Uploader.Start(trial, null, ReportUpload);
+    else if (TryLoadPb(trial, out Replay replay))
       Uploader.Start(trial, replay, ReportUpload);
   }
 

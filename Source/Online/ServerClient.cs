@@ -136,6 +136,23 @@ public static class ServerClient
     Send($"/v1/trials/{trialId}/submissions", HttpMethod.Post, body, onDone);
   }
 
+  public static void SubmitTime(
+    string trialId,
+    TimeSubmission time,
+    Action<ServerResult<SubmissionAnswer>> onDone
+  )
+  {
+    string body = JsonSerializer.Serialize(
+      new
+      {
+        ticks = time.Ticks,
+        achievedAtUtcTicks = time.AchievedAtUtcTicks,
+        trialHash = time.TrialHash,
+      }
+    );
+    Send($"/v1/trials/{trialId}/times", HttpMethod.Post, Json(body), onDone);
+  }
+
   private static StringContent Json(string text) => new(text, Encoding.UTF8, "application/json");
 
   private static bool TryBaseUri(out Uri uri) =>

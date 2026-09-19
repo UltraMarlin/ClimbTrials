@@ -73,11 +73,12 @@ public class TrialModeMenu : FadingMenu
   {
     Upload upload = Uploader.UploadFor(trial.Id);
     bool hasReplay = ReplayStore.Exists(trial.Id);
+    bool needsReplay = trial.FitsReplayLimit(record.BestTicks);
     bool submitting = upload.State == UploadState.Submitting;
     bool offlineMode = ClimbTrialsModule.Settings.OfflineMode;
     bool live =
       record.Submittable
-      && hasReplay
+      && (hasReplay || !needsReplay)
       && !Identity.Banned
       && !offlineMode
       && state == StandingsState.Ready
@@ -91,7 +92,7 @@ public class TrialModeMenu : FadingMenu
       reason = Dialog.Clean("climbtrials_submit_banned");
     else if (!record.Submittable)
       reason = Dialog.Clean("climbtrials_submit_unsubmittable");
-    else if (!hasReplay)
+    else if (!hasReplay && needsReplay)
       reason = Dialog.Clean("climbtrials_submit_no_replay");
     else if (offlineMode)
       reason = Dialog.Clean("climbtrials_offline_mode");

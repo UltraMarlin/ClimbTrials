@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Replays;
+using Celeste.Mod.ClimbTrials.Runs;
 
 namespace Celeste.Mod.ClimbTrials.Online;
 
@@ -30,21 +31,27 @@ public static class Uploader
   {
     int version = versions.GetValueOrDefault(trial.Id) + 1;
     versions[trial.Id] = version;
-    bool built = Submission.TryBuild(
-      replay,
-      trial,
-      out Submission submission,
-      out ValidationResult check
-    );
-
-    if (!built)
+    Submission submission;
+    if (replay != null)
     {
-      StoreAndReport(trial.Id, new Upload(UploadState.Failed, null, check.Describe()), report);
+      bool built = Submission.TryBuild(replay, trial, out submission, out ValidationResult check);
+      if (!built)
+      {
+        StoreAndReport(trial.Id, new Upload(UploadState.Failed, null, check.Describe()), report);
+        return;
+      }
+    }
+    else if (TrialRecords.Get(trial.Id) is TrialRecord record)
+      submission = Submission.ForTime(trial, record);
+    else
+    {
+      string text = Dialog.Clean("climbtrials_submit_failed");
+      StoreAndReport(trial.Id, new Upload(UploadState.Failed, null, text), report);
       return;
     }
 
     StoreAndReport(trial.Id, new Upload(UploadState.Submitting, null, null), report);
-    TryToPublish(trial.Id, submission.ReplayBytes, attempt: 1, version, report);
+    TryToPublish(trial.Id, submission, attempt: 1, version, report);
   }
 
   public static (string Text, bool Warning) Describe(Upload upload) =>
@@ -63,45 +70,45 @@ public static class Uploader
 
   private static void TryToPublish(
     string trialId,
-    byte[] bytes,
+    Submission submission,
     int attempt,
     int version,
     Action<Upload> report
   )
   {
-    ServerClient.Submit(
-      trialId,
-      bytes,
-      result =>
+    Action<ServerResult<SubmissionAnswer>> onDone = result =>
+    {
+      if (versions[trialId] != version)
+        return;
+
+      if (result.Ok)
       {
-        if (versions[trialId] != version)
-          return;
-
-        if (result.Ok)
-        {
-          Standings.Replace(result.Value.Standing);
-          StoreAndReport(
-            trialId,
-            new Upload(UploadState.Accepted, result.Value.Standing?.Rank, null),
-            report
-          );
-          return;
-        }
-
-        if (result.Error == ServerError.Offline && attempt < Tries)
-        {
-          Task.Delay(RetryDelayMs)
-            .ContinueWith(_ =>
-              MainThreadHelper.Schedule(() =>
-                TryToPublish(trialId, bytes, attempt + 1, version, report)
-              )
-            );
-          return;
-        }
-
-        StoreAndReport(trialId, new Upload(UploadState.Failed, null, MessageFor(result)), report);
+        Standings.Replace(result.Value.Standing);
+        StoreAndReport(
+          trialId,
+          new Upload(UploadState.Accepted, result.Value.Standing?.Rank, null),
+          report
+        );
+        return;
       }
-    );
+
+      if (result.Error == ServerError.Offline && attempt < Tries)
+      {
+        Task.Delay(RetryDelayMs)
+          .ContinueWith(_ =>
+            MainThreadHelper.Schedule(() =>
+              TryToPublish(trialId, submission, attempt + 1, version, report)
+            )
+          );
+        return;
+      }
+
+      StoreAndReport(trialId, new Upload(UploadState.Failed, null, MessageFor(result)), report);
+    };
+    if (submission.Time != null)
+      ServerClient.SubmitTime(trialId, submission.Time, onDone);
+    else
+      ServerClient.Submit(trialId, submission.ReplayBytes, onDone);
   }
 
   private static string MessageFor(ServerResult<SubmissionAnswer> result) =>

@@ -24,6 +24,11 @@ public sealed record TrialSpec(
         trial.ReplayLimitSeconds,
         trial.DefinitionHash
       );
+
+  public static bool FitsReplayLimit(int limitSeconds, long ticks) =>
+    ticks <= limitSeconds * TimeSpan.TicksPerSecond;
+
+  public bool FitsReplayLimit(long ticks) => FitsReplayLimit(ReplayLimitSeconds, ticks);
 }
 
 public sealed class ValidationResult
@@ -105,7 +110,7 @@ public static class ReplayValidator
       }
     }
 
-    if (replay.Ticks > trial.ReplayLimitSeconds * TimeSpan.TicksPerSecond)
+    if (!trial.FitsReplayLimit(replay.Ticks))
       result.Rejections.Add(
         $"time is over the trial's recording limit of {trial.ReplayLimitSeconds} s"
       );
@@ -128,17 +133,38 @@ public static class ReplayValidator
           + $"expected about {expectedWallMs:F0} ms"
       );
 
+    CheckModules(replay.Modules, allowedModules, result);
+    CheckDebug(replay.DebugCauses, result);
+
+    return result;
+  }
+
+  public static ValidationResult CheckAttempt(IReadOnlySet<string> allowedModules)
+  {
+    ValidationResult result = new();
+    CheckModules(ModCheck.Modules(), allowedModules, result);
+    CheckDebug(DebugUse.Causes, result);
+    return result;
+  }
+
+  private static void CheckModules(
+    IEnumerable<ModuleRef> modules,
+    IReadOnlySet<string> allowedModules,
+    ValidationResult result
+  )
+  {
     List<string> others = [];
-    foreach (ModuleRef module in replay.Modules)
+    foreach (ModuleRef module in modules)
       if (!allowedModules.Contains(module.Name))
         others.Add(module.Name);
     if (others.Count > 0)
       result.Rejections.Add("mods outside the allowlist: " + string.Join(", ", others));
+  }
 
-    if (replay.DebugCauses != DebugCause.None)
-      result.Rejections.Add("debug features used: " + replay.DebugCauses);
-
-    return result;
+  private static void CheckDebug(DebugCause causes, ValidationResult result)
+  {
+    if (causes != DebugCause.None)
+      result.Rejections.Add("debug features used: " + causes);
   }
 
   private static bool SamePlayerState(InputFrame a, InputFrame b) =>

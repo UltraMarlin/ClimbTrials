@@ -517,6 +517,11 @@ public static class Replayer
       RunManager.StartReplay(current);
       return;
     }
+    if (State == ReplayState.Finished && WatcherPressed(Settings.Instance.Cancel))
+    {
+      LeaveReplay();
+      return;
+    }
     if (State != ReplayState.Finished && WatcherPressed(Settings.Instance.Confirm))
     {
       if (State == ReplayState.Paused)
