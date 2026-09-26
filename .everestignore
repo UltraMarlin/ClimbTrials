@@ -4,7 +4,7 @@
 # to the ZippedFiles tag in the .csproj file, or the artifact paths in the
 # Github workflow file if you're using GitHub actions for publishing.
 Source/
-ClimbTrials.zip
+ClimbTrials*.zip
 log.sh
 build.sh
 watch.sh
