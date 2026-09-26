@@ -37,7 +37,7 @@ public class GoalListDisplay : Entity
 
   public GoalListDisplay()
   {
-    Tag = Tags.HUD | Tags.Persistent | Tags.TransitionUpdate;
+    Tag = Tags.HUD | Tags.Persistent | Tags.TransitionUpdate | Tags.FrozenUpdate;
   }
 
   private static GoalTimesDisplayMode Mode => ClimbTrialsModule.Settings.ShowGoalTimes;

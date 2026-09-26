@@ -24,6 +24,8 @@ public sealed class TransientText
       Audio.Play(SFX.ui_main_button_invalid);
   }
 
+  public bool Showing => age >= 0f && age < duration;
+
   public void Clear() => age = -1f;
 
   public void Update(float deltaTime)
@@ -34,7 +36,7 @@ public sealed class TransientText
 
   public void Render(Vector2 center, float scale, float alpha)
   {
-    if (age < 0f || age >= duration)
+    if (!Showing)
       return;
     Color shown = color * (alpha * Math.Clamp((duration - age) / FadeTime, 0f, 1f));
     ActiveFont.DrawOutline(

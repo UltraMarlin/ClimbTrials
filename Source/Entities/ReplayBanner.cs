@@ -90,17 +90,15 @@ public class ReplayBanner : Entity
   private static void RenderPrompts(float alpha)
   {
     string pauseKey =
-      Replayer.State == ReplayState.Paused
-        ? "climbtrials_replay_resume"
-        : "climbtrials_replay_pause";
-    List<(string, VirtualButton)> prompts = [];
+      Replayer.State == ReplayState.Paused ? "climbtrials_replay_resume" : "climbtrials_pause";
+    List<(string, VirtualButton)> prompts = [ButtonRow.MenuPrompt];
     if (Replayer.State == ReplayState.Finished)
-      prompts.Add((Dialog.Clean("climbtrials_finish_back"), Input.MenuCancel));
+      prompts.Add((Dialog.Clean("climbtrials_return_to_trials"), Input.MenuCancel));
     prompts.Add((Dialog.Clean("climbtrials_replay_restart"), Input.MenuJournal));
-    if (Replayer.State == ReplayState.Paused)
-      prompts.Add((Dialog.Clean("climbtrials_replay_step"), Input.MenuRight));
     if (Replayer.State != ReplayState.Finished)
       prompts.Add((Dialog.Clean(pauseKey), Input.MenuConfirm));
+    if (Replayer.State == ReplayState.Paused)
+      prompts.Add((Dialog.Clean("climbtrials_replay_step"), Input.MenuRight));
     ButtonRow.DrawRight(alpha, prompts);
   }
 

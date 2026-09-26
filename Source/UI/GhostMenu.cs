@@ -36,8 +36,8 @@ public class GhostMenu : FadingMenu
 
     Add(new HeaderItem(row, subject));
     Add(new Gap(OptionsGap));
-    Add(new DimButton(Dialog.Clean("climbtrials_ghost_watch"), Live, watch));
-    Add(new DimButton(Dialog.Clean("climbtrials_ghost_race"), Live, race));
+    Add(new DimButton(Dialog.Clean("climbtrials_watch_replay"), Live, watch));
+    Add(new DimButton(Dialog.Clean("climbtrials_race_this_ghost"), Live, race));
 
     OnCancel = Back;
     OnESC = Back;

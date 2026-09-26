@@ -12,6 +12,7 @@ public static class RowDescription
     TextMenuExt.EaseInSubHeaderExt description = (TextMenuExt.EaseInSubHeaderExt)
       menu.Items[menu.Items.IndexOf(row) + 1];
     description.IncludeWidthInMeasurement = false;
-    description.Offset = new Vector2(0f, -Lift);
+    float centreShift = (RowLayout.RowHeight - row.Height()) / 2f;
+    description.Offset = new Vector2(0f, -Lift + centreShift);
   }
 }

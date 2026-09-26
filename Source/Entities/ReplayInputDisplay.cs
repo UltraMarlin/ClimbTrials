@@ -60,7 +60,7 @@ public class ReplayInputDisplay : Entity
   private static readonly Button[] DetailedButtons =
   [
     new("climbtrials_input_talk", Actions.Talk, Holding(Actions.Dash)),
-    new("climbtrials_input_pause", Actions.Pause | Actions.Esc, null),
+    new("climbtrials_pause", Actions.Pause | Actions.Esc, null),
     new("climbtrials_input_restart", Actions.QuickRestart, null),
     new("climbtrials_input_menu_up", Actions.MenuUp, null, WhilePaused: true),
     new("climbtrials_input_menu_down", Actions.MenuDown, null, WhilePaused: true),

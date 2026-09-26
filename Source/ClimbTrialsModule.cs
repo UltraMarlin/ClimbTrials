@@ -54,6 +54,13 @@ public class ClimbTrialsModule : EverestModule
     HotReload.Recover();
   }
 
+  public override void SaveSettings()
+  {
+    if (_Settings != null && !Settings.HasChangedOptions && Settings.DiffersFromDefaults())
+      Settings.HasChangedOptions = true;
+    base.SaveSettings();
+  }
+
   public override void Unload()
   {
     RunManager.Stop();

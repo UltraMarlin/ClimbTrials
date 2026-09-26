@@ -1,4 +1,5 @@
 using System.Linq;
+using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.Runs;
 using Monocle;
@@ -27,13 +28,16 @@ public static class PauseMenu
     TextMenu.Item restart = new TextMenu.Button(Dialog.Clean("climbtrials_pause_restart")).Pressed(
       RestartTrial
     );
-    TextMenu.Item back = new TextMenu.Button(Dialog.Clean("climbtrials_pause_return")).Pressed(
+    TextMenu.Item back = new TextMenu.Button(Dialog.Clean("climbtrials_return_to_trials")).Pressed(
       RunManager.LeaveToTrials
     );
 
     int restartIndex = Replace(menu, "menu_pause_restartarea", restart);
     if (Replace(menu, "menu_pause_return", back) < 0)
       menu.Insert(restartIndex + 1, back);
+
+    if (!RunManager.Replaying || RunManager.Replay.RecorderVersion >= Compatibility.RaceRowSince)
+      menu.Insert(menu.Items.IndexOf(back), BuildRaceRow());
 
     if (Replayer.Silenced)
       LockRows(
@@ -43,7 +47,11 @@ public static class PauseMenu
         Dialog.Clean("menu_pause_skip_cutscene")
       );
     else if (RunManager.Replaying)
-      LockRows(menu, Dialog.Clean("menu_pause_resume"), Dialog.Clean("climbtrials_pause_return"));
+      LockRows(
+        menu,
+        Dialog.Clean("menu_pause_resume"),
+        Dialog.Clean("climbtrials_return_to_trials")
+      );
     else if (
       RunManager.Attempt.State == AttemptState.Finished
       && Find(menu, "menu_pause_retry") is TextMenu.Button retry
@@ -85,6 +93,38 @@ public static class PauseMenu
   public static void RestartTrial()
   {
     RunManager.StartRun(RunManager.Run);
+  }
+
+  private static TextMenu.Button BuildRaceRow()
+  {
+    if (RunManager.Racing)
+    {
+      TextMenu.Button stop = new(Dialog.Clean("climbtrials_pause_race_off"));
+      stop.Pressed(RaceWithoutGhost);
+      return stop;
+    }
+    TextMenu.Button race = new(Dialog.Clean("climbtrials_race_pb_ghost"));
+    race.Pressed(RaceAgainstPb);
+    if (!ReplayStore.Exists(RunManager.Trial.Id))
+      race.ConfirmSfx = null;
+    return race;
+  }
+
+  private static void RaceAgainstPb()
+  {
+    Trial trial = RunManager.Trial;
+    if (ReplayStore.TryLoadPb(trial, out Replay replay, out string deleted))
+    {
+      RunManager.StartRace(trial, replay);
+      return;
+    }
+    if (deleted != null)
+      RunManager.ShowText(deleted, warning: true);
+  }
+
+  private static void RaceWithoutGhost()
+  {
+    RunManager.StartTrial(RunManager.Trial);
   }
 
   private static void OnPause(Level level, int startIndex, bool minimal, bool quickReset)

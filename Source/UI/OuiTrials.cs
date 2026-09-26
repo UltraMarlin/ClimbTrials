@@ -322,16 +322,10 @@ public class OuiTrials : ListScreen
 
   private bool TryLoadPb(Trial trial, out Replay replay)
   {
-    replay = null;
-    if (!ReplayStore.Exists(trial.Id))
-    {
-      Audio.Play(SFX.ui_main_button_invalid);
-      return false;
-    }
-    if (ReplayStore.TryLoad(trial, out replay, out string failure))
+    if (ReplayStore.TryLoadPb(trial, out replay, out string deleted))
       return true;
-    string text = Dialog.Get("climbtrials_replay_deleted").Replace("{0}", failure);
-    notice.Show(text, NoticeSeconds);
+    if (deleted != null)
+      notice.Show(deleted, NoticeSeconds);
     return false;
   }
 

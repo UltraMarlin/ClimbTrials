@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using Microsoft.Xna.Framework.Input;
 
 namespace Celeste.Mod.ClimbTrials;
@@ -73,7 +76,7 @@ public class ClimbTrialsModuleSettings : EverestModuleSettings
   public LeaderboardMode ShowLeaderboard { get; set; } = LeaderboardMode.Normal;
 
   [SettingSubText("modoptions_climbtrialsmodule_ghostvisibility_desc")]
-  public GhostVisibility GhostVisibility { get; set; } = GhostVisibility.Strong;
+  public GhostVisibility GhostVisibility { get; set; } = GhostVisibility.Subtle;
 
   [SettingSubText("modoptions_climbtrialsmodule_replayinputdisplay_desc")]
   public InputDisplayMode ReplayInputDisplay { get; set; } = InputDisplayMode.Normal;
@@ -98,6 +101,38 @@ public class ClimbTrialsModuleSettings : EverestModuleSettings
   [SettingIgnore]
   public string ServerUrl { get; set; } = "https://climb-trials-server.mabidev.de";
 
-  [DefaultButtonBinding(Buttons.Back, Keys.F7)]
   public ButtonBinding Retry { get; set; }
+
+  [SettingIgnore]
+  public bool HasChangedOptions { get; set; }
+
+  public bool DiffersFromDefaults()
+  {
+    ClimbTrialsModuleSettings defaults = new();
+    IEnumerable<PropertyInfo> rows = typeof(ClimbTrialsModuleSettings)
+      .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+      .Where(property => property.GetCustomAttribute<SettingIgnoreAttribute>() == null);
+    foreach (PropertyInfo property in rows)
+    {
+      if (property.PropertyType == typeof(ButtonBinding))
+      {
+        if (!IsDefaultBind((ButtonBinding)property.GetValue(this), property))
+          return true;
+      }
+      else if (!Equals(property.GetValue(this), property.GetValue(defaults)))
+        return true;
+    }
+    return false;
+  }
+
+  private static bool IsDefaultBind(ButtonBinding bind, PropertyInfo property)
+  {
+    DefaultButtonBindingAttribute expected =
+      property.GetCustomAttribute<DefaultButtonBindingAttribute>();
+    Buttons[] buttons = expected != null && expected.Button != 0 ? [expected.Button] : [];
+    Keys[] keys = expected != null && expected.Key != Keys.None ? [expected.Key] : [];
+    return bind.Buttons.SequenceEqual(buttons)
+      && bind.Keys.SequenceEqual(keys)
+      && bind.MouseButtons.Count == 0;
+  }
 }

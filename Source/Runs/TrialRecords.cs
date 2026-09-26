@@ -66,7 +66,11 @@ public static class TrialRecords
     Dictionary<string, TrialRecord> bests = ClimbTrialsModule.SaveData.PersonalBests;
     TrialRecord previous = bests.GetValueOrDefault(trial.Id);
 
-    bool isPb = previous == null || ticks < previous.BestTicks;
+    bool faster = previous != null && ticks < previous.BestTicks;
+    bool isPb =
+      previous == null
+      || (submittable && !previous.Submittable)
+      || (submittable == previous.Submittable && faster);
     if (isPb)
     {
       bests[trial.Id] = new TrialRecord
@@ -91,7 +95,7 @@ public static class TrialRecords
     return new FinishResult
     {
       Ticks = ticks,
-      PreviousBestTicks = previous?.BestTicks,
+      PreviousBestTicks = faster ? previous.BestTicks : null,
       IsPersonalBest = isPb,
       PreviousMedal = before,
       NewMedal = newMedal,

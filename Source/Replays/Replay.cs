@@ -49,6 +49,16 @@ public sealed class Replay
   public List<InputFrame> Frames = [];
 
   public bool IsOwn { get; set; }
+
+  public Version RecorderVersion
+  {
+    get
+    {
+      string name = ClimbTrialsModule.Instance.Metadata.Name;
+      string recorded = Modules.Find(module => module.Name == name).Version;
+      return Version.TryParse(recorded, out Version version) ? version : null;
+    }
+  }
   public string OwnerName { get; set; }
 
   public bool MatchesGame() => CelesteVersion == Celeste.Instance.Version.ToString();

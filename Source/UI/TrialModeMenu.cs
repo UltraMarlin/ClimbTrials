@@ -51,11 +51,11 @@ public class TrialModeMenu : FadingMenu
       Add(new DateItem(record));
 
     Add(new Gap(OptionsGap));
-    Add(new Button(Dialog.Clean("climbtrials_trials_play")).Pressed(play));
+    Add(new Button(Dialog.Clean("climbtrials_play_trial")).Pressed(play));
     if (ReplayStore.Exists(trial.Id))
     {
       Add(new Button(Dialog.Clean("climbtrials_trials_watch_pb")).Pressed(watch));
-      Add(new Button(Dialog.Clean("climbtrials_trials_race_pb")).Pressed(race));
+      Add(new Button(Dialog.Clean("climbtrials_race_pb_ghost")).Pressed(race));
     }
     if (record != null && !OnBoard(record, standing))
       AddSubmitRow(trial, record, state, submit);

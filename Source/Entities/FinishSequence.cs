@@ -165,7 +165,7 @@ public class FinishSequence : Entity
     if (promptAge < 0f || level.Paused)
       return;
 
-    if (Input.MenuConfirm.Pressed || ClimbTrialsModule.Settings.Retry.Pressed)
+    if (Input.MenuConfirm.Pressed || RunManager.RetryPressed)
     {
       RunManager.StartRun(RunManager.Run);
       return;
@@ -328,11 +328,12 @@ public class FinishSequence : Entity
     float alpha = Ease.CubeOut(Math.Clamp(promptAge / PromptFadeDuration, 0f, 1f));
     List<(string, VirtualButton)> prompts =
     [
-      (Dialog.Clean("climbtrials_finish_back"), Input.MenuCancel),
+      ButtonRow.MenuPrompt,
+      (Dialog.Clean("climbtrials_return_to_trials"), Input.MenuCancel),
       (Dialog.Clean("climbtrials_finish_retry"), Input.MenuConfirm),
     ];
     if (RunManager.LastReplay != null)
-      prompts.Add((Dialog.Clean("climbtrials_finish_watch"), Input.MenuJournal));
+      prompts.Add((Dialog.Clean("climbtrials_watch_replay"), Input.MenuJournal));
     ButtonRow.DrawRight(alpha, prompts);
   }
 }

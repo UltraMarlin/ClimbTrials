@@ -12,6 +12,9 @@ public static class ButtonRow
   public const float Scale = 0.5f;
   private const float Spacing = 32f;
 
+  public static (string Label, VirtualButton Button) MenuPrompt =>
+    (Dialog.Clean("climbtrials_open_menu"), Input.GuiInputController() ? Input.Pause : Input.ESC);
+
   public static void DrawCenter(string label, VirtualButton button, float alpha, float x = CenterX)
   {
     ButtonUI.Render(new Vector2(x, Y), label, button, Scale, 0.5f, 0f, alpha);

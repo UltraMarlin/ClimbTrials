@@ -54,6 +54,21 @@ public static class ReplayStore
     );
   }
 
+  public static bool TryLoadPb(Trial trial, out Replay replay, out string deletedNotice)
+  {
+    replay = null;
+    deletedNotice = null;
+    if (!Exists(trial.Id))
+    {
+      Audio.Play(SFX.ui_main_button_invalid);
+      return false;
+    }
+    if (TryLoad(trial, out replay, out string failure))
+      return true;
+    deletedNotice = Dialog.Get("climbtrials_replay_deleted").Replace("{0}", failure);
+    return false;
+  }
+
   public static bool TryLoad(Trial trial, out Replay replay, out string failure)
   {
     replay = null;

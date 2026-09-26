@@ -15,9 +15,9 @@ public class WatcherMenu : FadingMenu
     Focused = false;
     RenderAsFocused = true;
     Add(new Button(Dialog.Clean("climbtrials_watcher_resume")).Pressed(resume));
-    Add(new Button(Dialog.Clean("climbtrials_trials_play")).Pressed(play));
-    Add(new Button(Dialog.Clean("climbtrials_watcher_race")).Pressed(race));
-    Add(new Button(Dialog.Clean("climbtrials_pause_return")).Pressed(leave));
+    Add(new Button(Dialog.Clean("climbtrials_play_trial")).Pressed(play));
+    Add(new Button(Dialog.Clean("climbtrials_race_this_ghost")).Pressed(race));
+    Add(new Button(Dialog.Clean("climbtrials_return_to_trials")).Pressed(leave));
   }
 
   public void MoveUp() => MoveSelection(-1, wiggle: true);

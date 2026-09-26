@@ -18,6 +18,7 @@ public abstract class ListScreen : Oui
 
   protected TrialsMenu menu;
   protected readonly TransientText notice = new();
+  protected string hintKey;
   protected float x = OnScreenX;
   protected float alpha;
   protected float yOffset;
@@ -134,6 +135,14 @@ public abstract class ListScreen : Oui
     RenderHeader();
     RenderPrompts(totalAlpha);
     notice.Render(new Vector2(x, NoticeY + yOffset), NoticeScale, totalAlpha);
+    if (hintKey != null && !notice.Showing)
+      TextOutline.DrawDim(
+        $"{Dialog.Clean("climbtrials_hint_prefix")} {Dialog.Clean(hintKey)}",
+        new Vector2(x, NoticeY + yOffset),
+        new Vector2(0.5f, 0.5f),
+        NoticeScale,
+        totalAlpha
+      );
     if (ModCheck.OthersLoaded)
       ActiveFont.DrawOutline(
         ModCheck.MenuWarning(),

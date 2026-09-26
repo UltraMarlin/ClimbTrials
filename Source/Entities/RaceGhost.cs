@@ -12,16 +12,16 @@ namespace Celeste.Mod.ClimbTrials.Entities;
 [Tracked]
 public class RaceGhost : Entity
 {
-  public const float StrongFarAlpha = 0.7f;
-  public const float StrongNearAlpha = 0.25f;
-  public const float StrongDuckNear = 8f;
+  public const float StrongFarAlpha = 0.8f;
+  public const float StrongNearAlpha = 0.4f;
+  public const float StrongDuckNear = 14f;
   public const float StrongDuckFar = 24f;
   public const float SubtleFarAlpha = 0.6f;
-  public const float SubtleNearAlpha = 0.3f;
-  public const float SubtleDuckNear = 12f;
-  public const float SubtleDuckFar = 28f;
+  public const float SubtleNearAlpha = 0.12f;
+  public const float SubtleDuckNear = 14f;
+  public const float SubtleDuckFar = 32f;
 
-  public static readonly Color SubtleColor = Calc.HexToColor("364a59");
+  public static readonly Color GhostColor = Calc.HexToColor("364a59");
 
   public const float HoldSeconds = 1.5f;
   public const float FadeSeconds = 1f;
@@ -49,7 +49,7 @@ public class RaceGhost : Entity
   private Vector2 slashOrigin;
   private Vector2 slashDirection;
 
-  public RaceGhost(Replay replay, PlayerSpriteMode mode)
+  public RaceGhost(Replay replay)
   {
     this.replay = replay;
     Name = Identity.NameOf(replay);
@@ -57,7 +57,7 @@ public class RaceGhost : Entity
     shownFrames = ticksPerFrame > 0 ? LevelUpdatedFrames(replay.Frames) : [];
     Tag = Tags.Persistent;
     Depth = Depths.Player + 1;
-    sprite = new PlayerSprite(Subtle ? PlayerSpriteMode.Playback : mode);
+    sprite = new PlayerSprite(PlayerSpriteMode.Playback);
     Add(hair = new PlayerHair(sprite));
     Add(sprite);
     sprite.Active = false;
@@ -126,7 +126,6 @@ public class RaceGhost : Entity
       sprite.Play(animation, restart: true);
     sprite.SetAnimationFrame(frame.AnimFrame);
     hair.Facing = (Facings)(int)facing;
-    hair.Color = HairColorFor(frame.Dashes);
     if (frame.State == Player.StRedDash)
       sprite.HairCount = 1;
     else if (frame.State != Player.StStarFly)
@@ -166,13 +165,8 @@ public class RaceGhost : Entity
 
   private void DrawOpaque()
   {
-    if (Subtle)
-    {
-      sprite.Color = SubtleColor;
-      hair.Color = SubtleColor;
-    }
-    else
-      sprite.Color = Color.White;
+    sprite.Color = GhostColor;
+    hair.Color = GhostColor;
     hair.Alpha = 1f;
     hair.Render();
     sprite.Render();
@@ -211,16 +205,6 @@ public class RaceGhost : Entity
     string first =
       shownFrames.Length > 0 ? replay.AnimationAt(replay.Frames[shownFrames[0]].AnimId) : null;
     return first != null && sprite.Has(first) ? first : PlayerSprite.Idle;
-  }
-
-  private Color HairColorFor(int dashes)
-  {
-    bool badeline = sprite.Mode == PlayerSpriteMode.MadelineAsBadeline;
-    if (dashes == 0)
-      return badeline ? Player.UsedBadelineHairColor : Player.UsedHairColor;
-    if (dashes == 2)
-      return badeline ? Player.TwoDashesBadelineHairColor : Player.TwoDashesHairColor;
-    return badeline ? Player.NormalBadelineHairColor : Player.NormalHairColor;
   }
 
   private static int[] LevelUpdatedFrames(List<InputFrame> frames)

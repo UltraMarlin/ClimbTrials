@@ -54,7 +54,7 @@ public class LeaderboardDisplay : Entity
 
   public LeaderboardDisplay()
   {
-    Tag = Tags.HUD | Tags.Persistent | Tags.TransitionUpdate;
+    Tag = Tags.HUD | Tags.Persistent | Tags.TransitionUpdate | Tags.FrozenUpdate;
   }
 
   private static LeaderboardMode Mode => ClimbTrialsModule.Settings.ShowLeaderboard;

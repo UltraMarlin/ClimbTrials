@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Celeste.Mod.ClimbTrials.Content;
@@ -27,6 +28,12 @@ public class OuiCampaigns : ListScreen
 
   private static ClimbTrialsModuleSettings Settings => ClimbTrialsModule.Settings;
 
+  public override IEnumerator Enter(Oui from)
+  {
+    hintKey = Hints.Pick();
+    return base.Enter(from);
+  }
+
   protected override TrialsMenu BuildMenu()
   {
     TrialsMenu built = [];
@@ -44,6 +51,7 @@ public class OuiCampaigns : ListScreen
     nameRow = new NameRow();
     nameRow.Pressed(OnNameRow);
     built.Add(nameRow);
+    RowDescription.Attach(built, nameRow, Dialog.Clean("climbtrials_name_desc"));
     built.OnCancel = () =>
     {
       built.Focused = false;

@@ -27,6 +27,7 @@ public static class RunManager
   public static Replay LastReplay => Replay ?? Recorder.Last;
   public static bool Racing { get; private set; }
   public static Replay RaceReplay { get; private set; }
+  public static bool RetryPressed { get; private set; }
   public static bool AttemptInProgress =>
     Run != null && Attempt.State is AttemptState.Countdown or AttemptState.Running;
   public static bool OwnsSaveData =>
@@ -45,6 +46,7 @@ public static class RunManager
   public static void Load()
   {
     Everest.Events.Level.OnLoadLevel += OnLoadLevel;
+    Everest.Events.Level.OnBeforeUpdate += OnBeforeUpdate;
     Everest.Events.Level.OnAfterUpdate += OnAfterUpdate;
     Everest.Events.Level.OnPause += OnPause;
     Everest.Events.Level.OnExit += OnExit;
@@ -62,6 +64,7 @@ public static class RunManager
   public static void Unload()
   {
     Everest.Events.Level.OnLoadLevel -= OnLoadLevel;
+    Everest.Events.Level.OnBeforeUpdate -= OnBeforeUpdate;
     Everest.Events.Level.OnAfterUpdate -= OnAfterUpdate;
     Everest.Events.Level.OnPause -= OnPause;
     Everest.Events.Level.OnExit -= OnExit;
@@ -83,6 +86,7 @@ public static class RunManager
 
   public static void StartTrial(Trial trial)
   {
+    StopRacing();
     Trial = trial;
     StartRun(trial.Run);
   }
@@ -91,7 +95,8 @@ public static class RunManager
   {
     Racing = true;
     RaceReplay = replay;
-    StartTrial(trial);
+    Trial = trial;
+    StartRun(trial.Run);
   }
 
   private static LevelLoader CreateRunLoader(
@@ -194,6 +199,12 @@ public static class RunManager
     pendingRestart = noticeKey;
   }
 
+  public static void ShowText(string text, bool warning)
+  {
+    if (Engine.Scene is Level level && level.Tracker.GetEntity<RunNotice>() is RunNotice notice)
+      notice.ShowText(text, warning);
+  }
+
   public static void ShowNotice(string noticeKey)
   {
     if (Engine.Scene is Level level && level.Tracker.GetEntity<RunNotice>() is RunNotice notice)
@@ -208,8 +219,7 @@ public static class RunManager
       return;
 
     (string text, bool warning) = Uploader.Describe(upload);
-    if (Engine.Scene is Level level && level.Tracker.GetEntity<RunNotice>() is RunNotice notice)
-      notice.ShowText(text, warning);
+    ShowText(text, warning);
   }
 
   private static void RunPendingRestart()
@@ -361,9 +371,7 @@ public static class RunManager
       }
       else
       {
-        PlayerSpriteMode mode =
-          level.Tracker.GetEntity<Player>()?.Sprite.Mode ?? PlayerSpriteMode.Madeline;
-        RaceGhost ghost = new(RaceReplay, mode);
+        RaceGhost ghost = new(RaceReplay);
         level.Add(ghost);
         ghost.Sync(Attempt.ElapsedTicks);
       }
@@ -413,6 +421,13 @@ public static class RunManager
     }
   }
 
+  private static void OnBeforeUpdate(Level level)
+  {
+    RetryPressed = Run != null && !Replaying && ClimbTrialsModule.Settings.Retry.Pressed;
+    if (RetryPressed)
+      Input.QuickRestart.ConsumePress();
+  }
+
   private static void OnAfterUpdate(Level level)
   {
     if (Run == null)
@@ -450,7 +465,7 @@ public static class RunManager
     if (
       !Replaying
       && Attempt.State is AttemptState.Countdown or AttemptState.Running
-      && ClimbTrialsModule.Settings.Retry.Pressed
+      && RetryPressed
     )
       StartRun(Run);
   }
