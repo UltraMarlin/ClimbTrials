@@ -45,6 +45,8 @@ public static class InputCapture
 
   public static bool Counts() => Engine.Scene is Level && Engine.OverloadGameLoop == null;
 
+  public static Player FindRecordedPlayer() => (Engine.Scene as Level)?.Tracker.GetEntity<Player>();
+
   private static void ReadButtons(out Actions held, out Actions pressed, out Actions released)
   {
     held = Actions.None;
@@ -131,7 +133,7 @@ public static class InputCapture
       frame.Flags |= FrameFlags.LevelUpdated;
     if (Engine.Scene is Level { Paused: true })
       frame.Flags |= FrameFlags.Paused;
-    Player player = (Engine.Scene as Level)?.Tracker.GetEntity<Player>();
+    Player player = FindRecordedPlayer();
     if (player == null)
       return frame;
 

@@ -10,6 +10,10 @@ public static class Colors
 {
   public static readonly Color Warning = Calc.HexToColor("f0777a");
   public static readonly Color DimText = Color.LightGray;
+  public static readonly Color Faster = Calc.HexToColor("6ded87");
+  public static readonly Color Slower = Calc.HexToColor("f0777a");
+  public static readonly Color FasterDim = Calc.HexToColor("b4ecc2");
+  public static readonly Color SlowerDim = Calc.HexToColor("f7b8b9");
 
   private static readonly Dictionary<int, ChapterTint> Chapters = new()
   {

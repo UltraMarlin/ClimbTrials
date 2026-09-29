@@ -30,7 +30,8 @@
         "noRefills": false,
         "coreMode": null,
         "dreamDash": null,
-        "introType": "Respawn"
+        "introType": "Respawn",
+        "splitCategories": ["RoomTransition", "Strawberry"]
       },
       "goals": {
         "bronze": 21,
@@ -70,7 +71,8 @@
         "ignoredStrawberries": [],
         "requiredStrawberries": 0,
         "dashes": null,
-        "grabless": false
+        "grabless": false,
+        "splitCategories": ["RoomTransition", "Waypoint"]
       },
       "goals": {
         "bronze": 7,
@@ -100,7 +102,8 @@
         "ignoredStrawberries": [],
         "requiredStrawberries": 0,
         "dashes": 0,
-        "grabless": false
+        "grabless": false,
+        "splitCategories": ["RoomTransition"]
       },
       "goals": {
         "bronze": 36,
@@ -130,7 +133,8 @@
         "ignoredStrawberries": [],
         "requiredStrawberries": 0,
         "dashes": 0,
-        "grabless": false
+        "grabless": false,
+        "splitCategories": ["RoomTransition"]
       },
       "goals": {
         "bronze": 11,
@@ -166,7 +170,8 @@
         "noRefills": true,
         "coreMode": null,
         "dreamDash": null,
-        "introType": "Respawn"
+        "introType": "Respawn",
+        "splitCategories": ["RoomTransition"]
       },
       "goals": {
         "bronze": 22,
@@ -246,7 +251,8 @@
         "ignoredStrawberries": [],
         "requiredStrawberries": 0,
         "dashes": null,
-        "grabless": false
+        "grabless": false,
+        "splitCategories": ["RoomTransition", "Waypoint"]
       },
       "goals": {
         "bronze": 15,
@@ -325,7 +331,8 @@
         "ignoredStrawberries": [],
         "requiredStrawberries": 0,
         "dashes": null,
-        "grabless": false
+        "grabless": false,
+        "splitCategories": ["Waypoint"]
       },
       "goals": {
         "bronze": 12,
@@ -361,7 +368,8 @@
         "noRefills": false,
         "coreMode": null,
         "dreamDash": null,
-        "introType": "Respawn"
+        "introType": "Respawn",
+        "splitCategories": ["RoomTransition", "Gem"]
       },
       "goals": {
         "bronze": 17,
@@ -417,7 +425,8 @@
         "ignoredStrawberries": [],
         "requiredStrawberries": 0,
         "dashes": null,
-        "grabless": false
+        "grabless": false,
+        "splitCategories": ["Waypoint"]
       },
       "goals": {
         "bronze": 7,
@@ -447,7 +456,8 @@
         "ignoredStrawberries": [],
         "requiredStrawberries": 0,
         "dashes": null,
-        "grabless": false
+        "grabless": false,
+        "splitCategories": ["RoomTransition"]
       },
       "goals": {
         "bronze": 12,
@@ -477,7 +487,8 @@
         "ignoredStrawberries": [],
         "requiredStrawberries": 2,
         "dashes": 1,
-        "grabless": false
+        "grabless": false,
+        "splitCategories": ["RoomTransition", "Strawberry"]
       },
       "goals": {
         "bronze": 32,
@@ -562,7 +573,8 @@
         "noRefills": false,
         "coreMode": null,
         "dreamDash": null,
-        "introType": "Respawn"
+        "introType": "Respawn",
+        "splitCategories": ["RoomTransition", "Waypoint"]
       },
       "goals": {
         "bronze": 33,

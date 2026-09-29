@@ -45,6 +45,8 @@ public static class TrialDraft
   public static PlacedFinish? Finish;
   public static readonly List<EntityID> IgnoredStrawberries = [];
   public static readonly List<CameraOffsetDef> CameraOffsets = [];
+  public static readonly List<SplitCategory> SplitCategories = [];
+  public static readonly List<SplitRect> SplitRects = [];
   public static float? BloomBaseAdd;
   public static float? LightingAlphaAdd;
 
@@ -72,6 +74,8 @@ public static class TrialDraft
     Finish = null;
     IgnoredStrawberries.Clear();
     CameraOffsets.Clear();
+    SplitCategories.Clear();
+    SplitRects.Clear();
     BloomBaseAdd = null;
     LightingAlphaAdd = null;
   }
@@ -116,6 +120,8 @@ public static class TrialDraft
     );
     IgnoredStrawberries.AddRange(run.IgnoredStrawberries);
     CameraOffsets.AddRange(run.CameraOffsets);
+    SplitCategories.AddRange(run.SplitCategories);
+    SplitRects.AddRange(run.SplitRects);
     BloomBaseAdd = run.BloomBaseAdd;
     LightingAlphaAdd = run.LightingAlphaAdd;
   }
@@ -154,6 +160,12 @@ public static class TrialDraft
         finish = kind == FinishKind.Heart || (kind == FinishKind.RoomEnter && drawn == null)
           ? null
           : new[] { rect.X, rect.Y, rect.Width, rect.Height },
+        splitCategories = SplitCategories.ConvertAll(c => c.ToString()),
+        splitRects = SplitRects.ConvertAll(r => new
+        {
+          room = r.Room,
+          rect = new[] { r.Rect.X, r.Rect.Y, r.Rect.Width, r.Rect.Height },
+        }),
         waypoints = Waypoints.ConvertAll(w => new
         {
           room = w.Room,
@@ -202,6 +214,9 @@ public static class TrialDraft
     + (waypoint.SetsSpawn ? "" : " setsSpawn false");
 
   public static string BerryText(EntityID id) => $"{id.Level} #{id.ID}";
+
+  public static string SplitRectText(SplitRect split) =>
+    $"{split.Room} [{split.Rect.X}, {split.Rect.Y}, {split.Rect.Width}, {split.Rect.Height}]";
 
   private static double ToSeconds(long ticks) => (double)ticks / TimeSpan.TicksPerSecond;
 }

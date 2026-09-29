@@ -8,10 +8,8 @@ namespace Celeste.Mod.ClimbTrials.Entities;
 [Tracked]
 public class RunTimerDisplay : Entity
 {
-  private const float TimerY = 60f;
-  private const float TextHeight = 38f,
-    TextMarginLeft = 32f,
-    Baseline = 44f;
+  private const float Baseline = 44f;
+  private const float BackgroundWidth = 288f;
   private static readonly Color RunColor = Color.White;
   private static readonly Color DoneColor = Calc.HexToColor("fad768");
 
@@ -25,7 +23,8 @@ public class RunTimerDisplay : Entity
     RunManager.Attempt.State switch
     {
       AttemptState.Idle => RunManager.Run != null,
-      AttemptState.Running => RunManager.Replaying || ClimbTrialsModule.Settings.ShowTimer,
+      AttemptState.Running => RunManager.Replaying
+        || ClimbTrialsModule.Settings.ShowRunTimer != RunTimerMode.Off,
       _ => true,
     };
 
@@ -37,16 +36,11 @@ public class RunTimerDisplay : Entity
     Attempt attempt = RunManager.Attempt;
 
     string text = TimeText.Format(attempt.ElapsedTicks);
-    float textWidth = TimeText.Width(text, TimeText.Hud);
-
-    MTexture bg = GFX.Gui["strawberryCountBG"];
-    float extra = System.Math.Max(0f, textWidth + TextMarginLeft + 8f - bg.Width);
-    Draw.Rect(0f, TimerY, extra + 2f, TextHeight, Color.Black);
-    bg.Draw(new Vector2(extra, TimerY));
+    TimerBackground.Draw(RunHudLayout.TimerY, RunHudLayout.TimerBackgroundHeight, BackgroundWidth);
 
     bool done = attempt.State == AttemptState.Finished;
     TimeText.Draw(
-      new Vector2(TextMarginLeft, TimerY + Baseline),
+      new Vector2(RunHudLayout.TimerTextLeft, RunHudLayout.TimerY + Baseline),
       text,
       TimeText.Hud,
       done ? DoneColor : RunColor

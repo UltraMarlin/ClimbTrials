@@ -100,27 +100,14 @@ public class GoalIndicator : Entity
     RunDefinition run = RunManager.Run;
     if (run.FinishKind == FinishKind.RoomEnter && map.Get(run.FinishRoom) is LevelData goal)
       goalRoomCenter = new Vector2(goal.Bounds.Center.X, goal.Bounds.Center.Y);
-    foreach (LevelData room in map.Levels)
+    foreach (Collectible item in run.FindCollectibles(map))
     {
-      foreach (EntityData entity in room.Entities)
-      {
-        Vector2 world = entity.Position + room.Position;
-        if (entity.Name == "summitgem")
-          gems.Add(new Gem(entity.Int("gem"), world));
-        else if (
-          run.FinishKind == FinishKind.Heart
-          && room.Name == run.FinishRoom
-          && entity.Name == "blackGem"
-          && !entity.Bool("fake")
-        )
-          heart = world;
-        if (!RunDefinition.IsTargetBerry(entity))
-          continue;
-        EntityID id = new(room.Name, entity.ID);
-        if (run.IgnoredStrawberries.Contains(id))
-          continue;
-        berries.Add(new Berry(id, world));
-      }
+      if (item.Kind == CollectibleKind.SummitGem)
+        gems.Add(new Gem(item.Entity.Int("gem"), item.World));
+      else if (run.IsFinishHeart(item))
+        heart = item.World;
+      else if (item.Kind == CollectibleKind.Strawberry)
+        berries.Add(new Berry(item.Id, item.World));
     }
   }
 

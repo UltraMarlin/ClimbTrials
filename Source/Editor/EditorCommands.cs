@@ -150,6 +150,29 @@ public static class EditorCommands
       );
   }
 
+  [Command("ct_split", "ClimbTrials: draw a split rectangle in a trial draft")]
+  public static void DraftSplit()
+  {
+    if (ConsoleOutput.TryGetLevel(out Level level))
+      Begin(
+        TrialDesigner.GetOrAddDesigner(level).BeginSplit,
+        "draw the split rectangle with the mouse"
+      );
+  }
+
+  [Command("ct_split_rm", "ClimbTrials: remove the last drawn split rectangle")]
+  public static void DraftSplitRemove()
+  {
+    if (TrialDraft.SplitRects.Count == 0)
+    {
+      Engine.Commands.Log("no split rectangles drawn");
+      return;
+    }
+    SplitRect removed = TrialDraft.SplitRects[^1];
+    TrialDraft.SplitRects.RemoveAt(TrialDraft.SplitRects.Count - 1);
+    Engine.Commands.Log($"removed split rectangle {TrialDraft.SplitRectText(removed)}");
+  }
+
   [Command(
     "ct_fin_heart",
     "ClimbTrials: make the current room's heart the finish of a trial draft"

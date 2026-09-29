@@ -20,6 +20,7 @@ public class GoalListDisplay : Entity
   private Trial cachedTrial;
   private long cachedBest;
   private GoalTimesDisplayMode cachedMode;
+  private float cachedShift;
   private List<Row> rows = [];
   private readonly List<FadeBuffer> layers = [];
   private float widest;
@@ -95,11 +96,13 @@ public class GoalListDisplay : Entity
       return;
     long best = TrialRecords.Get(trial.Id)?.BestTicks ?? long.MaxValue;
     GoalTimesDisplayMode mode = Mode;
-    if (trial == cachedTrial && best == cachedBest && mode == cachedMode)
+    float shift = RunHudLayout.ColumnShift;
+    if (trial == cachedTrial && best == cachedBest && mode == cachedMode && shift == cachedShift)
       return;
     cachedTrial = trial;
     cachedBest = best;
     cachedMode = mode;
+    cachedShift = shift;
     rows = Rows(trial, best, mode);
     widest = WidestRow(rows);
     RebuildLayers();

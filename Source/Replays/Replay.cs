@@ -50,6 +50,27 @@ public sealed class Replay
 
   public bool IsOwn { get; set; }
 
+  private int[] shownFrames;
+
+  public long TicksPerFrame => Attempt.SecondsToTicks(RawDeltaTime);
+
+  public int[] ShownFrames => shownFrames ??= FindShownFrames();
+
+  public long TicksOfShownFrame(int shownIndex) => (shownIndex + 1) * TicksPerFrame;
+
+  public long ShownFrameAt(long ticks) => ticks / TicksPerFrame - 1;
+
+  private int[] FindShownFrames()
+  {
+    if (TicksPerFrame <= 0)
+      return [];
+    List<int> shown = new(Frames.Count);
+    for (int i = 0; i < Frames.Count; i++)
+      if (Frames[i].LevelUpdated)
+        shown.Add(i);
+    return shown.ToArray();
+  }
+
   public Version RecorderVersion
   {
     get

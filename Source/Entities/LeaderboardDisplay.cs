@@ -20,7 +20,6 @@ public class LeaderboardDisplay : Entity
   private const float GapBelowGoals = 12f;
   private const float RankX = 16f;
   private const float ColumnGapPerScale = 36f;
-  private const int NameFullChars = 10;
   private const float NameMinFit = 0.6f;
   private const string Ellipsis = "...";
 
@@ -33,6 +32,8 @@ public class LeaderboardDisplay : Entity
   private LeaderboardMode cachedMode;
   private long cachedBest;
   private bool cachedGoalsShown;
+  private float cachedShift;
+  private GoalTimesDisplayMode cachedGoalMode;
   private bool built;
   private float rowsTop = RunHudLayout.ListY;
   private float rowHeight;
@@ -100,13 +101,17 @@ public class LeaderboardDisplay : Entity
     LeaderboardMode mode = Mode;
     long best = TrialRecords.Get(trial.Id)?.BestTicks ?? long.MaxValue;
     bool goalsShown = GoalListDisplay.Shown;
+    float shift = RunHudLayout.ColumnShift;
+    GoalTimesDisplayMode goalMode = ClimbTrialsModule.Settings.ShowGoalTimes;
     bool same =
       built
       && ReferenceEquals(standing, cachedStanding)
       && state == cachedState
       && mode == cachedMode
       && best == cachedBest
-      && goalsShown == cachedGoalsShown;
+      && goalsShown == cachedGoalsShown
+      && shift == cachedShift
+      && goalMode == cachedGoalMode;
     if (same)
       return;
     built = true;
@@ -115,6 +120,8 @@ public class LeaderboardDisplay : Entity
     cachedMode = mode;
     cachedBest = best;
     cachedGoalsShown = goalsShown;
+    cachedShift = shift;
+    cachedGoalMode = goalMode;
 
     textScale = mode == LeaderboardMode.Subtle ? SubtleTextScale : NormalTextScale;
     textAlpha = mode == LeaderboardMode.Subtle ? SubtleTextAlpha : NormalTextAlpha;
@@ -166,10 +173,7 @@ public class LeaderboardDisplay : Entity
     return rows;
   }
 
-  private static float NameFitFor(string name) =>
-    name.Length <= NameFullChars
-      ? 1f
-      : TextFit.Scale(name, ActiveFont.Measure(name[..NameFullChars]).X, NameMinFit);
+  private static float NameFitFor(string name) => TextFit.FitName("{0}", name, NameMinFit);
 
   private static Row Message(string key) =>
     new(Dialog.Clean(key), "", "", Colors.DimText, Message: true);

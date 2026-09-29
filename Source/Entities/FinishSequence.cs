@@ -15,12 +15,19 @@ public class FinishSequence : Entity
   private const float TimeFadeDuration = 0.1f;
   private const float PromptFadeDuration = 0.3f;
   private const float TimeBaselineY = 470f;
-  private const float DeltaBaselineY = 500f;
+  private const float DeltaBaselineY = 488f;
   private const float DeltaStagger = 0.1f;
+  private const float DeltaLabelScale = 0.6f;
+  private const float DeltaLabelStroke = 1.5f;
+  private const float DeltaLabelGap = 6f;
+  private const float DeltaTimeScale = 0.75f;
   private const float BoxPaddingX = 80f;
   private const float BoxPaddingTop = 16f;
   private const float BoxPaddingBottom = 20f;
+  private const float DeltaBoxPaddingBottom = 14f;
   private const float BoxAlpha = 0.7f;
+  private readonly string deltaText;
+  private readonly float deltaRestWidth;
   private readonly Color boxColor = Colors.ForChapter(RunManager.Run.Area).Dark;
   private const float MedalsVisualDelay = 0.36f;
   private const float MedalStagger = 0.3f;
@@ -36,8 +43,6 @@ public class FinishSequence : Entity
   private const string PbSound = SFX.ui_postgame_strawberry_total;
   private const string FinishSound = SFX.game_07_checkpointconfetti;
   private const float ConfettiLift = 8f;
-
-  private static readonly Color DeltaColor = Calc.HexToColor("6ded87");
 
   private const float GamePixel = 6f;
   private const float SparkSpeedMin = 70f;
@@ -72,6 +77,14 @@ public class FinishSequence : Entity
   public FinishSequence(FinishResult result)
   {
     this.result = result;
+    if (result.PreviousBestTicks is long previous)
+    {
+      deltaText = TimeText.FormatDelta(result.Ticks - previous);
+      deltaRestWidth =
+        ActiveFont.Measure(Dialog.Clean("climbtrials_pb_improved")).X * DeltaLabelScale
+        + DeltaLabelGap
+        + TimeText.Width(deltaText, TimeText.Hud.At(DeltaTimeScale));
+    }
     watcher = RunManager.Replaying;
     medals = [.. result.UnlockedMedals()];
     medalAges = new float[medals.Length];
@@ -199,15 +212,15 @@ public class FinishSequence : Entity
   private void RenderResult()
   {
     string time = TimeText.Format(result.Ticks);
-    string delta = result.PreviousBestTicks is long previous
-      ? "-" + TimeText.Format(previous - result.Ticks)
-      : null;
+    string delta = deltaText;
     float deltaAge = timeAge - DeltaStagger;
 
     float boxAlpha = BoxAlpha * Ease.CubeOut(Math.Clamp(timeAge / MedalPopDuration, 0f, 1f));
-    float boxWidth = TimeText.Width(time, TimeText.Large) + 2f * BoxPaddingX;
+    float boxWidth =
+      Math.Max(TimeText.Width(time, TimeText.Large), deltaRestWidth) + 2f * BoxPaddingX;
     float boxTop = TimeBaselineY - TimeText.Height(TimeText.Large) - BoxPaddingTop;
-    float boxBottom = (delta == null ? TimeBaselineY : DeltaBaselineY) + BoxPaddingBottom;
+    float boxBottom =
+      delta == null ? TimeBaselineY + BoxPaddingBottom : DeltaBaselineY + DeltaBoxPaddingBottom;
     Draw.Rect(960f - boxWidth / 2f, boxTop, boxWidth, boxBottom - boxTop, boxColor * boxAlpha);
 
     float alpha = Ease.CubeOut(Math.Clamp(timeAge / TimeFadeDuration, 0f, 1f));
@@ -216,7 +229,34 @@ public class FinishSequence : Entity
     if (delta == null || deltaAge < 0f)
       return;
     float deltaAlpha = Ease.CubeOut(Math.Clamp(deltaAge / TimeFadeDuration, 0f, 1f));
-    DrawAnimated(delta, TimeText.Hud, DeltaBaselineY, deltaAge, DeltaColor * deltaAlpha);
+    DrawDeltaLine(delta, deltaAge, deltaAlpha);
+  }
+
+  private void DrawDeltaLine(string delta, float age, float alpha)
+  {
+    float pop = Pop(age);
+    string label = Dialog.Clean("climbtrials_pb_improved");
+    float labelScale = DeltaLabelScale * pop;
+    TimeStyle style = TimeText.Hud.At(DeltaTimeScale * pop);
+    float labelWidth = ActiveFont.Measure(label).X * labelScale;
+    float left = 960f - deltaRestWidth * pop / 2f;
+    float baseline = DeltaBaselineY - TimeText.LineBelowBaseline * style.Scale;
+    Color labelColor = Color.White * alpha;
+    ActiveFont.DrawOutline(
+      label,
+      new Vector2(left, baseline + TimeText.LineBelowBaseline * labelScale),
+      new Vector2(0f, 1f),
+      Vector2.One * labelScale,
+      labelColor,
+      DeltaLabelStroke,
+      TextOutline.StrokeFor(labelColor)
+    );
+    TimeText.Draw(
+      new Vector2(left + labelWidth + DeltaLabelGap * pop, DeltaBaselineY),
+      delta,
+      style,
+      Colors.Faster * alpha
+    );
   }
 
   private static void DrawAnimated(

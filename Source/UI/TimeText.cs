@@ -21,15 +21,27 @@ public static class TimeText
   public static readonly TimeStyle SmallHud = new(0.4f, 1f, 1.35f, 0.85f);
   public static readonly TimeStyle Hud = new(1f, 4f, 2f, 0.7f);
   public static readonly TimeStyle Large = new(2.8f, 0f, 3.5f, 0.7f, RoundStroke: true);
+  public const float SignGap = 4f;
+  public const float LineBelowBaseline = 16f;
 
   private static float numberWidth;
   private static float spacerWidth;
+  private static float signWidth;
   private static float numberHeight;
 
   public static string Format(long ticks)
   {
     TimeSpan time = TimeSpan.FromTicks(ticks);
     return time.ToString(time.TotalHours >= 1 ? "h\\:mm\\:ss\\.fff" : "m\\:ss\\.fff");
+  }
+
+  public static string FormatDelta(long ticks)
+  {
+    char sign = ticks < 0 ? '-' : '+';
+    TimeSpan time = TimeSpan.FromTicks(Math.Abs(ticks));
+    if (time.TotalMinutes >= 1)
+      return sign + Format(Math.Abs(ticks));
+    return $"{sign}{(int)time.TotalSeconds}.{time.Milliseconds:000}";
   }
 
   public static string FormatDate(DateTime utc) => utc.ToLocalTime().ToString("yyyy-MM-dd");
@@ -49,11 +61,18 @@ public static class TimeText
       .Font.Get(Dialog.Languages["english"].FontFaceSize);
     numberWidth = "0123456789".Max(c => size.Measure(c.ToString()).X);
     spacerWidth = size.Measure(":").X;
+    signWidth = Math.Max(size.Measure("+").X, size.Measure("-").X);
     numberHeight = size.Measure("0").Y;
   }
 
-  private static float Advance(char c, TimeStyle style) =>
-    (char.IsDigit(c) ? numberWidth : spacerWidth) + style.DigitGap;
+  private static bool IsSign(char c) => c is '-' or '+';
+
+  private static float Advance(char c, TimeStyle style)
+  {
+    if (IsSign(c))
+      return signWidth + style.DigitGap + SignGap;
+    return (char.IsDigit(c) ? numberWidth : spacerWidth) + style.DigitGap;
+  }
 
   public static float Width(string text, TimeStyle style)
   {
@@ -91,8 +110,11 @@ public static class TimeText
         y -= 5f * style.Scale;
       }
       float w = Advance(c, style) * charScale * style.Scale;
-      Vector2 position = new(x + w / 2f, y);
-      Vector2 justify = new(0.5f, 1f);
+      bool sign = IsSign(c);
+      Vector2 position = sign
+        ? new(x + w - SignGap * charScale * style.Scale, y)
+        : new(x + w / 2f, y);
+      Vector2 justify = sign ? new(1f, 1f) : new(0.5f, 1f);
       Vector2 scale = Vector2.One * charScale * style.Scale;
       Color stroke = TextOutline.StrokeFor(color);
       if (style.RoundStroke)

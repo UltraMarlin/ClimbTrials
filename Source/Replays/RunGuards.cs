@@ -54,6 +54,8 @@ public static class RunGuards
   {
     if (RunManager.AttemptInProgress && !RunManager.Replaying)
       RunManager.RestartAttemptAfterSave("climbtrials_notice_settings");
+    else
+      RunManager.UpdateGhostBlockVisibility();
   }
 
   private static bool OnSetCheckpoint(

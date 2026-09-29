@@ -160,8 +160,8 @@ public class TrialModeMenu : FadingMenu
   private class PbItem(TrialRecord record, TrialStanding standing) : Item
   {
     private readonly string label = standing?.Rank is int rank
-      ? $"{Dialog.Clean("climbtrials_trials_pb")} #{rank}:"
-      : Dialog.Clean("climbtrials_trials_pb");
+      ? $"{Dialog.Clean("climbtrials_pb")} #{rank}:"
+      : Dialog.Clean("climbtrials_pb");
     private readonly string time = TimeText.Format(record.BestTicks);
     private static TimeStyle Style => TimeText.Hud.At(PbScale);
 

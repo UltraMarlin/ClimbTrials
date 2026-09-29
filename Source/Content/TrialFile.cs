@@ -43,6 +43,9 @@ public static class TrialFile
   private static readonly Dictionary<string, Player.IntroTypes> IntroNames =
     RunDefinition.AllowedIntroTypes.ToDictionary(intro => intro.ToString());
 
+  private static readonly Dictionary<string, SplitCategory> SplitCategoryNames =
+    Enum.GetValues<SplitCategory>().ToDictionary(category => category.ToString());
+
   public static IReadOnlyList<Campaign> Load()
   {
     if (!Everest.Content.TryGet(Folder, out ModAsset folder, includeDirs: true))
@@ -228,6 +231,8 @@ public static class TrialFile
         CoreMode = coreMode,
         DreamDash = OptionalBool(run, "dreamDash", at),
         IntroType = intro,
+        SplitCategories = ReadSplitCategories(run, at),
+        SplitRects = List(run, "splitRects", at, ReadSplitRect),
       };
     }
     catch (ArgumentOutOfRangeException e)
@@ -249,6 +254,39 @@ public static class TrialFile
       Vector(Field(element, "position", where), $"{where}.position"),
       spawn,
       OptionalBool(element, "setsSpawn", where) ?? true
+    );
+  }
+
+  private static IReadOnlyList<SplitCategory> ReadSplitCategories(JsonElement run, string at)
+  {
+    const string key = "splitCategories";
+    if (!run.TryGetProperty(key, out JsonElement array) || array.ValueKind == JsonValueKind.Null)
+      return [];
+    string failure =
+      $"{at}, field 'run.{key}': expected an array of {string.Join(", ", SplitCategoryNames.Keys)}";
+    if (array.ValueKind != JsonValueKind.Array)
+      throw new TrialFileException(failure);
+    HashSet<SplitCategory> categories = [];
+    foreach (JsonElement element in array.EnumerateArray())
+    {
+      if (
+        element.ValueKind != JsonValueKind.String
+        || !SplitCategoryNames.TryGetValue(element.GetString(), out SplitCategory category)
+      )
+        throw new TrialFileException(failure);
+      categories.Add(category);
+    }
+    return [.. categories];
+  }
+
+  private static SplitRect ReadSplitRect(JsonElement element, string where)
+  {
+    int[] rect = Integers(Field(element, "rect", where), 4, $"{where}.rect");
+    if (rect[2] <= 0 || rect[3] <= 0)
+      throw new TrialFileException($"{where}.rect: expected a width and a height greater than 0");
+    return new SplitRect(
+      String(element, "room", where),
+      new Rectangle(rect[0], rect[1], rect[2], rect[3])
     );
   }
 

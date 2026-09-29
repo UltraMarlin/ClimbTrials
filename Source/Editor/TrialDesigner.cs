@@ -15,6 +15,7 @@ public class TrialDesigner : Entity
     PlacingSpawn,
     PlacingWaypoint,
     DrawingFinish,
+    DrawingSplit,
   }
 
   private const float Grid = 8f;
@@ -22,6 +23,7 @@ public class TrialDesigner : Entity
   private static readonly Color FinishColor = Color.White;
   private static readonly Color SpawnColor = Color.Red;
   private static readonly Color IgnoreColor = Color.Orange;
+  private static readonly Color SplitColor = Color.LightGreen;
 
   private Mode mode;
   private Vector2? dragStart;
@@ -78,6 +80,8 @@ public class TrialDesigner : Entity
 
   public void BeginFinish() => Begin(Mode.DrawingFinish);
 
+  public void BeginSplit() => Begin(Mode.DrawingSplit);
+
   private void Begin(Mode next)
   {
     mode = next;
@@ -126,19 +130,29 @@ public class TrialDesigner : Entity
         TrialDraft.Waypoints.Add(waypoint);
         Begin(Mode.Idle);
         break;
-      case Mode.DrawingFinish:
+      case Mode.DrawingFinish or Mode.DrawingSplit:
         Vector2 raw = RawMouseWorld();
         if (MInput.Mouse.PressedLeftButton)
           dragStart = raw;
         if (dragStart is Vector2 start && MInput.Mouse.ReleasedLeftButton)
         {
           Rectangle rect = SquaresBetween(start, raw);
-          TrialDraft.Finish = new TrialDraft.PlacedFinish(room, FinishKind.Zone, rect);
+          SplitRect split = new(room, rect);
+          if (mode == Mode.DrawingFinish)
+            TrialDraft.Finish = new TrialDraft.PlacedFinish(room, FinishKind.Zone, rect);
+          else if (SplitMap.IsInsideItsRoom(split, level.Session.MapData))
+            TrialDraft.SplitRects.Add(split);
+          else
+            Engine.Commands.Log(
+              $"Discarded: split rectangle {TrialDraft.SplitRectText(split)} crosses room edge"
+            );
           Begin(Mode.Idle);
         }
         break;
     }
   }
+
+  private Color DragColor => mode == Mode.DrawingSplit ? SplitColor : FinishColor;
 
   private static Rectangle SquaresBetween(Vector2 a, Vector2 b)
   {
@@ -171,6 +185,9 @@ public class TrialDesigner : Entity
     string room = SceneAs<Level>().Session.Level;
     if (TrialDraft.Finish is { Rect: Rectangle finishRect } finish && finish.Room == room)
       Draw.HollowRect(finishRect, FinishColor * KeptAlpha);
+    foreach (SplitRect split in TrialDraft.SplitRects)
+      if (split.Room == room)
+        Draw.HollowRect(split.Rect, SplitColor * KeptAlpha);
     foreach (TrialDraft.PlacedWaypoint waypoint in TrialDraft.Waypoints)
       if (waypoint.Room == room)
         TrialWaypoint.DrawPreview(waypoint.Position, KeptAlpha);
@@ -191,12 +208,12 @@ public class TrialDesigner : Entity
       case Mode.PlacingWaypoint:
         TrialWaypoint.DrawPreview(at, 1f);
         break;
-      case Mode.DrawingFinish when dragStart is Vector2 start:
-        Draw.HollowRect(SquaresBetween(start, RawMouseWorld()), FinishColor);
+      case Mode.DrawingFinish or Mode.DrawingSplit when dragStart is Vector2 start:
+        Draw.HollowRect(SquaresBetween(start, RawMouseWorld()), DragColor);
         break;
-      case Mode.DrawingFinish:
+      case Mode.DrawingFinish or Mode.DrawingSplit:
         Vector2 raw = RawMouseWorld();
-        Draw.HollowRect(SquaresBetween(raw, raw), FinishColor);
+        Draw.HollowRect(SquaresBetween(raw, raw), DragColor);
         break;
     }
   }

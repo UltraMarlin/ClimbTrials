@@ -53,13 +53,21 @@ public enum GhostVisibility
   Strong,
 }
 
+public enum RunTimerMode
+{
+  Off,
+  TimeOnly,
+  Detailed,
+}
+
 public class ClimbTrialsModuleSettings : EverestModuleSettings
 {
   [SettingRange(min: 1, max: 5)]
   public int CountdownLength { get; set; } = 3;
   public CountdownMode CountdownMode { get; set; } = CountdownMode.Fast;
   public bool ResetOnDeath { get; set; } = false;
-  public bool ShowTimer { get; set; } = true;
+
+  public RunTimerMode ShowRunTimer { get; set; } = RunTimerMode.Detailed;
 
   [SettingSubText("modoptions_climbtrialsmodule_pbautosubmit_desc")]
   public bool PbAutoSubmit { get; set; } = true;

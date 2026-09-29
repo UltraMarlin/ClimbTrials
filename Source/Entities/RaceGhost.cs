@@ -36,7 +36,6 @@ public class RaceGhost : Entity
 
   private readonly Replay replay;
   private readonly int[] shownFrames;
-  private readonly long ticksPerFrame;
   private readonly PlayerSprite sprite;
   private readonly PlayerHair hair;
   private readonly FadeBuffer layer;
@@ -53,8 +52,7 @@ public class RaceGhost : Entity
   {
     this.replay = replay;
     Name = Identity.NameOf(replay);
-    ticksPerFrame = Attempt.SecondsToTicks(replay.RawDeltaTime);
-    shownFrames = ticksPerFrame > 0 ? LevelUpdatedFrames(replay.Frames) : [];
+    shownFrames = replay.ShownFrames;
     Tag = Tags.Persistent;
     Depth = Depths.Player + 1;
     sprite = new PlayerSprite(PlayerSpriteMode.Playback);
@@ -99,11 +97,11 @@ public class RaceGhost : Entity
     if (shownFrames.Length == 0)
       return;
     int last = shownFrames.Length - 1;
-    int index = (int)Math.Clamp(ticks / ticksPerFrame - 1, 0, last);
+    int index = (int)Math.Clamp(replay.ShownFrameAt(ticks), 0, last);
     for (int i = shownIndex + 1; i <= index; i++)
       DetectDash(i);
     shownIndex = index;
-    long pastEnd = ticks - (last + 1) * ticksPerFrame - Attempt.SecondsToTicks(HoldSeconds);
+    long pastEnd = ticks - replay.TicksOfShownFrame(last) - Attempt.SecondsToTicks(HoldSeconds);
     fadeAlpha = 1f - Calc.Clamp((float)pastEnd / Attempt.SecondsToTicks(FadeSeconds), 0f, 1f);
 
     InputFrame frame = replay.Frames[shownFrames[index]];
@@ -205,14 +203,5 @@ public class RaceGhost : Entity
     string first =
       shownFrames.Length > 0 ? replay.AnimationAt(replay.Frames[shownFrames[0]].AnimId) : null;
     return first != null && sprite.Has(first) ? first : PlayerSprite.Idle;
-  }
-
-  private static int[] LevelUpdatedFrames(List<InputFrame> frames)
-  {
-    List<int> shown = new(frames.Count);
-    for (int i = 0; i < frames.Count; i++)
-      if (frames[i].LevelUpdated)
-        shown.Add(i);
-    return shown.ToArray();
   }
 }

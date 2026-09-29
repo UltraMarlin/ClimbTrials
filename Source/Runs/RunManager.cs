@@ -27,6 +27,8 @@ public static class RunManager
   public static Replay LastReplay => Replay ?? Recorder.Last;
   public static bool Racing { get; private set; }
   public static Replay RaceReplay { get; private set; }
+  public static SplitComparison Comparison { get; private set; }
+  public static bool GhostBlockVisible { get; private set; }
   public static bool RetryPressed { get; private set; }
   public static bool AttemptInProgress =>
     Run != null && Attempt.State is AttemptState.Countdown or AttemptState.Running;
@@ -42,6 +44,7 @@ public static class RunManager
   private static string pendingRestart;
   private static EventInstance finishSnapshot;
   private static SaveData ownSaveData;
+  private static GhostSplits raceSplits;
 
   public static void Load()
   {
@@ -139,11 +142,7 @@ public static class RunManager
     session.SetFlag(TrialFlagPrefix + Trial?.Id);
     foreach (CameraOffsetDef def in run.CameraOffsets)
       if (session.MapData.Get(def.Room) == null)
-        Logger.Log(
-          LogLevel.Warn,
-          LogTag,
-          $"camera offset names room that doesnt exist '{def.Room}'"
-        );
+        Logger.Log(LogLevel.Warn, LogTag, $"camera offset has room that doesnt exist '{def.Room}'");
     foreach (WaypointDef waypoint in run.Waypoints)
     {
       string actual = session.MapData.GetAt(waypoint.Position)?.Name;
@@ -151,10 +150,17 @@ public static class RunManager
         Logger.Log(
           LogLevel.Warn,
           LogTag,
-          $"waypoint at {waypoint.Position} says room '{waypoint.Room}' "
-            + $"but lies in '{actual ?? "no room"}'"
+          $"waypoint at {waypoint.Position} has room '{waypoint.Room}' but is in '{actual ?? "no room"}'"
         );
     }
+    foreach (SplitRect rect in run.SplitRects)
+      if (!SplitMap.IsInsideItsRoom(rect, session.MapData))
+        Logger.Log(
+          LogLevel.Warn,
+          LogTag,
+          $"Discarded: split rectangle {rect.Rect} is not inside room '{rect.Room}'"
+        );
+    Comparison = CreateSplitComparison(run);
     SaveData.Instance.StartSession(session);
     awaitingLoad = true;
 
@@ -165,6 +171,22 @@ public static class RunManager
     loader.PlayerIntroTypeOverride = introType;
     return loader;
   }
+
+  private static SplitComparison CreateSplitComparison(RunDefinition run)
+  {
+    if (!Racing || RaceReplay == null)
+      return null;
+    if (raceSplits?.Replay != RaceReplay || raceSplits.Course.Run != run)
+      raceSplits = GhostSplits.Compute(RaceReplay, SplitMap.Build(run));
+    return new SplitComparison(raceSplits);
+  }
+
+  public static void UpdateGhostBlockVisibility() =>
+    GhostBlockVisible =
+      Racing
+      && !Replaying
+      && Comparison != null
+      && ClimbTrialsModule.Settings.ShowRunTimer == RunTimerMode.Detailed;
 
   public static void StartRun(RunDefinition run, bool countdown = true)
   {
@@ -270,6 +292,7 @@ public static class RunManager
   {
     Racing = false;
     RaceReplay = null;
+    raceSplits = null;
   }
 
   public static void DiscardAttemptAfterDesync()
@@ -285,6 +308,8 @@ public static class RunManager
     LastFinish = null;
     Attempt.Reset();
     Progress.Reset();
+    Comparison = null;
+    GhostBlockVisible = false;
     HeartGoal.Reset();
     RoomGoal.Reset();
     awaitingLoad = false;
@@ -377,6 +402,10 @@ public static class RunManager
       }
     }
 
+    UpdateGhostBlockVisibility();
+    if (Trial != null && level.Tracker.GetEntity<GhostDeltaDisplay>() == null)
+      level.Add(new GhostDeltaDisplay());
+
     for (int i = 0; i < Run.Waypoints.Count; i++)
       if (Run.Waypoints[i].Room == room)
         level.Add(new TrialWaypoint(i, Run.Waypoints[i]));
@@ -446,6 +475,8 @@ public static class RunManager
     )
       StopRecording(StopReason.State);
     Attempt.Tick(Engine.RawDeltaTime);
+    if (Attempt.State == AttemptState.Running && InputCapture.FindRecordedPlayer() is Player runner)
+      Comparison?.CompareAt(runner.Position, Attempt.ElapsedTicks);
     HeartGoal.AfterUpdate(level);
     RoomGoal.AfterUpdate(level);
     if (level.Tracker.GetEntity<RaceGhost>() is RaceGhost ghost)
@@ -555,6 +586,7 @@ public static class RunManager
       return false;
 
     Attempt.Finish();
+    Comparison?.Finish(Attempt.ElapsedTicks);
     Determinism.StopSeeding();
     finishSnapshot ??= Audio.CreateSnapshot("snapshot:/pause_menu");
     if (Replay != null)

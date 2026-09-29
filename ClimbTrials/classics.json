@@ -30,7 +30,8 @@
         "noRefills": false,
         "coreMode": null,
         "dreamDash": null,
-        "introType": "Respawn"
+        "introType": "Respawn",
+        "splitCategories": ["RoomTransition"]
       },
       "goals": {
         "bronze": 7.5,
@@ -54,6 +55,37 @@
         "finishRoom": "10-x",
         "finishKind": "roomEnter",
         "finish": [5248, 56, 32, 16],
+        "splitCategories": ["RoomTransition"],
+        "splitRects": [
+          {
+            "room": "09-b",
+            "rect": [4712, -176, 16, 24]
+          },
+          {
+            "room": "09-b",
+            "rect": [4776, -288, 16, 24]
+          },
+          {
+            "room": "09-b",
+            "rect": [4840, -192, 24, 16]
+          },
+          {
+            "room": "09-b",
+            "rect": [4904, -192, 32, 16]
+          },
+          {
+            "room": "09-b",
+            "rect": [5008, -56, 24, 24]
+          },
+          {
+            "room": "09-b",
+            "rect": [5248, -96, 24, 16]
+          },
+          {
+            "room": "09-b",
+            "rect": [5064, -224, 16, 16]
+          }
+        ],
         "waypoints": [],
         "cameraOffsets": [],
         "bloomBaseAdd": null,
@@ -96,7 +128,8 @@
         "ignoredStrawberries": [],
         "requiredStrawberries": 0,
         "dashes": null,
-        "grabless": false
+        "grabless": false,
+        "splitCategories": ["RoomTransition"]
       },
       "goals": {
         "bronze": 16,
@@ -118,15 +151,52 @@
         "spawn": [26752, -24688],
         "spawnFacing": null,
         "finishRoom": "g-03",
+        "finishKind": "zone",
         "finish": [27728, -25648, 56, 80],
+        "splitCategories": [],
+        "splitRects": [
+          {
+            "room": "g-03",
+            "rect": [26888, -24816, 16, 56]
+          },
+          {
+            "room": "g-03",
+            "rect": [26968, -24976, 16, 56]
+          },
+          {
+            "room": "g-03",
+            "rect": [27088, -25056, 16, 56]
+          },
+          {
+            "room": "g-03",
+            "rect": [27296, -25168, 16, 64]
+          },
+          {
+            "room": "g-03",
+            "rect": [27392, -25336, 16, 80]
+          },
+          {
+            "room": "g-03",
+            "rect": [27504, -25496, 16, 80]
+          },
+          {
+            "room": "g-03",
+            "rect": [27640, -25584, 16, 72]
+          }
+        ],
         "waypoints": [],
         "cameraOffsets": [],
         "bloomBaseAdd": null,
         "lightingAlphaAdd": null,
         "ignoredStrawberries": [],
         "requiredStrawberries": 0,
+        "requiredSummitGems": 0,
         "dashes": null,
-        "grabless": false
+        "grabless": false,
+        "noRefills": false,
+        "coreMode": null,
+        "dreamDash": null,
+        "introType": "Respawn"
       },
       "goals": {
         "bronze": 12,
@@ -162,7 +232,8 @@
         "noRefills": false,
         "coreMode": null,
         "dreamDash": null,
-        "introType": "Respawn"
+        "introType": "Respawn",
+        "splitCategories": ["RoomTransition"]
       },
       "goals": {
         "bronze": 13,
@@ -216,6 +287,25 @@
         "finishRoom": "03",
         "finishKind": "heart",
         "finish": null,
+        "splitCategories": [],
+        "splitRects": [
+          {
+            "room": "03",
+            "rect": [3840, -1016, 16, 104]
+          },
+          {
+            "room": "03",
+            "rect": [4040, -1016, 16, 96]
+          },
+          {
+            "room": "03",
+            "rect": [4144, -1024, 16, 96]
+          },
+          {
+            "room": "03",
+            "rect": [4256, -1032, 16, 96]
+          }
+        ],
         "waypoints": [],
         "cameraOffsets": [],
         "bloomBaseAdd": null,
