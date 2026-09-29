@@ -55,10 +55,10 @@ public class LeaderboardDisplay : Entity
 
   public LeaderboardDisplay()
   {
-    Tag = Tags.HUD | Tags.Persistent | Tags.TransitionUpdate | Tags.FrozenUpdate;
+    Tag = Tags.HUD | Tags.Persistent | Tags.TransitionUpdate | Tags.PauseUpdate;
   }
 
-  private static LeaderboardMode Mode => ClimbTrialsModule.Settings.ShowLeaderboard;
+  private static LeaderboardMode Mode => ClimbTrialsModule.Settings.HudSettings.Leaderboard;
 
   private static bool Shown =>
     Mode != LeaderboardMode.Off
@@ -102,7 +102,7 @@ public class LeaderboardDisplay : Entity
     long best = TrialRecords.Get(trial.Id)?.BestTicks ?? long.MaxValue;
     bool goalsShown = GoalListDisplay.Shown;
     float shift = RunHudLayout.ColumnShift;
-    GoalTimesDisplayMode goalMode = ClimbTrialsModule.Settings.ShowGoalTimes;
+    GoalTimesDisplayMode goalMode = ClimbTrialsModule.Settings.HudSettings.GoalTimes;
     bool same =
       built
       && ReferenceEquals(standing, cachedStanding)

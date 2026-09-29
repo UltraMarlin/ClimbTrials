@@ -15,6 +15,7 @@ public static class RunGuards
     On.Celeste.Level.AutoSave += OnAutoSave;
     On.Celeste.Level.CompleteArea_bool_bool_bool += OnCompleteArea;
     On.Celeste.FinalBoss.Added += OnFinalBossAdded;
+    On.Celeste.SummitCheckpoint.Update += OnSummitCheckpointUpdate;
   }
 
   public static void Unload()
@@ -24,6 +25,7 @@ public static class RunGuards
     On.Celeste.Level.AutoSave -= OnAutoSave;
     On.Celeste.Level.CompleteArea_bool_bool_bool -= OnCompleteArea;
     On.Celeste.FinalBoss.Added -= OnFinalBossAdded;
+    On.Celeste.SummitCheckpoint.Update -= OnSummitCheckpointUpdate;
   }
 
   private static void OnSaveHandler(
@@ -54,8 +56,6 @@ public static class RunGuards
   {
     if (RunManager.AttemptInProgress && !RunManager.Replaying)
       RunManager.RestartAttemptAfterSave("climbtrials_notice_settings");
-    else
-      RunManager.UpdateGhostBlockVisibility();
   }
 
   private static bool OnSetCheckpoint(
@@ -73,6 +73,16 @@ public static class RunGuards
   private static void OnAutoSave(On.Celeste.Level.orig_AutoSave orig, Level self)
   {
     if (RunManager.Run != null)
+      return;
+    orig(self);
+  }
+
+  private static void OnSummitCheckpointUpdate(
+    On.Celeste.SummitCheckpoint.orig_Update orig,
+    SummitCheckpoint self
+  )
+  {
+    if (RunManager.Run != null && RunManager.Attempt.State == AttemptState.Finished)
       return;
     orig(self);
   }

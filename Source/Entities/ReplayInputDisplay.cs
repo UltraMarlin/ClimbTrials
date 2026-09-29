@@ -145,7 +145,7 @@ public class ReplayInputDisplay : Entity
     return Vector2.Distance(value.SafeNormalize(), digital.SafeNormalize()) > DirectionTolerance;
   }
 
-  private static InputDisplayMode Mode => ClimbTrialsModule.Settings.ReplayInputDisplay;
+  private static InputDisplayMode Mode => ClimbTrialsModule.Settings.HudSettings.ReplayInputDisplay;
 
   private bool DetailedRowShown => Mode == InputDisplayMode.Detailed && detailedRow.Count > 0;
 

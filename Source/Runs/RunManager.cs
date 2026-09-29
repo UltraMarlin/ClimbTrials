@@ -29,6 +29,7 @@ public static class RunManager
   public static Replay RaceReplay { get; private set; }
   public static SplitComparison Comparison { get; private set; }
   public static bool GhostBlockVisible { get; private set; }
+  public static bool FinishedBefore { get; private set; }
   public static bool RetryPressed { get; private set; }
   public static bool AttemptInProgress =>
     Run != null && Attempt.State is AttemptState.Countdown or AttemptState.Running;
@@ -111,6 +112,8 @@ public static class RunManager
     ResetRunState();
     RunBinds.Blank();
     Run = run;
+    TrialRecords.EnsureLoaded();
+    FinishedBefore = Trial != null && TrialRecords.Get(Trial.Id) != null;
     Replay = replay;
     if (replay == null)
       GameplayRenderer.RenderDebug = false;
@@ -181,12 +184,12 @@ public static class RunManager
     return new SplitComparison(raceSplits);
   }
 
-  public static void UpdateGhostBlockVisibility() =>
+  private static void UpdateGhostBlockVisibility() =>
     GhostBlockVisible =
       Racing
       && !Replaying
       && Comparison != null
-      && ClimbTrialsModule.Settings.ShowRunTimer == RunTimerMode.Detailed;
+      && ClimbTrialsModule.Settings.HudSettings.RunTimer == RunTimerMode.Detailed;
 
   public static void StartRun(RunDefinition run, bool countdown = true)
   {
@@ -452,6 +455,7 @@ public static class RunManager
 
   private static void OnBeforeUpdate(Level level)
   {
+    UpdateGhostBlockVisibility();
     RetryPressed = Run != null && !Replaying && ClimbTrialsModule.Settings.Retry.Pressed;
     if (RetryPressed)
       Input.QuickRestart.ConsumePress();

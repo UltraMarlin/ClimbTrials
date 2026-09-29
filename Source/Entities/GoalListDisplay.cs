@@ -38,10 +38,10 @@ public class GoalListDisplay : Entity
 
   public GoalListDisplay()
   {
-    Tag = Tags.HUD | Tags.Persistent | Tags.TransitionUpdate | Tags.FrozenUpdate;
+    Tag = Tags.HUD | Tags.Persistent | Tags.TransitionUpdate | Tags.PauseUpdate;
   }
 
-  private static GoalTimesDisplayMode Mode => ClimbTrialsModule.Settings.ShowGoalTimes;
+  private static GoalTimesDisplayMode Mode => ClimbTrialsModule.Settings.HudSettings.GoalTimes;
 
   private static List<Row> Rows(Trial trial, long best, GoalTimesDisplayMode mode)
   {

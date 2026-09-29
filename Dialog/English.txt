@@ -104,7 +104,10 @@ CLIMBTRIALS_HINT_RETRY_BIND=           You can bind a quick retry button in Mod 
 
 MODOPTIONS_CLIMBTRIALSMODULE_PBAUTOSUBMIT=               PB Auto Submit
 MODOPTIONS_CLIMBTRIALSMODULE_PBAUTOSUBMIT_DESC=          Automatically submits a new PB to the leaderboards.
+MODOPTIONS_CLIMBTRIALSMODULE_HUDSETTINGS=                HUD Settings
+MODOPTIONS_CLIMBTRIALSMODULE_GOALINDICATORSETTINGS=      Goal Indicator
 MODOPTIONS_CLIMBTRIALSMODULE_GOALINDICATOR_DESC=         Points you towards the goal or a close waypoint.
+MODOPTIONS_CLIMBTRIALSMODULE_HIDEAFTERFIRSTFINISH_DESC=  Hides the indicator on trials you have finished already.
 MODOPTIONS_CLIMBTRIALSMODULE_SHOWGOALTIMES_DESC=         Shows your PB and goal times while running.
 MODOPTIONS_CLIMBTRIALSMODULE_SHOWLEADERBOARD_DESC=       Shows a small leaderboard while running.
 MODOPTIONS_CLIMBTRIALSMODULE_REPLAYINPUTDISPLAY_DESC=    Shows an input display while watching a replay.

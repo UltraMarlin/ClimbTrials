@@ -5,6 +5,4 @@
 # Github workflow file if you're using GitHub actions for publishing.
 Source/
 ClimbTrials*.zip
-log.sh
-build.sh
-watch.sh
+*.sh

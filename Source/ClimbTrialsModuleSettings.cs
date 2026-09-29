@@ -60,6 +60,32 @@ public enum RunTimerMode
   Detailed,
 }
 
+[SettingSubMenu]
+public class HudSettings
+{
+  public RunTimerMode RunTimer { get; set; } = RunTimerMode.Detailed;
+
+  [SettingSubText("modoptions_climbtrialsmodule_showgoaltimes_desc")]
+  public GoalTimesDisplayMode GoalTimes { get; set; } = GoalTimesDisplayMode.All;
+
+  [SettingSubText("modoptions_climbtrialsmodule_showleaderboard_desc")]
+  public LeaderboardMode Leaderboard { get; set; } = LeaderboardMode.Subtle;
+
+  [SettingSubText("modoptions_climbtrialsmodule_replayinputdisplay_desc")]
+  public InputDisplayMode ReplayInputDisplay { get; set; } = InputDisplayMode.Normal;
+}
+
+[SettingSubMenu]
+public class GoalIndicatorSettings
+{
+  [SettingSubText("modoptions_climbtrialsmodule_goalindicator_desc")]
+  public GoalIndicatorMode Style { get; set; } = GoalIndicatorMode.Subtle;
+  public GoalIndicatorTargets Targets { get; set; } = GoalIndicatorTargets.EachCondition;
+
+  [SettingSubText("modoptions_climbtrialsmodule_hideafterfirstfinish_desc")]
+  public bool HideAfterFirstFinish { get; set; } = true;
+}
+
 public class ClimbTrialsModuleSettings : EverestModuleSettings
 {
   [SettingRange(min: 1, max: 5)]
@@ -67,27 +93,11 @@ public class ClimbTrialsModuleSettings : EverestModuleSettings
   public CountdownMode CountdownMode { get; set; } = CountdownMode.Fast;
   public bool ResetOnDeath { get; set; } = false;
 
-  public RunTimerMode ShowRunTimer { get; set; } = RunTimerMode.Detailed;
-
   [SettingSubText("modoptions_climbtrialsmodule_pbautosubmit_desc")]
   public bool PbAutoSubmit { get; set; } = true;
 
-  [SettingSubText("modoptions_climbtrialsmodule_goalindicator_desc")]
-  public GoalIndicatorMode GoalIndicator { get; set; } = GoalIndicatorMode.Subtle;
-  public GoalIndicatorTargets GoalIndicatorTargets { get; set; } =
-    GoalIndicatorTargets.EachCondition;
-
-  [SettingSubText("modoptions_climbtrialsmodule_showgoaltimes_desc")]
-  public GoalTimesDisplayMode ShowGoalTimes { get; set; } = GoalTimesDisplayMode.All;
-
-  [SettingSubText("modoptions_climbtrialsmodule_showleaderboard_desc")]
-  public LeaderboardMode ShowLeaderboard { get; set; } = LeaderboardMode.Normal;
-
   [SettingSubText("modoptions_climbtrialsmodule_ghostvisibility_desc")]
   public GhostVisibility GhostVisibility { get; set; } = GhostVisibility.Subtle;
-
-  [SettingSubText("modoptions_climbtrialsmodule_replayinputdisplay_desc")]
-  public InputDisplayMode ReplayInputDisplay { get; set; } = InputDisplayMode.Normal;
 
   [SettingSubText("modoptions_climbtrialsmodule_offlinemode_desc")]
   public bool OfflineMode { get; set; } = false;
@@ -114,20 +124,32 @@ public class ClimbTrialsModuleSettings : EverestModuleSettings
   [SettingIgnore]
   public bool HasChangedOptions { get; set; }
 
-  public bool DiffersFromDefaults()
+  public HudSettings HudSettings { get; set; } = new();
+
+  public GoalIndicatorSettings GoalIndicatorSettings { get; set; } = new();
+
+  public bool DiffersFromDefaults() => Differs(this, new ClimbTrialsModuleSettings());
+
+  private static bool Differs(object current, object defaults)
   {
-    ClimbTrialsModuleSettings defaults = new();
-    IEnumerable<PropertyInfo> rows = typeof(ClimbTrialsModuleSettings)
+    IEnumerable<PropertyInfo> rows = current
+      .GetType()
       .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
       .Where(property => property.GetCustomAttribute<SettingIgnoreAttribute>() == null);
     foreach (PropertyInfo property in rows)
     {
+      object value = property.GetValue(current);
       if (property.PropertyType == typeof(ButtonBinding))
       {
-        if (!IsDefaultBind((ButtonBinding)property.GetValue(this), property))
+        if (!IsDefaultBind((ButtonBinding)value, property))
           return true;
       }
-      else if (!Equals(property.GetValue(this), property.GetValue(defaults)))
+      else if (property.PropertyType.GetCustomAttribute<SettingSubMenuAttribute>() != null)
+      {
+        if (Differs(value, property.GetValue(defaults)))
+          return true;
+      }
+      else if (!Equals(value, property.GetValue(defaults)))
         return true;
     }
     return false;

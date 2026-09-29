@@ -61,6 +61,7 @@ public class GoalIndicator : Entity
     public float Alpha;
     public Color Color = WaypointColor;
     public Vector2 Position;
+    public Target? Aim;
     public FadeBuffer Layer;
     public VertexLight Light;
   }
@@ -76,7 +77,7 @@ public class GoalIndicator : Entity
 
   public GoalIndicator()
   {
-    Tag = Tags.Persistent | Tags.TransitionUpdate | Tags.FrozenUpdate;
+    Tag = Tags.Persistent | Tags.TransitionUpdate | Tags.PauseUpdate;
     Depth = Depths.Top;
     Visible = false;
     float diagonal = new Vector2(texture.Width, texture.Height).Length();
@@ -123,13 +124,10 @@ public class GoalIndicator : Entity
     }
 
     Array.Fill(targets, null);
-    bool active =
-      ClimbTrialsModule.Settings.GoalIndicator != GoalIndicatorMode.Off
-      && player != null
-      && !player.Dead;
-    if (active)
+    if (Shown && player != null && !player.Dead)
       FillTargets(run, player);
 
+    bool paused = SceneAs<Level>().Paused;
     Arrow shown = Array.Find(arrows, a => a.Visible);
     int shownCount = Array.FindAll(targets, t => t != null).Length;
     int shownIndex = 0;
@@ -140,9 +138,15 @@ public class GoalIndicator : Entity
       bool appearing = !arrow.Visible;
       arrow.Visible = targets[ring] != null;
       if (targets[ring] is not Target target)
+      {
+        arrow.Aim = null;
         continue;
+      }
       Visible = true;
-      if (appearing && shown != null)
+      if (paused && arrow.Aim != target)
+        appearing = true;
+      arrow.Aim = target;
+      if (appearing && shown != null && !paused)
       {
         arrow.Angle = shown.Angle;
         arrow.Position = shown.Position;
@@ -150,7 +154,7 @@ public class GoalIndicator : Entity
       }
       float offset = (shownIndex - (shownCount - 1) / 2f) * RingGap;
       shownIndex++;
-      Steer(arrow, target, player, offset, appearing);
+      Steer(arrow, target, player, offset, appearing, paused);
     }
     foreach (Arrow arrow in arrows)
     {
@@ -161,7 +165,14 @@ public class GoalIndicator : Entity
     }
   }
 
-  private void Steer(Arrow arrow, Target target, Player player, float offset, bool appearing)
+  private void Steer(
+    Arrow arrow,
+    Target target,
+    Player player,
+    float offset,
+    bool appearing,
+    bool paused
+  )
   {
     arrow.Color = target.Kind switch
     {
@@ -174,6 +185,9 @@ public class GoalIndicator : Entity
     Vector2 toTarget = target.Position - center;
     float t = Calc.ClampedMap(toTarget.Length(), FadeNear, FadeFar);
     arrow.Alpha = t * BaseAlpha();
+    if (paused && !appearing)
+      return;
+
     float radius = MathHelper.Lerp(RadiusNear, RadiusFar(), t) + offset;
     if (appearing)
     {
@@ -198,15 +212,17 @@ public class GoalIndicator : Entity
     );
   }
 
+  private static GoalIndicatorSettings Settings => ClimbTrialsModule.Settings.GoalIndicatorSettings;
+
+  private static bool Shown =>
+    Settings.Style != GoalIndicatorMode.Off
+    && !(Settings.HideAfterFirstFinish && RunManager.FinishedBefore);
+
   private static float BaseAlpha() =>
-    ClimbTrialsModule.Settings.GoalIndicator == GoalIndicatorMode.Strong
-      ? StrongAlpha
-      : SubtleAlpha;
+    Settings.Style == GoalIndicatorMode.Strong ? StrongAlpha : SubtleAlpha;
 
   private static float RadiusFar() =>
-    ClimbTrialsModule.Settings.GoalIndicator == GoalIndicatorMode.Strong
-      ? StrongRadiusFar
-      : SubtleRadiusFar;
+    Settings.Style == GoalIndicatorMode.Strong ? StrongRadiusFar : SubtleRadiusFar;
 
   private void FillTargets(RunDefinition run, Player player)
   {
@@ -217,7 +233,7 @@ public class GoalIndicator : Entity
         targets[0] = new Target(finish, TargetKind.Finish);
       return;
     }
-    if (ClimbTrialsModule.Settings.GoalIndicatorTargets == GoalIndicatorTargets.Nearest)
+    if (Settings.Targets == GoalIndicatorTargets.Nearest)
     {
       targets[0] = Nearest(run, player, progress, null);
       return;
