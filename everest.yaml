@@ -1,5 +1,5 @@
 - Name: ClimbTrials
-  Version: 0.4.0-pre
+  Version: 0.4.0
   DLL: bin/ClimbTrials.dll
   Dependencies:
     - Name: EverestCore
