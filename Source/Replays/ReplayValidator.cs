@@ -11,6 +11,7 @@ public sealed record TrialSpec(
   float SpawnX,
   float SpawnY,
   int ReplayLimitSeconds,
+  FinishKind FinishKind,
   byte[] DefinitionHash
 )
 {
@@ -22,6 +23,7 @@ public sealed record TrialSpec(
         trial.Run.Spawn.X,
         trial.Run.Spawn.Y,
         trial.ReplayLimitSeconds,
+        trial.Run.FinishKind,
         trial.DefinitionHash
       );
 
@@ -88,8 +90,8 @@ public static class ReplayValidator
       if (frame.LevelUpdated)
         counted++;
     int frozen = replay.Frames.Count - counted;
-    long expected = counted * FrameTicks;
-    if (Math.Abs(replay.Ticks - expected) > FrameTicks)
+    long expected = counted * FrameTicks + replay.ExtraHeaderTicks(trial.FinishKind);
+    if (replay.Ticks != expected)
       result.Rejections.Add(
         $"header time {TimeText.Format(replay.Ticks)}, "
           + $"but {counted} counted frames add up to {TimeText.Format(expected)}"

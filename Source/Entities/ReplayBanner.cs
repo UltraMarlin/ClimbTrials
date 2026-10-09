@@ -59,17 +59,13 @@ public class ReplayBanner : Entity
     if (replay == null)
       return;
 
+    bool stopped = Replayer.Desynced || Replayer.StoppedByReload;
     string titleKey =
-      Replayer.Desynced ? "climbtrials_replay_desynced"
+      Replayer.StoppedByReload ? "climbtrials_replay_stopped_reload"
+      : Replayer.Desynced ? "climbtrials_replay_desynced"
       : Replayer.State == ReplayState.Paused ? "climbtrials_replay_paused"
       : "climbtrials_replay_title";
-    Outline(
-      Dialog.Clean(titleKey),
-      TitleY,
-      1.1f,
-      Replayer.Desynced ? DesyncColor : TitleColor,
-      TitleStroke
-    );
+    Outline(Dialog.Clean(titleKey), TitleY, 1.1f, stopped ? DesyncColor : TitleColor, TitleStroke);
 
     string played = Dialog.Clean("climbtrials_replay_played_date");
     string owner = Identity.NameOf(replay);
@@ -83,22 +79,25 @@ public class ReplayBanner : Entity
     float width = TimeText.Width(time, TimeStyle);
     TimeText.Draw(new Vector2(960f - width / 2f, TimeBaselineY), time, TimeStyle, Color.White);
 
-    if (Replayer.State != ReplayState.Idle)
+    if (Replayer.State != ReplayState.Idle || Replayer.WaitingToStart)
       RenderPrompts(1f);
   }
 
   private static void RenderPrompts(float alpha)
   {
-    string pauseKey =
-      Replayer.State == ReplayState.Paused ? "climbtrials_replay_resume" : "climbtrials_pause";
+    ClimbTrialsModuleSettings binds = ClimbTrialsModule.Settings;
+    bool paused = Replayer.State == ReplayState.Paused || Replayer.PauseQueued;
+    string pauseKey = paused ? "climbtrials_replay_resume" : "climbtrials_pause";
     List<(string, VirtualButton)> prompts = [ButtonRow.MenuPrompt];
     if (Replayer.State == ReplayState.Finished)
       prompts.Add((Dialog.Clean("climbtrials_return_to_trials"), Input.MenuCancel));
-    prompts.Add((Dialog.Clean("climbtrials_replay_restart"), Input.MenuJournal));
+    prompts.Add((Dialog.Clean("climbtrials_replay_restart"), binds.ReplayRestart.Button));
     if (Replayer.State != ReplayState.Finished)
-      prompts.Add((Dialog.Clean(pauseKey), Input.MenuConfirm));
+      prompts.Add((Dialog.Clean(pauseKey), binds.ReplayPlayPause.Button));
     if (Replayer.State == ReplayState.Paused)
-      prompts.Add((Dialog.Clean("climbtrials_replay_step"), Input.MenuRight));
+      prompts.Add(
+        (Dialog.Clean("climbtrials_replay_frame_advance"), binds.ReplayFrameAdvance.Button)
+      );
     ButtonRow.DrawRight(alpha, prompts);
   }
 

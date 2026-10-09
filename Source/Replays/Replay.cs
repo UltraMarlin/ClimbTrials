@@ -56,9 +56,14 @@ public sealed class Replay
 
   public int[] ShownFrames => shownFrames ??= FindShownFrames();
 
-  public long TicksOfShownFrame(int shownIndex) => (shownIndex + 1) * TicksPerFrame;
+  public long TicksOfShownFrame(int shownIndex) => shownIndex * TicksPerFrame;
 
-  public long ShownFrameAt(long ticks) => ticks / TicksPerFrame - 1;
+  public long ExtraHeaderTicks(FinishKind finishKind) =>
+    finishKind == FinishKind.RoomEnter && RecorderVersion < Compatibility.RoomGoalExactTimeSince
+      ? TicksPerFrame
+      : 0;
+
+  public long ShownFrameAt(long ticks) => ticks / TicksPerFrame;
 
   private int[] FindShownFrames()
   {

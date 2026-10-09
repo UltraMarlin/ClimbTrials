@@ -9,7 +9,21 @@ public static class RunBinds
 {
   private static readonly List<(VirtualButton Button, Binding Binding)> saved = [];
 
-  public static void Unload() => Restore();
+  public static void Load() => Everest.Events.Input.OnInitialize += OnInputInitialize;
+
+  public static void Unload()
+  {
+    Everest.Events.Input.OnInitialize -= OnInputInitialize;
+    Restore();
+  }
+
+  private static void OnInputInitialize()
+  {
+    if (saved.Count == 0)
+      return;
+    Restore();
+    Blank();
+  }
 
   public static void Blank()
   {

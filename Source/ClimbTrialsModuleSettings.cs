@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Microsoft.Xna.Framework.Input;
+using Monocle;
 
 namespace Celeste.Mod.ClimbTrials;
 
@@ -119,7 +120,18 @@ public class ClimbTrialsModuleSettings : EverestModuleSettings
   [SettingIgnore]
   public string ServerUrl { get; set; } = "https://climb-trials-server.mabidev.de";
 
+  [SettingSubHeader("modoptions_climbtrialsmodule_runbinds")]
   public ButtonBinding Retry { get; set; }
+
+  [SettingSubHeader("modoptions_climbtrialsmodule_replaybinds")]
+  public ButtonBinding ReplayPlayPause { get; set; }
+
+  public ButtonBinding ReplayRestart { get; set; }
+
+  public ButtonBinding ReplayFrameAdvance { get; set; }
+
+  [DefaultButtonBinding(0, Keys.F8)]
+  public ButtonBinding ReplayShowHitboxes { get; set; }
 
   [SettingIgnore]
   public bool HasChangedOptions { get; set; }
@@ -155,8 +167,61 @@ public class ClimbTrialsModuleSettings : EverestModuleSettings
     return false;
   }
 
+  private static Binding VanillaSourceOf(PropertyInfo property) =>
+    property.Name switch
+    {
+      nameof(ReplayPlayPause) => Settings.Instance.Confirm,
+      nameof(ReplayRestart) => Settings.Instance.Journal,
+      nameof(ReplayFrameAdvance) => Settings.Instance.MenuRight,
+      _ => null,
+    };
+
+  private static IEnumerable<PropertyInfo> CopiedBinds() =>
+    typeof(ClimbTrialsModuleSettings)
+      .GetProperties()
+      .Where(property => VanillaSourceOf(property) != null);
+
+  public void CopyMissingBinds()
+  {
+    foreach (PropertyInfo property in CopiedBinds())
+    {
+      if (property.GetValue(this) != null)
+        continue;
+      ButtonBinding bind = new();
+      CopyKeyboard(bind, VanillaSourceOf(property));
+      CopyController(bind, VanillaSourceOf(property));
+      property.SetValue(this, bind);
+    }
+  }
+
+  public void RecopyKeyboardBinds()
+  {
+    foreach (PropertyInfo property in CopiedBinds())
+      CopyKeyboard((ButtonBinding)property.GetValue(this), VanillaSourceOf(property));
+  }
+
+  public void RecopyControllerBinds()
+  {
+    foreach (PropertyInfo property in CopiedBinds())
+      CopyController((ButtonBinding)property.GetValue(this), VanillaSourceOf(property));
+  }
+
+  private static void CopyKeyboard(ButtonBinding bind, Binding vanilla)
+  {
+    bind.Keys = [.. vanilla.Keyboard];
+    bind.MouseButtons = [.. vanilla.Mouse];
+  }
+
+  private static void CopyController(ButtonBinding bind, Binding vanilla) =>
+    bind.Buttons = [.. vanilla.Controller];
+
   private static bool IsDefaultBind(ButtonBinding bind, PropertyInfo property)
   {
+    Binding vanilla = VanillaSourceOf(property);
+    if (vanilla != null)
+      return bind.Keys.SequenceEqual(vanilla.Keyboard)
+        && bind.Buttons.SequenceEqual(vanilla.Controller)
+        && bind.MouseButtons.SequenceEqual(vanilla.Mouse);
     DefaultButtonBindingAttribute expected =
       property.GetCustomAttribute<DefaultButtonBindingAttribute>();
     Buttons[] buttons = expected != null && expected.Button != 0 ? [expected.Button] : [];

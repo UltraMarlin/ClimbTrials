@@ -32,11 +32,14 @@ public static class Replayer
 
   public static ReplayState State { get; private set; }
   public static bool Desynced { get; private set; }
+  public static bool StoppedByReload { get; private set; }
+  public static bool PauseQueued { get; private set; }
   public static int Frame { get; private set; }
   public static bool Silenced => State is ReplayState.Playing or ReplayState.Paused;
   public static bool MenuOpen => menu != null;
 
   private static Replay current;
+  private static bool timePending;
   private static bool stepping;
   private static int stepHeldTicks;
   private static WatcherMenu menu;
@@ -88,6 +91,7 @@ public static class Replayer
     current = replay;
     Frame = 0;
     Desynced = false;
+    StoppedByReload = false;
     stepping = false;
     stepHeldTicks = 0;
 
@@ -105,8 +109,7 @@ public static class Replayer
 
     watchedLevel = level;
     Input.LastAim = replay.LastAim;
-    level.TimeActive = replay.TimeActive;
-    level.RawTimeActive = replay.RawTimeActive;
+    timePending = true;
     level.AllowHudHide = false;
 
     VirtualButton[] buttons = InputCapture.Buttons();
@@ -124,7 +127,8 @@ public static class Replayer
     SilenceStick(Input.Aim, aim);
     SilenceStick(Input.Feather, feather);
 
-    State = ReplayState.Playing;
+    State = PauseQueued ? ReplayState.Paused : ReplayState.Playing;
+    PauseQueued = false;
     Logger.Log(
       LogLevel.Info,
       LogTag,
@@ -149,11 +153,12 @@ public static class Replayer
       Desync($"finished {missing} frames early");
       return false;
     }
-    if (elapsedTicks != current.Ticks)
+    long expected = current.Ticks - current.ExtraHeaderTicks(RunManager.Run.FinishKind);
+    if (elapsedTicks != expected)
     {
       Desync(
         $"finished at {TimeText.Format(elapsedTicks)}, "
-          + $"the header says {TimeText.Format(current.Ticks)}"
+          + $"the recording is {TimeText.Format(expected)}"
       );
       return false;
     }
@@ -165,7 +170,10 @@ public static class Replayer
     RestoreInputs();
     State = ReplayState.Idle;
     current = null;
+    timePending = false;
     Desynced = false;
+    StoppedByReload = false;
+    PauseQueued = false;
     stepping = false;
     ReleasePauseAudio();
     RestoreRecordedMenu();
@@ -175,6 +183,15 @@ public static class Replayer
   }
 
   public static void RenderMenu() => menu?.Render();
+
+  public static void ApplyRecordedTime(Level level)
+  {
+    if (!timePending || current == null)
+      return;
+    timePending = false;
+    level.TimeActive = current.TimeActive;
+    level.RawTimeActive = current.RawTimeActive;
+  }
 
   public static InputFrame? FedFrame(int framesBack = 0)
   {
@@ -288,6 +305,7 @@ public static class Replayer
     if (Engine.Instance.IsActive && MInput.Active && !Engine.Commands.Open)
     {
       MInput.Keyboard.Update();
+      MInput.Mouse.Update();
       MInput.GamePads[Input.Gamepad].Update();
       if (menu != null)
         DriveMenu();
@@ -404,7 +422,7 @@ public static class Replayer
     ReleasePauseAudio();
     RestoreRecordedMenu();
     menu = null;
-    RunManager.StartRace(RunManager.Trial, current);
+    RunManager.StartRace(RunManager.Trial, RunManager.Replay);
   }
 
   private static void LeaveReplay()
@@ -442,13 +460,13 @@ public static class Replayer
 
   private static bool StepRequested()
   {
-    Binding right = Settings.Instance.MenuRight;
-    if (right.Pressed(Input.Gamepad, StepThreshold))
+    Binding step = ClimbTrialsModule.Settings.ReplayFrameAdvance.Binding;
+    if (step.Pressed(Input.Gamepad, StepThreshold))
     {
       stepHeldTicks = 1;
       return true;
     }
-    if (stepHeldTicks == 0 || !right.Check(Input.Gamepad, StepThreshold))
+    if (stepHeldTicks == 0 || !step.Check(Input.Gamepad, StepThreshold))
     {
       stepHeldTicks = 0;
       return false;
@@ -462,9 +480,48 @@ public static class Replayer
   {
     if ((State == ReplayState.Playing || stepping) && InputCapture.Counts())
       Step();
+
     orig();
-    if (State != ReplayState.Idle && !Engine.Commands.Open)
+
+    if (Engine.Commands.Open || Engine.Scene is not Level)
+      return;
+
+    if (State != ReplayState.Idle)
       HandleWatcherControls();
+    else if (WaitingToStart)
+      HandleControlsBeforeStart();
+  }
+
+  public static bool WaitingToStart =>
+    RunManager.Replaying && Engine.Scene is Level level && !level.Paused;
+
+  private static void HandleControlsBeforeStart()
+  {
+    ToggleHitboxesOnPress();
+    if (WatcherPressed(ClimbTrialsModule.Settings.ReplayRestart))
+    {
+      RestartReplay(RunManager.Replay, PauseQueued);
+      return;
+    }
+    if (WatcherPressed(ClimbTrialsModule.Settings.ReplayPlayPause))
+    {
+      PauseQueued = !PauseQueued;
+      Audio.Play(PauseQueued ? PauseSound : ResumeSound);
+    }
+  }
+
+  private static void RestartReplay(Replay replay, bool paused)
+  {
+    if (!RunManager.StartReplay(replay))
+      return;
+    Audio.Play(RestartSound);
+    PauseQueued = paused;
+  }
+
+  private static void ToggleHitboxesOnPress()
+  {
+    if (WatcherPressed(ClimbTrialsModule.Settings.ReplayShowHitboxes))
+      GameplayRenderer.RenderDebug = !GameplayRenderer.RenderDebug;
   }
 
   private static MTexture OnGuiButton(
@@ -500,21 +557,19 @@ public static class Replayer
   private static bool WatcherPressed(Binding binding) =>
     binding.Pressed(Input.Gamepad, WatcherThreshold);
 
+  private static bool WatcherPressed(ButtonBinding bind) => WatcherPressed(bind.Binding);
+
   private static void HandleWatcherControls()
   {
-    if (MInput.Keyboard.Pressed(Keys.F8))
-    {
-      GameplayRenderer.RenderDebug = !GameplayRenderer.RenderDebug;
-    }
+    ToggleHitboxesOnPress();
     if (WatcherPressed(Settings.Instance.Pause) || WatcherPressed(EscapeBinding()))
     {
       OpenMenu();
       return;
     }
-    if (WatcherPressed(Settings.Instance.Journal))
+    if (WatcherPressed(ClimbTrialsModule.Settings.ReplayRestart))
     {
-      Audio.Play(RestartSound);
-      RunManager.StartReplay(current);
+      RestartReplay(RunManager.Replay, State == ReplayState.Paused);
       return;
     }
     if (State == ReplayState.Finished && WatcherPressed(Settings.Instance.Cancel))
@@ -522,7 +577,7 @@ public static class Replayer
       LeaveReplay();
       return;
     }
-    if (State != ReplayState.Finished && WatcherPressed(Settings.Instance.Confirm))
+    if (State != ReplayState.Finished && WatcherPressed(ClimbTrialsModule.Settings.ReplayPlayPause))
     {
       if (State == ReplayState.Paused)
       {
@@ -590,12 +645,24 @@ public static class Replayer
     Frame++;
   }
 
+  public static void StopOnReload(Level level)
+  {
+    StoppedByReload = true;
+    AnnounceStop("replay stopped: the level was reloaded");
+    EndPlaybackEarly(level);
+  }
+
   private static void StopOnDesync(string reason)
   {
     Desync(reason);
+    EndPlaybackEarly(Engine.Scene as Level);
+  }
+
+  private static void EndPlaybackEarly(Level level)
+  {
     RestoreInputs();
     State = ReplayState.Finished;
-    if (Engine.Scene is Level level)
+    if (level != null)
       level.Frozen = true;
     RunManager.DiscardAttemptAfterDesync();
   }
@@ -603,9 +670,14 @@ public static class Replayer
   private static void Desync(string reason)
   {
     Desynced = true;
+    AnnounceStop($"replay desynced: {reason}");
+  }
+
+  private static void AnnounceStop(string message)
+  {
     ClearFed();
     Audio.Play(DesyncSound);
-    Logger.Log(LogLevel.Warn, LogTag, $"replay desynced: {reason}");
+    Logger.Log(LogLevel.Warn, LogTag, message);
   }
 
   private static void ClearFed()

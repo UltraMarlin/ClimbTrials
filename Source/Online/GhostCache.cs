@@ -13,14 +13,14 @@ public static class GhostCache
   private static readonly Dictionary<string, Replay> replays = [];
   private static readonly List<string> order = [];
 
-  public static void Fetch(string replayId, bool own, Action<Replay> onDone)
+  public static void Fetch(string replayId, long ticks, bool own, Action<Replay> onDone)
   {
     if (string.IsNullOrEmpty(replayId))
     {
       onDone(null);
       return;
     }
-    if (replays.TryGetValue(replayId, out Replay cached))
+    if (replays.TryGetValue(replayId, out Replay cached) && cached.Ticks == ticks)
     {
       onDone(cached);
       return;
@@ -60,6 +60,7 @@ public static class GhostCache
   private static void Store(string replayId, Replay replay)
   {
     replays[replayId] = replay;
+    order.Remove(replayId);
     order.Add(replayId);
     if (order.Count <= Keep)
       return;

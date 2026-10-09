@@ -442,6 +442,7 @@ public class LeaderboardView : Entity
     downloading = true;
     GhostCache.Fetch(
       row.ReplayId,
+      row.Ticks,
       row.Me,
       replay =>
       {

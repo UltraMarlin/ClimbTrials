@@ -1,10 +1,12 @@
 using System;
 using System.Linq;
+using Celeste.Editor;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Entities;
 using Celeste.Mod.ClimbTrials.Online;
 using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.UI;
+using Celeste.Mod.Core;
 using FMOD.Studio;
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -53,7 +55,7 @@ public static class RunManager
     Everest.Events.Level.OnBeforeUpdate += OnBeforeUpdate;
     Everest.Events.Level.OnAfterUpdate += OnAfterUpdate;
     Everest.Events.Level.OnPause += OnPause;
-    Everest.Events.Level.OnExit += OnExit;
+    Everest.Events.Celeste.OnSceneTransition += OnSceneTransition;
     On.Celeste.Player.Added += OnPlayerAdded;
     On.Celeste.Player.Die += OnPlayerDie;
     On.Celeste.Level.Reload += OnLevelReload;
@@ -71,7 +73,7 @@ public static class RunManager
     Everest.Events.Level.OnBeforeUpdate -= OnBeforeUpdate;
     Everest.Events.Level.OnAfterUpdate -= OnAfterUpdate;
     Everest.Events.Level.OnPause -= OnPause;
-    Everest.Events.Level.OnExit -= OnExit;
+    Everest.Events.Celeste.OnSceneTransition -= OnSceneTransition;
     On.Celeste.Player.Added -= OnPlayerAdded;
     On.Celeste.Player.Die -= OnPlayerDie;
     On.Celeste.Level.Reload -= OnLevelReload;
@@ -83,13 +85,19 @@ public static class RunManager
     Everest.Events.Player.OnAfterUpdate -= OnPlayerAfterUpdate;
   }
 
+  private static bool SceneSwitchPending => Engine.NextScene != Engine.Scene;
+
   public static void SwitchScene(Scene next)
   {
     Engine.Scene = next;
+    MInput.Keyboard.PreviousState = MInput.Keyboard.CurrentState;
+    CoreModule.Settings.DebugMap.ConsumePress();
   }
 
   public static void StartTrial(Trial trial)
   {
+    if (SceneSwitchPending)
+      return;
     StopRacing();
     Trial = trial;
     StartRun(trial.Run);
@@ -97,6 +105,8 @@ public static class RunManager
 
   public static void StartRace(Trial trial, Replay replay)
   {
+    if (SceneSwitchPending)
+      return;
     Racing = true;
     RaceReplay = replay;
     Trial = trial;
@@ -117,7 +127,7 @@ public static class RunManager
     Replay = replay;
     if (replay == null)
       GameplayRenderer.RenderDebug = false;
-    countdownOnControl = countdown;
+    countdownOnControl = countdown && replay == null;
 
     ownSaveData = new SaveData { Name = "ClimbTrials" };
     SaveData.Start(ownSaveData, -1);
@@ -191,32 +201,40 @@ public static class RunManager
       && Comparison != null
       && ClimbTrialsModule.Settings.HudSettings.RunTimer == RunTimerMode.Detailed;
 
-  public static void StartRun(RunDefinition run, bool countdown = true)
+  public static bool StartRun(RunDefinition run, bool countdown = true)
   {
+    if (SceneSwitchPending)
+      return false;
     SwitchScene(CreateRunLoader(run, null, countdown));
+    return true;
   }
 
   public static void LeaveToTrials()
   {
+    if (SceneSwitchPending)
+      return;
     OuiTrials.ReturnTrial = Trial;
     Stop();
     SwitchScene(new OverworldLoader(OuiTrials.ReturnStartMode));
   }
 
-  public static void StartReplay(Replay replay)
+  public static bool StartReplay(Replay replay)
   {
     Trial trial = Campaigns.FindTrial(replay.TrialId);
-    if (trial == null)
-      return;
+    if (trial == null || SceneSwitchPending)
+      return false;
     Trial = trial;
     StopRacing();
     SwitchScene(CreateRunLoader(trial.Run, replay));
+    return true;
   }
 
-  public static void RestartAttempt(string noticeKey)
+  public static bool RestartAttempt(string noticeKey)
   {
+    if (SceneSwitchPending)
+      return false;
     pendingNotice = noticeKey;
-    StartRun(Run);
+    return StartRun(Run);
   }
 
   public static void RestartAttemptAfterSave(string noticeKey)
@@ -258,9 +276,8 @@ public static class RunManager
       return;
     }
 
-    string notice = pendingRestart;
-    pendingRestart = null;
-    RestartAttempt(notice);
+    if (RestartAttempt(pendingRestart))
+      pendingRestart = null;
   }
 
   private static void OnPause(Level level, int startIndex, bool minimal, bool quickReset)
@@ -348,7 +365,12 @@ public static class RunManager
       awaitingLoad = false;
       awaitingControl = true;
     }
-    else if (isFromLoader && !Replaying && (AttemptInProgress || awaitingControl))
+    else if (isFromLoader && Replaying)
+    {
+      awaitingControl = false;
+      Replayer.StopOnReload(level);
+    }
+    else if (isFromLoader && (AttemptInProgress || awaitingControl))
     {
       StopRecording(StopReason.Reload);
       if (Attempt.State != AttemptState.Running)
@@ -455,6 +477,20 @@ public static class RunManager
 
   private static void OnBeforeUpdate(Level level)
   {
+    if (Run != null)
+    {
+      Attempt.Tick(Engine.RawDeltaTime);
+      if (
+        Recorder.Recording
+        && !level.Paused
+        && Attempt.State == AttemptState.Running
+        && !Trial.FitsReplayLimit(Attempt.ElapsedTicks)
+      )
+        StopRecording(StopReason.Limit);
+    }
+
+    if (Replaying)
+      CoreModule.Settings.DebugMap.ConsumePress();
     UpdateGhostBlockVisibility();
     RetryPressed = Run != null && !Replaying && ClimbTrialsModule.Settings.Retry.Pressed;
     if (RetryPressed)
@@ -466,6 +502,7 @@ public static class RunManager
     if (Run == null)
       return;
 
+    Replayer.ApplyRecordedTime(level);
     if (pendingRestart != null && !level.Paused)
       RunPendingRestart();
     DebugUse.ObserveFrame();
@@ -478,7 +515,6 @@ public static class RunManager
       && !SaveData.Instance.Assists.Equals(ExpectedAssists())
     )
       StopRecording(StopReason.State);
-    Attempt.Tick(Engine.RawDeltaTime);
     if (Attempt.State == AttemptState.Running && InputCapture.FindRecordedPlayer() is Player runner)
       Comparison?.CompareAt(runner.Position, Attempt.ElapsedTicks);
     HeartGoal.AfterUpdate(level);
@@ -490,13 +526,6 @@ public static class RunManager
       else if (!level.Paused)
         ghost.Advance(Engine.RawDeltaTime);
     }
-    if (
-      Recorder.Recording
-      && !level.Paused
-      && Attempt.State == AttemptState.Running
-      && !Trial.FitsReplayLimit(Attempt.ElapsedTicks)
-    )
-      StopRecording(StopReason.Limit);
     if (
       !Replaying
       && Attempt.State is AttemptState.Countdown or AttemptState.Running
@@ -736,14 +765,12 @@ public static class RunManager
     Progress.AddSummitGem();
   }
 
-  private static void OnExit(
-    Level level,
-    LevelExit exit,
-    LevelExit.Mode mode,
-    Session session,
-    HiresSnow snow
-  )
+  private static void OnSceneTransition(Scene last, Scene next)
   {
+    if (Run == null || next is Level or LevelLoader or AssetReloadHelper)
+      return;
+    if (next is MapEditor && !Replaying)
+      return;
     Stop();
   }
 }
