@@ -43,6 +43,22 @@ public static class RunBinds
     saved.Clear();
   }
 
+  public static Binding Unblanked(ButtonBinding bind)
+  {
+    foreach ((VirtualButton button, Binding binding) in saved)
+      if (button == bind.Button)
+        return binding;
+    return bind.Binding;
+  }
+
+  public static bool Pressed(ButtonBinding bind)
+  {
+    foreach ((VirtualButton button, Binding binding) in saved)
+      if (button == bind.Button)
+        return Replayer.MenuPressed(binding);
+    return bind.Pressed;
+  }
+
   private static IEnumerable<VirtualButton> PageButtons() =>
     new[] { CoreModule.Settings.MenuPageUp, CoreModule.Settings.MenuPageDown }
       .Select(bind => bind?.Button)

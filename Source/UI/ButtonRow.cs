@@ -15,6 +15,9 @@ public static class ButtonRow
   public static (string Label, VirtualButton Button) MenuPrompt =>
     (Dialog.Clean("climbtrials_open_menu"), Input.GuiInputController() ? Input.Pause : Input.ESC);
 
+  public static float Width(string label, VirtualButton button) =>
+    Scale * ButtonUI.Width(label, button);
+
   public static void DrawCenter(string label, VirtualButton button, float alpha, float x = CenterX)
   {
     ButtonUI.Render(new Vector2(x, Y), label, button, Scale, 0.5f, 0f, alpha);
@@ -29,7 +32,7 @@ public static class ButtonRow
     foreach ((string label, VirtualButton button) in prompts)
     {
       ButtonUI.Render(position, label, button, Scale, 1f, 0f, alpha);
-      position.X -= Scale * ButtonUI.Width(label, button) + Spacing;
+      position.X -= Width(label, button) + Spacing;
     }
   }
 }

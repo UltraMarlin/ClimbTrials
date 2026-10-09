@@ -99,6 +99,7 @@ public static class RunManager
     if (SceneSwitchPending)
       return;
     StopRacing();
+    GhostComparisons.Forget();
     Trial = trial;
     StartRun(trial.Run);
   }
@@ -107,6 +108,7 @@ public static class RunManager
   {
     if (SceneSwitchPending)
       return;
+    GhostComparisons.Forget();
     Racing = true;
     RaceReplay = replay;
     Trial = trial;
@@ -225,6 +227,7 @@ public static class RunManager
       return false;
     Trial = trial;
     StopRacing();
+    GhostComparisons.KeepFor(trial, replay);
     SwitchScene(CreateRunLoader(trial.Run, replay));
     return true;
   }
@@ -292,6 +295,7 @@ public static class RunManager
     if (trial == null)
       return null;
     Trial = trial;
+    GhostComparisons.Forget();
     return CreateRunLoader(trial.Run, null);
   }
 
@@ -306,6 +310,7 @@ public static class RunManager
     Run = null;
     pendingNotice = null;
     StopRacing();
+    GhostComparisons.Forget();
   }
 
   private static void StopRacing()
@@ -412,20 +417,20 @@ public static class RunManager
       pendingNotice = null;
     }
 
-    if (Racing && !Replaying && level.Tracker.GetEntity<RaceGhost>() == null)
+    if (level.Tracker.GetEntity<GhostLayer>() == null)
     {
-      if (RaceReplay == null)
+      if (Racing && !Replaying && RaceReplay == null)
       {
         Racing = false;
         notice.Show("climbtrials_race_no_replay");
       }
-      else
-      {
-        RaceGhost ghost = new(RaceReplay);
-        level.Add(ghost);
-        ghost.Sync(Attempt.ElapsedTicks);
-      }
+      GhostLayer ghosts = new(Attempt.ElapsedTicks);
+      level.Add(ghosts);
+      ghosts.Show(GhostSpecs());
     }
+
+    if (Trial != null && level.Tracker.GetEntity<ComparisonDisplay>() == null)
+      level.Add(new ComparisonDisplay());
 
     UpdateGhostBlockVisibility();
     if (Trial != null && level.Tracker.GetEntity<GhostDeltaDisplay>() == null)
@@ -437,6 +442,29 @@ public static class RunManager
 
     if (room == Run.FinishRoom)
       SpawnFinish(level);
+  }
+
+  private static GhostSpec[] GhostSpecs()
+  {
+    if (Racing && !Replaying && RaceReplay != null)
+      return [new GhostSpec(RaceReplay, PlaybackGhost.RaceColor, Color.White, Comparison: false)];
+    if (!Replaying)
+      return [];
+    return
+    [
+      .. GhostComparisons.All.Select(g => new GhostSpec(
+        g.Replay,
+        g.Color,
+        GhostComparisons.NameColor(g.Color),
+        Comparison: true
+      )),
+    ];
+  }
+
+  public static void ShowGhosts()
+  {
+    if (Engine.Scene is Level level && level.Tracker.GetEntity<GhostLayer>() is GhostLayer ghosts)
+      ghosts.Show(GhostSpecs());
   }
 
   private static void ApplyCameraOffset(Level level, string room, Player.IntroTypes playerIntro)
@@ -519,12 +547,12 @@ public static class RunManager
       Comparison?.CompareAt(runner.Position, Attempt.ElapsedTicks);
     HeartGoal.AfterUpdate(level);
     RoomGoal.AfterUpdate(level);
-    if (level.Tracker.GetEntity<RaceGhost>() is RaceGhost ghost)
+    if (level.Tracker.GetEntity<GhostLayer>() is GhostLayer ghosts)
     {
       if (Attempt.State != AttemptState.Finished)
-        ghost.Sync(Attempt.ElapsedTicks);
+        ghosts.Sync(Attempt.ElapsedTicks);
       else if (!level.Paused)
-        ghost.Advance(Engine.RawDeltaTime);
+        ghosts.Advance(Engine.RawDeltaTime);
     }
     if (
       !Replaying
@@ -591,6 +619,7 @@ public static class RunManager
     int runSeed = Calc.Random.Next();
     Determinism.Reseed(runSeed);
     Recorder.Begin(Trial, loadSeed, runSeed, introType, level);
+    Standings.RefreshMiniBoard(Campaigns.CampaignOf(Trial));
   }
 
   private static void SuppressVanillaTimer(

@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Xna.Framework;
 using Monocle;
 
@@ -8,6 +9,8 @@ public abstract class FadingMenu : TextMenu
   private const float BackdropAlpha = 0.6f;
   private const float FadeSpeed = 5f;
   private const float UnderDim = 0.05f;
+  private const float ReasonGap = 40f;
+  private const float ReasonScale = 0.6f;
 
   private float fade;
   private bool closing;
@@ -40,5 +43,26 @@ public abstract class FadingMenu : TextMenu
   {
     Draw.Rect(-1f, -1f, 1922f, 1082f, Color.Black * (BackdropAlpha * fade));
     base.Render();
+  }
+
+  protected void ReadKeys(MenuKeys keys, Action back)
+  {
+    if (keys.Confirm && Current != null)
+    {
+      Current.ConfirmPressed();
+      Current.OnPressed?.Invoke();
+    }
+    else if (keys.Back)
+      back();
+    else if (keys.Up)
+      MoveSelection(-1, wiggle: true);
+    else if (keys.Down)
+      MoveSelection(1, wiggle: true);
+  }
+
+  protected void DrawReason(string text)
+  {
+    Vector2 at = Position + new Vector2(0f, Height / 2f + ReasonGap);
+    TextOutline.DrawDim(text, at, new Vector2(0.5f, 0.5f), ReasonScale, Alpha);
   }
 }

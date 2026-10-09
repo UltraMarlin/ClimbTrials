@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Runs;
 using Celeste.Mod.ClimbTrials.UI;
 using Celeste.Mod.Core;
@@ -26,7 +27,6 @@ public static class Replayer
   private const float WatcherThreshold = 0.2f;
   private const float StepThreshold = 0.4f;
   private const float MenuThreshold = 0.4f;
-  private const float RecordedMenuDim = 0.05f;
   private const int StepDelayTicks = 30;
   private const int StepRepeatTicks = 4;
 
@@ -43,6 +43,7 @@ public static class Replayer
   private static bool stepping;
   private static int stepHeldTicks;
   private static WatcherMenu menu;
+  private static LeaderboardView board;
   private static bool resumeOnClose;
   private static bool pauseEffectsHeld;
   private static TextMenu recordedMenu;
@@ -108,6 +109,7 @@ public static class Replayer
     }
 
     watchedLevel = level;
+    WatcherOverlay.Begin();
     Input.LastAim = replay.LastAim;
     timePending = true;
     level.AllowHudHide = false;
@@ -177,12 +179,12 @@ public static class Replayer
     stepping = false;
     ReleasePauseAudio();
     RestoreRecordedMenu();
+    WatcherOverlay.End();
     menu = null;
+    board = null;
     resumeOnClose = false;
     watchedLevel = null;
   }
-
-  public static void RenderMenu() => menu?.Render();
 
   public static void ApplyRecordedTime(Level level)
   {
@@ -293,6 +295,7 @@ public static class Replayer
     {
       stepHeldTicks = 0;
       orig(self, gameTime);
+      WatcherOverlay.Update(gameTime, engineSkipped: false);
       return;
     }
 
@@ -307,8 +310,12 @@ public static class Replayer
       MInput.Keyboard.Update();
       MInput.Mouse.Update();
       MInput.GamePads[Input.Gamepad].Update();
-      if (menu != null)
-        DriveMenu();
+      bool menuWasOpen = menu != null;
+      if (menuWasOpen && !menuStarted)
+        StartMenu();
+      WatcherOverlay.Update(gameTime, engineSkipped: true);
+      if (menuWasOpen)
+        FollowMenu();
       else
       {
         HandleWatcherControls();
@@ -332,31 +339,11 @@ public static class Replayer
       Engine.Commands.UpdateClosed();
   }
 
-  private static void DriveMenu()
+  private static void FollowMenu()
   {
-    if (!menuStarted)
-      StartMenu();
-    if (!menu.Closing)
-    {
-      if (WatcherPressed(Settings.Instance.Confirm))
-      {
-        menu.Confirm();
-        if (menu == null)
-          return;
-      }
-      else if (
-        WatcherPressed(Settings.Instance.Cancel)
-        || WatcherPressed(Settings.Instance.Pause)
-        || WatcherPressed(EscapeBinding())
-      )
-        ResumeReplay();
-      else if (MenuPressed(Settings.Instance.MenuUp))
-        menu.MoveUp();
-      else if (MenuPressed(Settings.Instance.MenuDown))
-        menu.MoveDown();
-    }
-    menu.Update();
-    recordedMenu?.Alpha = recordedMenuAlpha * (1f - (1f - RecordedMenuDim) * menu.Fade);
+    if (menu == null)
+      return;
+    recordedMenu?.Alpha = recordedMenuAlpha * menu.DimUnder;
     if (!menu.Closed)
       return;
 
@@ -380,7 +367,49 @@ public static class Replayer
       Input.ESC.ConsumePress();
     }
     menuStarted = false;
-    menu = new WatcherMenu(ResumeReplay, PlayTrial, RaceGhost, LeaveReplay);
+    menu = new WatcherMenu(ResumeReplay, PlayTrial, RaceGhost, OpenBoard, LeaveReplay);
+    WatcherOverlay.Add(menu);
+  }
+
+  private static void OpenBoard()
+  {
+    if (menu == null || menu.Covered || RunManager.Trial == null)
+      return;
+    menu.Covered = true;
+    WatcherOverlay.Add(
+      board = new LeaderboardView(
+        BoardSubject.Alone(RunManager.Trial),
+        progress => menu?.RowsAlpha = 1f - progress,
+        _ => UncoverMenu(),
+        LeaveForGhost,
+        options: BoardOptions.InLevel(MenuKeys.Watcher, comparing: true)
+      )
+    );
+  }
+
+  private static void UncoverMenu()
+  {
+    board = null;
+    if (menu == null)
+      return;
+    menu.Covered = false;
+    menu.RowsAlpha = 1f;
+  }
+
+  private static void LeaveForGhost(Trial trial, Replay replay, bool race)
+  {
+    DropMenu();
+    LevelBoard.StartGhost(trial, replay, race);
+  }
+
+  private static void DropMenu()
+  {
+    ReleasePauseAudio();
+    RestoreRecordedMenu();
+    board?.Discard();
+    board = null;
+    menu?.RemoveSelf();
+    menu = null;
   }
 
   private static void StartMenu()
@@ -411,25 +440,19 @@ public static class Replayer
 
   private static void PlayTrial()
   {
-    ReleasePauseAudio();
-    RestoreRecordedMenu();
-    menu = null;
+    DropMenu();
     RunManager.StartTrial(RunManager.Trial);
   }
 
   private static void RaceGhost()
   {
-    ReleasePauseAudio();
-    RestoreRecordedMenu();
-    menu = null;
+    DropMenu();
     RunManager.StartRace(RunManager.Trial, RunManager.Replay);
   }
 
   private static void LeaveReplay()
   {
-    ReleasePauseAudio();
-    RestoreRecordedMenu();
-    menu = null;
+    DropMenu();
     RunManager.LeaveToTrials();
   }
 
@@ -441,9 +464,9 @@ public static class Replayer
     pauseEffectsHeld = false;
   }
 
-  private static Binding EscapeBinding() => SavedBinding(Input.ESC) ?? Input.ESC.Binding;
+  public static Binding EscapeBinding() => SavedBinding(Input.ESC) ?? Input.ESC.Binding;
 
-  private static bool MenuPressed(Binding binding) => binding.Pressed(Input.Gamepad, MenuThreshold);
+  public static bool MenuPressed(Binding binding) => binding.Pressed(Input.Gamepad, MenuThreshold);
 
   private static void StepOnce(On.Monocle.Engine.orig_Update orig, Engine self, GameTime gameTime)
   {
@@ -554,29 +577,35 @@ public static class Replayer
     return null;
   }
 
-  private static bool WatcherPressed(Binding binding) =>
+  public static bool WatcherPressed(Binding binding) =>
     binding.Pressed(Input.Gamepad, WatcherThreshold);
 
   private static bool WatcherPressed(ButtonBinding bind) => WatcherPressed(bind.Binding);
 
   private static void HandleWatcherControls()
   {
+    if (current == null)
+      return;
+
     ToggleHitboxesOnPress();
     if (WatcherPressed(Settings.Instance.Pause) || WatcherPressed(EscapeBinding()))
     {
       OpenMenu();
       return;
     }
+
     if (WatcherPressed(ClimbTrialsModule.Settings.ReplayRestart))
     {
       RestartReplay(RunManager.Replay, State == ReplayState.Paused);
       return;
     }
+
     if (State == ReplayState.Finished && WatcherPressed(Settings.Instance.Cancel))
     {
       LeaveReplay();
       return;
     }
+
     if (State != ReplayState.Finished && WatcherPressed(ClimbTrialsModule.Settings.ReplayPlayPause))
     {
       if (State == ReplayState.Paused)

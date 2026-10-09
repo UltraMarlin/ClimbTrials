@@ -86,6 +86,7 @@ public sealed class Replay
     }
   }
   public string OwnerName { get; set; }
+  public string ServerReplayId { get; set; }
 
   public bool MatchesGame() => CelesteVersion == Celeste.Instance.Version.ToString();
 

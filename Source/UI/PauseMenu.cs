@@ -39,6 +39,12 @@ public static class PauseMenu
     if (!RunManager.Replaying || RunManager.Replay.RecorderVersion >= Compatibility.RaceRowSince)
       menu.Insert(menu.Items.IndexOf(back), BuildRaceRow());
 
+    if (
+      !RunManager.Replaying
+      || RunManager.Replay.RecorderVersion >= Compatibility.LeaderboardRowSince
+    )
+      AddLeaderboardRow(level, menu, menu.Items.IndexOf(back));
+
     if (Replayer.Silenced)
       LockRows(
         menu,
@@ -93,6 +99,19 @@ public static class PauseMenu
   public static void RestartTrial()
   {
     RunManager.StartRun(RunManager.Run);
+  }
+
+  private static void AddLeaderboardRow(Level level, TextMenu menu, int index)
+  {
+    bool online = !ClimbTrialsModule.Settings.OfflineMode;
+    DimButton row = new(
+      Dialog.Clean("climbtrials_trials_leaderboard"),
+      online,
+      () => LevelBoard.OpenFromPause(level, menu)
+    );
+    menu.Insert(index, row);
+    if (!online)
+      row.AddDescription(menu, Dialog.Clean("climbtrials_offline_mode"));
   }
 
   private static TextMenu.Button BuildRaceRow()

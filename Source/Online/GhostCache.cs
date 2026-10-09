@@ -47,6 +47,7 @@ public static class GhostCache
       Replay replay = Replay.FromBytes(downloaded.Bytes);
       replay.IsOwn = own;
       replay.OwnerName = downloaded.OwnerName;
+      replay.ServerReplayId = replayId;
       Store(replayId, replay);
       return replay;
     }

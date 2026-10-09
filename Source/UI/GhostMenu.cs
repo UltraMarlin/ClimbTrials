@@ -1,10 +1,13 @@
 using System;
+using System.Collections.Generic;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Online;
 using Microsoft.Xna.Framework;
 using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.UI;
+
+public readonly record struct GhostOption(string Label, Func<string> Reason, Action Chosen);
 
 public class GhostMenu : FadingMenu
 {
@@ -13,38 +16,37 @@ public class GhostMenu : FadingMenu
   private const float HeaderHeight = 90f;
   private const float OptionsGap = 40f;
   private const float LabelGap = 24f;
-  private const float ReasonGap = 40f;
-  private const float ReasonScale = 0.6f;
 
-  private readonly Func<string> reason;
+  private readonly MenuKeys keys;
   private readonly Action closed;
   private bool discarded;
 
   public GhostMenu(
     BoardRow row,
     BoardSubject subject,
-    Func<string> reason,
-    Action watch,
-    Action race,
+    IEnumerable<GhostOption> options,
+    MenuKeys keys,
     Action closed
   )
   {
-    this.reason = reason;
+    this.keys = keys;
     this.closed = closed;
     Position.Y -= MenuLift;
-    Depth = -2;
+    if (keys.Raw)
+    {
+      Focused = false;
+      RenderAsFocused = true;
+    }
 
     Add(new HeaderItem(row, subject));
     Add(new Gap(OptionsGap));
-    Add(new DimButton(Dialog.Clean("climbtrials_watch_replay"), Live, watch));
-    Add(new DimButton(Dialog.Clean("climbtrials_race_this_ghost"), Live, race));
+    foreach (GhostOption option in options)
+      Add(new OptionButton(option));
 
     OnCancel = Back;
     OnESC = Back;
     OnPause = Back;
   }
-
-  private bool Live() => reason() == null;
 
   public void Discard()
   {
@@ -69,6 +71,8 @@ public class GhostMenu : FadingMenu
 
   public override void Update()
   {
+    if (keys.Raw && !Closing && !discarded)
+      ReadKeys(keys, Back);
     base.Update();
     if (!Closed)
       return;
@@ -79,10 +83,14 @@ public class GhostMenu : FadingMenu
   public override void Render()
   {
     base.Render();
-    if (reason() is not string text)
-      return;
-    Vector2 at = Position + new Vector2(0f, Height / 2f + ReasonGap);
-    TextOutline.DrawDim(text, at, new Vector2(0.5f, 0.5f), ReasonScale, Alpha);
+    if (Current is OptionButton button && button.Reason() is string text)
+      DrawReason(text);
+  }
+
+  private class OptionButton(GhostOption option)
+    : DimButton(option.Label, () => option.Reason() == null, option.Chosen)
+  {
+    public Func<string> Reason => option.Reason;
   }
 
   private class HeaderItem(BoardRow row, BoardSubject subject) : Item

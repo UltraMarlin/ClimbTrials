@@ -12,10 +12,26 @@ public sealed class FadeBuffer : Component
   private readonly int height;
   private readonly Action draw;
   private VirtualRenderTarget target;
+  private VirtualRenderTarget mask;
   private BeforeRenderHook hook;
+
+  private static readonly BlendState Flatten = new()
+  {
+    ColorSourceBlend = Blend.DestinationAlpha,
+    AlphaSourceBlend = Blend.DestinationAlpha,
+  };
+  private static readonly Vector2[] OutlineOffsets =
+  [
+    new(-1f, 0f),
+    new(1f, 0f),
+    new(0f, -1f),
+    new(0f, 1f),
+  ];
 
   public Vector2 Origin;
   public float Alpha = 1f;
+  public Color? SilhouetteFill;
+  public Color SilhouetteOutline;
 
   public FadeBuffer(string name, int width, int height, Action draw)
     : base(active: false, visible: true)
@@ -56,9 +72,11 @@ public sealed class FadeBuffer : Component
   {
     target?.Dispose();
     target = null;
+    mask?.Dispose();
+    mask = null;
   }
 
-  private void Capture()
+  public void Capture()
   {
     if (!Visible || !Entity.Visible)
       return;
@@ -67,7 +85,35 @@ public sealed class FadeBuffer : Component
     SamplerState sampler = Entity.TagCheck(Tags.HUD)
       ? SamplerState.LinearClamp
       : SamplerState.PointClamp;
+    if (SilhouetteFill is not Color fill)
+    {
+      DrawContent(target, origin, sampler);
+      return;
+    }
+    mask ??= VirtualContent.CreateRenderTarget(name + "-mask", width, height);
+    DrawContent(mask, origin, sampler);
+    Draw.SpriteBatch.Begin(SpriteSortMode.Deferred, Flatten);
+    Draw.Rect(0f, 0f, width, height, Color.White);
+    Draw.SpriteBatch.End();
+
     Engine.Graphics.GraphicsDevice.SetRenderTarget(target);
+    Engine.Graphics.GraphicsDevice.Clear(Color.Transparent);
+    Draw.SpriteBatch.Begin(
+      SpriteSortMode.Deferred,
+      BlendState.AlphaBlend,
+      sampler,
+      DepthStencilState.None,
+      RasterizerState.CullNone
+    );
+    foreach (Vector2 offset in OutlineOffsets)
+      Draw.SpriteBatch.Draw((RenderTarget2D)mask, offset, SilhouetteOutline);
+    Draw.SpriteBatch.Draw((RenderTarget2D)mask, Vector2.Zero, fill);
+    Draw.SpriteBatch.End();
+  }
+
+  private void DrawContent(VirtualRenderTarget into, Vector2 origin, SamplerState sampler)
+  {
+    Engine.Graphics.GraphicsDevice.SetRenderTarget(into);
     Engine.Graphics.GraphicsDevice.Clear(Color.Transparent);
     Draw.SpriteBatch.Begin(
       SpriteSortMode.Deferred,

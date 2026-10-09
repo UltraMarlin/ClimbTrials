@@ -84,7 +84,7 @@ public enum StandingsState
 
 public static class Standings
 {
-  private const double FreshSeconds = 60;
+  public const double FreshSeconds = 60;
 
   private sealed class Entry<T>
   {
@@ -92,6 +92,7 @@ public static class Standings
     public DateTime FetchedAt;
     public StandingsState State;
     public bool Fetching;
+    public DateTime MiniBoardTriedAt;
   }
 
   private delegate void BoardRequest(int offset, int limit, Action<ServerResult<Board>> onDone);
@@ -138,6 +139,32 @@ public static class Standings
 
     entry.Fetching = true;
     ServerClient.GetStandings(campaign.Id, result => Receive(entry, result));
+  }
+
+  public static void RefreshMiniBoard(Campaign campaign)
+  {
+    if (campaign == null || Settings.OfflineMode)
+      return;
+
+    Entry<CampaignStandings> entry = EntryOf(campaign);
+    DateTime now = DateTime.UtcNow;
+    bool fresh =
+      entry.State == StandingsState.Ready && (now - entry.FetchedAt).TotalSeconds < FreshSeconds;
+    if (entry.Fetching || fresh || (now - entry.MiniBoardTriedAt).TotalSeconds < FreshSeconds)
+      return;
+
+    entry.Fetching = true;
+    entry.MiniBoardTriedAt = now;
+    ServerClient.GetStandings(
+      campaign.Id,
+      result =>
+      {
+        if (result.Ok)
+          Receive(entry, result);
+        else
+          entry.Fetching = false;
+      }
+    );
   }
 
   public static void EnsureFreshTotals()
@@ -196,22 +223,32 @@ public static class Standings
 
   private static string CampaignKey(string campaignId) => $"campaign:{campaignId}";
 
-  public static void FetchTrialBoard(Trial trial, int chunk, Action<ServerResult<Board>> onDone) =>
+  public static void FetchTrialBoard(
+    Trial trial,
+    int chunk,
+    double maxAgeSeconds,
+    Action<ServerResult<Board>> onDone
+  ) =>
     FetchChunk(
       TrialKey(trial.Id),
       chunk,
+      maxAgeSeconds,
       (offset, limit, done) => ServerClient.GetBoard(trial.Id, offset, limit, done),
       onDone
     );
 
+  public static void DropTrialBoard(Trial trial) => DropChunks(TrialKey(trial.Id));
+
   public static void FetchCampaignBoard(
     Campaign campaign,
     int chunk,
+    double maxAgeSeconds,
     Action<ServerResult<Board>> onDone
   ) =>
     FetchChunk(
       CampaignKey(campaign.Id),
       chunk,
+      maxAgeSeconds,
       (offset, limit, done) => ServerClient.GetCampaignBoard(campaign.Id, offset, limit, done),
       onDone
     );
@@ -219,13 +256,14 @@ public static class Standings
   private static void FetchChunk(
     string key,
     int chunk,
+    double maxAgeSeconds,
     BoardRequest request,
     Action<ServerResult<Board>> onDone
   )
   {
     (string, int) at = (key, chunk);
     bool hit = chunks.TryGetValue(at, out (DateTime FetchedAt, Board Board) cached);
-    bool fresh = hit && (DateTime.UtcNow - cached.FetchedAt).TotalSeconds < FreshSeconds;
+    bool fresh = hit && (DateTime.UtcNow - cached.FetchedAt).TotalSeconds < maxAgeSeconds;
     if (fresh && !Settings.OfflineMode)
     {
       onDone(new ServerResult<Board>(cached.Board, ServerError.None, null));

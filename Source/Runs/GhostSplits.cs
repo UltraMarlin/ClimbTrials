@@ -6,6 +6,7 @@ namespace Celeste.Mod.ClimbTrials.Runs;
 public sealed class GhostSplits
 {
   private readonly Dictionary<SplitKey, long> ticksByKey = [];
+  private readonly List<SplitKey> reachOrder = [];
 
   public Replay Replay { get; }
   public SplitMap Course { get; }
@@ -16,6 +17,8 @@ public sealed class GhostSplits
     Replay = replay;
     Course = course;
   }
+
+  public IReadOnlyList<SplitKey> ReachOrder => reachOrder;
 
   public bool TryGetTicks(SplitKey key, out long ticks) => ticksByKey.TryGetValue(key, out ticks);
 
@@ -30,7 +33,8 @@ public sealed class GhostSplits
       if (!frame.HasPlayer)
         continue;
       foreach (SplitKey key in detector.FindReachedSplits(frame.Position))
-        splits.ticksByKey.TryAdd(key, replay.TicksOfShownFrame(k));
+        if (splits.ticksByKey.TryAdd(key, replay.TicksOfShownFrame(k)))
+          splits.reachOrder.Add(key);
     }
     return splits;
   }

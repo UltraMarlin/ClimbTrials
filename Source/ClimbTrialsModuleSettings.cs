@@ -133,6 +133,12 @@ public class ClimbTrialsModuleSettings : EverestModuleSettings
   [DefaultButtonBinding(0, Keys.F8)]
   public ButtonBinding ReplayShowHitboxes { get; set; }
 
+  [DefaultButtonBinding(Buttons.Y, Keys.G)]
+  public ButtonBinding ToggleComparison { get; set; }
+
+  [DefaultButtonBinding(Buttons.Back, Keys.Delete)]
+  public ButtonBinding ClearComparisons { get; set; }
+
   [SettingIgnore]
   public bool HasChangedOptions { get; set; }
 

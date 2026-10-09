@@ -9,8 +9,7 @@ using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.Entities;
 
-[Tracked]
-public class RaceGhost : Entity
+public class PlaybackGhost : Entity
 {
   public const float StrongFarAlpha = 0.8f;
   public const float StrongNearAlpha = 0.4f;
@@ -21,7 +20,14 @@ public class RaceGhost : Entity
   public const float SubtleDuckNear = 14f;
   public const float SubtleDuckFar = 32f;
 
-  public static readonly Color GhostColor = Calc.HexToColor("364a59");
+  public const float ComparisonFarAlpha = 0.75f;
+  public const float ComparisonNearAlpha = 0.6f;
+  public const float ComparisonDuckNear = 14f;
+  public const float ComparisonDuckFar = 24f;
+  private const float RaceTagAlpha = 0.4f;
+  private const float ComparisonOutlineDarken = 0.8f;
+
+  public static readonly Color RaceColor = Calc.HexToColor("364a59");
 
   public const float HoldSeconds = 1.5f;
   public const float FadeSeconds = 1f;
@@ -31,15 +37,18 @@ public class RaceGhost : Entity
   private const int BufferSize = 96;
   private static readonly Vector2 BufferAnchor = new(48f, 72f);
 
+  public readonly Replay Replay;
   public readonly string Name;
-  public float Alpha { get; private set; }
+  public readonly Color TagColor;
+  public readonly Color? TagOutline;
+  private readonly bool comparison;
+  private float Alpha { get; set; }
 
-  private readonly Replay replay;
+  private readonly Color color;
   private readonly int[] shownFrames;
   private readonly PlayerSprite sprite;
   private readonly PlayerHair hair;
   private readonly FadeBuffer layer;
-  private RaceGhostTag nameTag;
   private long ticks;
   private float fadeAlpha = 1f;
   private bool hairSettled;
@@ -48,14 +57,15 @@ public class RaceGhost : Entity
   private Vector2 slashOrigin;
   private Vector2 slashDirection;
 
-  public RaceGhost(Replay replay)
+  public PlaybackGhost(Replay replay, Color color, Color tagColor, bool comparison)
   {
-    this.replay = replay;
+    this.comparison = comparison;
+    Replay = replay;
+    this.color = color;
+    TagColor = tagColor;
     Name = Identity.NameOf(replay);
     shownFrames = replay.ShownFrames;
-    Tag = Tags.Persistent;
-    Depth = Depths.Player + 1;
-    sprite = new PlayerSprite(PlayerSpriteMode.Playback);
+    sprite = new PlayerSprite(comparison ? PlayerSpriteMode.Madeline : PlayerSpriteMode.Playback);
     Add(hair = new PlayerHair(sprite));
     Add(sprite);
     sprite.Active = false;
@@ -64,21 +74,18 @@ public class RaceGhost : Entity
     hair.Visible = false;
     sprite.Play(FirstKnownAnimation());
     Add(layer = new FadeBuffer("climbtrials-ghost", BufferSize, BufferSize, DrawOpaque));
+    if (comparison)
+    {
+      Color outline = Color.Lerp(color, Color.Black, ComparisonOutlineDarken);
+      hair.Border = Color.Transparent;
+      layer.SilhouetteFill = color;
+      layer.SilhouetteOutline = outline;
+      TagOutline = outline;
+    }
     Visible = shownFrames.Length > 0;
   }
 
-  public override void Added(Scene scene)
-  {
-    base.Added(scene);
-    nameTag = new RaceGhostTag(this);
-    scene.Add(nameTag);
-  }
-
-  public override void Removed(Scene scene)
-  {
-    base.Removed(scene);
-    nameTag?.RemoveSelf();
-  }
+  public long Ticks => ticks;
 
   public void Sync(long elapsedTicks)
   {
@@ -86,25 +93,23 @@ public class RaceGhost : Entity
     Apply();
   }
 
-  public void Advance(float rawDeltaSeconds)
-  {
-    ticks += Attempt.SecondsToTicks(rawDeltaSeconds);
-    Apply();
-  }
+  public void Capture() => layer.Capture();
+
+  public void Dispose() => Remove(layer);
 
   private void Apply()
   {
     if (shownFrames.Length == 0)
       return;
     int last = shownFrames.Length - 1;
-    int index = (int)Math.Clamp(replay.ShownFrameAt(ticks), 0, last);
+    int index = (int)Math.Clamp(Replay.ShownFrameAt(ticks), 0, last);
     for (int i = shownIndex + 1; i <= index; i++)
       DetectDash(i);
     shownIndex = index;
-    long pastEnd = ticks - replay.TicksOfShownFrame(last) - Attempt.SecondsToTicks(HoldSeconds);
+    long pastEnd = ticks - Replay.TicksOfShownFrame(last) - Attempt.SecondsToTicks(HoldSeconds);
     fadeAlpha = 1f - Calc.Clamp((float)pastEnd / Attempt.SecondsToTicks(FadeSeconds), 0f, 1f);
 
-    InputFrame frame = replay.Frames[shownFrames[index]];
+    InputFrame frame = Replay.Frames[shownFrames[index]];
     Visible = frame.HasPlayer && fadeAlpha > 0f;
     if (!frame.HasPlayer)
     {
@@ -119,7 +124,7 @@ public class RaceGhost : Entity
       frame.ScaleX / ReplayColumns.ScaleUnit * facing,
       frame.ScaleY / ReplayColumns.ScaleUnit
     );
-    string animation = replay.AnimationAt(frame.AnimId);
+    string animation = Replay.AnimationAt(frame.AnimId);
     if (animation != null && animation != sprite.CurrentAnimationID && sprite.Has(animation))
       sprite.Play(animation, restart: true);
     sprite.SetAnimationFrame(frame.AnimFrame);
@@ -141,11 +146,11 @@ public class RaceGhost : Entity
     Vector2 SlashOffset = new(0f, -6f);
     if (shown < 1 || shown + 1 >= shownFrames.Length)
       return;
-    InputFrame current = replay.Frames[shownFrames[shown]];
-    InputFrame before = replay.Frames[shownFrames[shown - 1]];
+    InputFrame current = Replay.Frames[shownFrames[shown]];
+    InputFrame before = Replay.Frames[shownFrames[shown - 1]];
     if (current.State != Player.StDash || before.State == Player.StDash)
       return;
-    byte direction = replay.Frames[shownFrames[shown + 1]].DashDir;
+    byte direction = Replay.Frames[shownFrames[shown + 1]].DashDir;
     if (direction == 0)
       return;
     slashStart = shown;
@@ -156,15 +161,29 @@ public class RaceGhost : Entity
   private static bool Subtle =>
     ClimbTrialsModule.Settings.GhostVisibility == GhostVisibility.Subtle;
 
-  private static float FarAlpha => Subtle ? SubtleFarAlpha : StrongFarAlpha;
-  private static float NearAlpha => Subtle ? SubtleNearAlpha : StrongNearAlpha;
-  private static float DuckNear => Subtle ? SubtleDuckNear : StrongDuckNear;
-  private static float DuckFar => Subtle ? SubtleDuckFar : StrongDuckFar;
+  private float FarAlpha =>
+    comparison ? ComparisonFarAlpha
+    : Subtle ? SubtleFarAlpha
+    : StrongFarAlpha;
+  private float NearAlpha =>
+    comparison ? ComparisonNearAlpha
+    : Subtle ? SubtleNearAlpha
+    : StrongNearAlpha;
+  private float DuckNear =>
+    comparison ? ComparisonDuckNear
+    : Subtle ? SubtleDuckNear
+    : StrongDuckNear;
+  private float DuckFar =>
+    comparison ? ComparisonDuckFar
+    : Subtle ? SubtleDuckFar
+    : StrongDuckFar;
+
+  public float TagAlpha => comparison ? Alpha : Alpha * Alpha * RaceTagAlpha;
 
   private void DrawOpaque()
   {
-    sprite.Color = GhostColor;
-    hair.Color = GhostColor;
+    sprite.Color = color;
+    hair.Color = color;
     hair.Alpha = 1f;
     hair.Render();
     sprite.Render();
@@ -182,15 +201,14 @@ public class RaceGhost : Entity
       slashStart = -1;
       return;
     }
-    Vector2 at = slashOrigin + slashDirection * (8f * elapsed * replay.RawDeltaTime);
+    Vector2 at = slashOrigin + slashDirection * (8f * elapsed * Replay.RawDeltaTime);
     float angle = slashDirection.Angle();
     float rotation = Math.Abs(angle - MathF.PI) > 0.01f ? angle : 0f;
     frames[elapsed / SlashFrameTicks].DrawCentered(at, Color.White * Alpha, 1f, rotation);
   }
 
-  public override void Render()
+  public void Render(Player player)
   {
-    Player player = Scene.Tracker.GetEntity<Player>();
     float distance = player == null ? DuckFar : (player.Position - Position).Length();
     Alpha = Calc.ClampedMap(distance, DuckNear, DuckFar, NearAlpha, FarAlpha) * fadeAlpha;
     layer.Alpha = Alpha;
@@ -201,7 +219,7 @@ public class RaceGhost : Entity
   private string FirstKnownAnimation()
   {
     string first =
-      shownFrames.Length > 0 ? replay.AnimationAt(replay.Frames[shownFrames[0]].AnimId) : null;
+      shownFrames.Length > 0 ? Replay.AnimationAt(Replay.Frames[shownFrames[0]].AnimId) : null;
     return first != null && sprite.Has(first) ? first : PlayerSprite.Idle;
   }
 }

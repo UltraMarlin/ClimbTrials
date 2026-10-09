@@ -35,7 +35,7 @@ public class RunInfoDisplay : Entity
   public override void Render()
   {
     Trial trial = RunManager.Trial;
-    if (trial == null || RunManager.Run == null)
+    if (trial == null || RunManager.Run == null || GhostComparisons.Showing)
       return;
     RunDefinition run = trial.Run;
     RunProgress progress = RunManager.Progress;

@@ -50,7 +50,7 @@ public class ReplayBanner : Entity
       layer.Alpha = alpha;
       base.Render();
     }
-    Replayer.RenderMenu();
+    WatcherOverlay.Render();
   }
 
   private void DrawContent()

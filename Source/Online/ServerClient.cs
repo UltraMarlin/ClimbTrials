@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.Helpers;
 using Monocle;
 
@@ -217,7 +218,7 @@ public static class ServerClient
     if (pending == 0 || iconShown)
       return;
     iconShown = true;
-    SaveLoadIcon.Show(Engine.Scene);
+    SaveLoadIcon.Show(WatcherOverlay.Scene ?? Engine.Scene);
   }
 
   private static void EndRequest()

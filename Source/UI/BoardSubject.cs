@@ -15,15 +15,17 @@ public abstract class BoardSubject
   public abstract MTexture Skull { get; }
   public abstract string CountKey { get; }
   public abstract IReadOnlyList<BoardSubject> Siblings { get; }
-  public abstract void Fetch(int chunk, Action<ServerResult<Board>> onDone);
+  public abstract void Fetch(int chunk, double maxAgeSeconds, Action<ServerResult<Board>> onDone);
   public abstract Medal ShownMedal(BoardRow row);
   public virtual Trial Trial => null;
 
-  public static BoardSubject Of(Trial trial) => new TrialSubject(trial);
+  public static BoardSubject Of(Trial trial) => new TrialSubject(trial, alone: false);
+
+  public static BoardSubject Alone(Trial trial) => new TrialSubject(trial, alone: true);
 
   public static BoardSubject Of(Campaign campaign) => new CampaignSubject(campaign);
 
-  private sealed class TrialSubject(Trial trial) : BoardSubject
+  private sealed class TrialSubject(Trial trial, bool alone) : BoardSubject
   {
     public override string Id => trial.Id;
     public override string Name => trial.Name;
@@ -32,12 +34,15 @@ public abstract class BoardSubject
     public override Trial Trial => trial;
 
     public override IReadOnlyList<BoardSubject> Siblings =>
-      Campaigns.CampaignOf(trial) is Campaign campaign
+      !alone && Campaigns.CampaignOf(trial) is Campaign campaign
         ? campaign.Trials.Select(t => Of(t)).ToList()
-        : [Of(trial)];
+        : [this];
 
-    public override void Fetch(int chunk, Action<ServerResult<Board>> onDone) =>
-      Standings.FetchTrialBoard(trial, chunk, onDone);
+    public override void Fetch(
+      int chunk,
+      double maxAgeSeconds,
+      Action<ServerResult<Board>> onDone
+    ) => Standings.FetchTrialBoard(trial, chunk, maxAgeSeconds, onDone);
 
     public override Medal ShownMedal(BoardRow row) =>
       trial.Goals == null
@@ -58,8 +63,11 @@ public abstract class BoardSubject
     public override IReadOnlyList<BoardSubject> Siblings =>
       Campaigns.All.Select(c => Of(c)).ToList();
 
-    public override void Fetch(int chunk, Action<ServerResult<Board>> onDone) =>
-      Standings.FetchCampaignBoard(campaign, chunk, onDone);
+    public override void Fetch(
+      int chunk,
+      double maxAgeSeconds,
+      Action<ServerResult<Board>> onDone
+    ) => Standings.FetchCampaignBoard(campaign, chunk, maxAgeSeconds, onDone);
 
     public override Medal ShownMedal(BoardRow row) =>
       GoalTimes.HideUnreachedGrandmaster(

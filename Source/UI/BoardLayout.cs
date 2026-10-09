@@ -17,6 +17,8 @@ public static class BoardLayout
   public const float RankX = 0f;
   public const float NameX = 136f;
   public const float PageArrowGap = 64f;
+  public const float PageArrowX = 744f;
+  public const float MinWidth = 1060f;
   public const float PageSlideDistance = 160f;
   public const float PageSlideDuration = 0.15f;
   public const float PageArrowScale = 1f;
