@@ -15,10 +15,32 @@ public sealed class MenuKeys
 
   private static Settings Binds => Settings.Instance;
 
-  public bool Up => Replayer.MenuPressed(Binds.MenuUp);
-  public bool Down => Replayer.MenuPressed(Binds.MenuDown);
-  public bool Left => Replayer.MenuPressed(Binds.MenuLeft);
-  public bool Right => Replayer.MenuPressed(Binds.MenuRight);
+  private const float RepeatDelay = 0.4f;
+  private const float RepeatInterval = 0.1f;
+
+  private readonly KeyRepeat up = new();
+  private readonly KeyRepeat down = new();
+  private readonly KeyRepeat left = new();
+  private readonly KeyRepeat right = new();
+
+  public bool Up => Raw ? up.Fired : Replayer.MenuPressed(Binds.MenuUp);
+  public bool Down => Raw ? down.Fired : Replayer.MenuPressed(Binds.MenuDown);
+  public bool Left => Raw ? left.Fired : Replayer.MenuPressed(Binds.MenuLeft);
+  public bool Right => Raw ? right.Fired : Replayer.MenuPressed(Binds.MenuRight);
+
+  public bool StepUp(TextMenu menu) =>
+    Up && !(Raw && up.Repeating && menu.Selection == menu.FirstPossibleSelection);
+
+  public bool StepDown(TextMenu menu) =>
+    Down && !(Raw && down.Repeating && menu.Selection == menu.LastPossibleSelection);
+
+  public void Tick(float deltaSeconds)
+  {
+    up.Tick(Binds.MenuUp, deltaSeconds);
+    down.Tick(Binds.MenuDown, deltaSeconds);
+    left.Tick(Binds.MenuLeft, deltaSeconds);
+    right.Tick(Binds.MenuRight, deltaSeconds);
+  }
 
   public bool Confirm => Raw ? Pressed(Binds.Confirm) : Input.MenuConfirm.Pressed;
 
@@ -40,4 +62,33 @@ public sealed class MenuKeys
 
   private static bool Pressed(Binding binding) =>
     binding != null && Replayer.WatcherPressed(binding);
+
+  private sealed class KeyRepeat
+  {
+    private float wait;
+
+    public bool Fired { get; private set; }
+    public bool Repeating { get; private set; }
+
+    public void Tick(Binding binding, float deltaSeconds)
+    {
+      Repeating = false;
+      if (Replayer.MenuPressed(binding))
+      {
+        Fired = true;
+        wait = RepeatDelay;
+        return;
+      }
+      if (!Replayer.MenuHeld(binding))
+      {
+        Fired = false;
+        return;
+      }
+      wait -= deltaSeconds;
+      Fired = wait <= 0f;
+      Repeating = Fired;
+      if (Fired)
+        wait += RepeatInterval;
+    }
+  }
 }

@@ -140,7 +140,7 @@ public class ComparisonDisplay : Entity
     if (watched == null || Scene.Tracker.GetEntity<GhostLayer>() is not GhostLayer ghosts)
       return [];
     List<Line> lines = [WatchedLine(watched)];
-    foreach (ComparedGhost ghost in GhostComparisons.All)
+    foreach (ComparedGhost ghost in GhostComparisons.Shown)
       lines.Add(GhostLine(ghost, watched, ghosts.Ticks));
     lines.Sort(
       (a, b) =>

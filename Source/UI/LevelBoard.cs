@@ -11,6 +11,8 @@ public static class LevelBoard
   {
     if (RunManager.Trial == null)
       return;
+    if (!RunManager.Replaying)
+      GhostComparisons.Forget();
     pauseMenu.Focused = false;
     level.PauseMainMenuOpen = false;
     level.Add(
@@ -19,13 +21,19 @@ public static class LevelBoard
         progress => pauseMenu.Visible = progress < 1f,
         _ => ClosedOverPause(level, pauseMenu),
         StartGhost,
-        options: BoardOptions.InLevel(MenuKeys.Live, comparing: false)
+        options: BoardOptions.InLevel(MenuKeys.Live, comparing: false, plans: !RunManager.Replaying)
       )
     );
   }
 
   private static void ClosedOverPause(Level level, TextMenu pauseMenu)
   {
+    if (GhostComparisons.Planning && GhostComparisons.SwitchingTo is Replay planned)
+    {
+      if (RunManager.StartReplay(planned))
+        return;
+      GhostComparisons.Forget();
+    }
     if (
       RunManager.AttemptInProgress
       && !RunManager.Replaying

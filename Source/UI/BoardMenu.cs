@@ -155,9 +155,9 @@ public class BoardMenu : TextMenu
 
   private void Drive()
   {
-    if (keys.Down)
+    if (keys.StepDown(this))
       MoveSelection(1, wiggle: true);
-    else if (keys.Up)
+    else if (keys.StepUp(this))
       MoveSelection(-1, wiggle: true);
     if (Current == null)
       return;
@@ -219,7 +219,7 @@ public class BoardMenu : TextMenu
 
   private static void DrawMarker(BoardRow row, Vector2 left, float alpha)
   {
-    if (!RunManager.Replaying)
+    if (!RunManager.Replaying && !GhostComparisons.Planning)
       return;
     string marker;
     Color color;

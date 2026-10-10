@@ -1,3 +1,4 @@
+using Celeste.Mod.ClimbTrials.UI;
 using Microsoft.Xna.Framework;
 using Monocle;
 
@@ -26,6 +27,8 @@ public static class WatcherOverlay
 
     if (scene is not Scene current)
       return;
+
+    MenuKeys.Watcher.Tick(Engine.RawDeltaTime);
 
     current.BeforeUpdate();
     current.Update();

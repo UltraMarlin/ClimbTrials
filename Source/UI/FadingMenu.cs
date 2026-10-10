@@ -54,9 +54,9 @@ public abstract class FadingMenu : TextMenu
     }
     else if (keys.Back)
       back();
-    else if (keys.Up)
+    else if (keys.StepUp(this))
       MoveSelection(-1, wiggle: true);
-    else if (keys.Down)
+    else if (keys.StepDown(this))
       MoveSelection(1, wiggle: true);
   }
 

@@ -1,5 +1,6 @@
 using Celeste.Mod.ClimbTrials.Runs;
 using Microsoft.Xna.Framework;
+using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.Entities;
 
@@ -16,6 +17,9 @@ public static class RunHudLayout
   public const float GhostBlockTop = TimerY + TimerBackgroundHeight + GhostBlockGap;
   public const float GhostBlockHeight =
     GhostBlockGap + HeadlineHeight + DeltaHeight - BackgroundOverlap;
+
+  public static bool PauseScreenOpen =>
+    Engine.Scene is Level { Paused: true, PauseMainMenuOpen: false };
 
   public static float ColumnShift => RunManager.GhostBlockVisible ? GhostBlockHeight : 0f;
 

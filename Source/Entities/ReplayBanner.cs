@@ -63,7 +63,7 @@ public class ReplayBanner : Entity
     string titleKey =
       Replayer.StoppedByReload ? "climbtrials_replay_stopped_reload"
       : Replayer.Desynced ? "climbtrials_replay_desynced"
-      : Replayer.State == ReplayState.Paused ? "climbtrials_replay_paused"
+      : Replayer.State == ReplayState.Paused || Replayer.PauseQueued ? "climbtrials_replay_paused"
       : "climbtrials_replay_title";
     Outline(Dialog.Clean(titleKey), TitleY, 1.1f, stopped ? DesyncColor : TitleColor, TitleStroke);
 

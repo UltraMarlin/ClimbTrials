@@ -227,6 +227,13 @@ public static class Replayer
     bool quickReset
   )
   {
+    if (quickReset && RunManager.Replaying && !Silenced)
+      return;
+    if (current == null && RunManager.Replaying)
+    {
+      OpenMenu();
+      return;
+    }
     if (current == null)
     {
       orig(self, startIndex, minimal, quickReset);
@@ -380,20 +387,27 @@ public static class Replayer
       board = new LeaderboardView(
         BoardSubject.Alone(RunManager.Trial),
         progress => menu?.RowsAlpha = 1f - progress,
-        _ => UncoverMenu(),
+        _ => CloseBoard(),
         LeaveForGhost,
         options: BoardOptions.InLevel(MenuKeys.Watcher, comparing: true)
       )
     );
   }
 
-  private static void UncoverMenu()
+  private static void CloseBoard()
   {
     board = null;
     if (menu == null)
       return;
-    menu.Covered = false;
-    menu.RowsAlpha = 1f;
+    menu.RowsAlpha = 0f;
+    if (GhostComparisons.SwitchingTo is Replay next)
+    {
+      bool paused = current == null ? PauseQueued : State == ReplayState.Paused && !resumeOnClose;
+      if (RestartReplay(next, paused))
+        return;
+      GhostComparisons.CancelSwitch();
+    }
+    ResumeReplay();
   }
 
   private static void LeaveForGhost(Trial trial, Replay replay, bool race)
@@ -468,6 +482,8 @@ public static class Replayer
 
   public static bool MenuPressed(Binding binding) => binding.Pressed(Input.Gamepad, MenuThreshold);
 
+  public static bool MenuHeld(Binding binding) => binding.Check(Input.Gamepad, MenuThreshold);
+
   private static void StepOnce(On.Monocle.Engine.orig_Update orig, Engine self, GameTime gameTime)
   {
     stepping = true;
@@ -533,12 +549,13 @@ public static class Replayer
     }
   }
 
-  private static void RestartReplay(Replay replay, bool paused)
+  private static bool RestartReplay(Replay replay, bool paused)
   {
     if (!RunManager.StartReplay(replay))
-      return;
+      return false;
     Audio.Play(RestartSound);
     PauseQueued = paused;
+    return true;
   }
 
   private static void ToggleHitboxesOnPress()
@@ -584,7 +601,7 @@ public static class Replayer
 
   private static void HandleWatcherControls()
   {
-    if (current == null)
+    if (!RunManager.Replaying)
       return;
 
     ToggleHitboxesOnPress();

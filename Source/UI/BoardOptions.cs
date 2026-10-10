@@ -8,7 +8,8 @@ public sealed record BoardOptions(
   float BackdropAlpha,
   bool Comparing,
   int DepthBase,
-  bool Slides
+  bool Slides,
+  bool Plans = false
 )
 {
   private const double InLevelMaxAgeSeconds = 20;
@@ -24,6 +25,14 @@ public sealed record BoardOptions(
     true
   );
 
-  public static BoardOptions InLevel(MenuKeys keys, bool comparing) =>
-    new(keys, InLevelMaxAgeSeconds, InLevelBackdropAlpha, comparing, InLevelDepthBase, false);
+  public static BoardOptions InLevel(MenuKeys keys, bool comparing, bool plans = false) =>
+    new(
+      keys,
+      InLevelMaxAgeSeconds,
+      InLevelBackdropAlpha,
+      comparing,
+      InLevelDepthBase,
+      false,
+      plans
+    );
 }

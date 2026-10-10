@@ -123,6 +123,8 @@ public static class RunManager
   {
     ResetRunState();
     RunBinds.Blank();
+    if (replay == null)
+      GhostComparisons.Forget();
     Run = run;
     TrialRecords.EnsureLoaded();
     FinishedBefore = Trial != null && TrialRecords.Get(Trial.Id) != null;
@@ -399,6 +401,9 @@ public static class RunManager
     if (!Replaying && level.Tracker.GetEntity<GoalIndicator>() == null)
       level.Add(new GoalIndicator());
 
+    if (Replaying)
+      WatcherOverlay.Begin();
+
     if (Replaying && level.Tracker.GetEntity<ReplayBanner>() == null)
       level.Add(new ReplayBanner());
 
@@ -452,7 +457,7 @@ public static class RunManager
       return [];
     return
     [
-      .. GhostComparisons.All.Select(g => new GhostSpec(
+      .. GhostComparisons.Shown.Select(g => new GhostSpec(
         g.Replay,
         g.Color,
         GhostComparisons.NameColor(g.Color),

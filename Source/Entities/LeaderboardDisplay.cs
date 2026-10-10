@@ -64,8 +64,8 @@ public class LeaderboardDisplay : Entity
     Mode != LeaderboardMode.Off
     && RunManager.Run != null
     && RunManager.Trial != null
-    && (!RunManager.Replaying || RunManager.Replay.IsOwn)
-    && !GhostComparisons.Showing;
+    && !RunManager.Replaying
+    && !RunHudLayout.PauseScreenOpen;
 
   private float BoxBottom => rowsTop + rows.Count * rowHeight + RunHudLayout.BoxPaddingBottom;
 

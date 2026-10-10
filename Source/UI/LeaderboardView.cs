@@ -407,9 +407,9 @@ public class LeaderboardView : Entity
       return;
     }
 
-    if (options.Comparing && Keys.ToggleComparison)
+    if (Comparing && Keys.ToggleComparison)
       ToggleHovered();
-    else if (options.Comparing && Keys.ClearComparisons && GhostComparisons.All.Count > 0)
+    else if (Comparing && Keys.ClearComparisons && GhostComparisons.All.Count > 0)
     {
       GhostComparisons.Clear();
       Audio.Play(SFX.ui_main_button_toggle_off);
@@ -427,7 +427,7 @@ public class LeaderboardView : Entity
     notice.Render(new Vector2(current.X, NoticeY), NoticeScale, 1f);
     if (outgoing == null && current.State == BoardState.Offline && RetryAllowed)
       ButtonRow.DrawCenter(Dialog.Clean("climbtrials_board_retry"), Input.MenuConfirm, dim);
-    else if (options.Comparing)
+    else if (Comparing)
       DrawComparisonPrompts();
   }
 
@@ -454,6 +454,15 @@ public class LeaderboardView : Entity
     ButtonRow.DrawCenter(clear, binds.ClearComparisons.Button, dim, x);
   }
 
+  private bool Comparing => options.Comparing || (options.Plans && GhostComparisons.Planning);
+
+  private enum GhostChoice
+  {
+    Watch,
+    Race,
+    Plan,
+  }
+
   private void OpenGhostMenu(BoardRow row)
   {
     if (ghost == null || current.Subject.Trial == null || ghostMenu != null)
@@ -464,26 +473,38 @@ public class LeaderboardView : Entity
     List<GhostOption> choices =
     [
       new(
-        Dialog.Clean("climbtrials_watch_replay"),
+        Dialog.Clean(Comparing ? "climbtrials_switch_replay" : "climbtrials_watch_replay"),
         () => GhostReason(row, local) ?? WatchedReason(row),
-        () => ChooseGhost(row, local, race: false)
+        () => ChooseGhost(row, local, GhostChoice.Watch)
       ),
       new(
         Dialog.Clean("climbtrials_race_this_ghost"),
         () => GhostReason(row, local),
-        () => ChooseGhost(row, local, race: true)
+        () => ChooseGhost(row, local, GhostChoice.Race)
       ),
     ];
-    if (options.Comparing && GhostComparisons.Find(row) != null)
+    if (GhostComparisons.Planning && GhostComparisons.IsWatched(row))
+      choices.Add(
+        new(Dialog.Clean("climbtrials_cancel_comparison"), () => null, () => CancelPlan())
+      );
+    else if (Comparing && GhostComparisons.Find(row) != null)
       choices.Add(
         new(Dialog.Clean("climbtrials_remove_comparison"), () => null, () => RemoveFromMenu(row))
       );
-    else if (options.Comparing)
+    else if (Comparing)
       choices.Add(
         new(
           Dialog.Clean("climbtrials_add_comparison"),
           () => GhostReason(row, local) ?? WatchedReason(row),
           () => AddFromMenu(row, local)
+        )
+      );
+    else if (options.Plans)
+      choices.Add(
+        new(
+          Dialog.Clean("climbtrials_start_comparison"),
+          () => GhostReason(row, local),
+          () => ChooseGhost(row, local, GhostChoice.Plan)
         )
       );
     ghostMenu = new GhostMenu(row, current.Subject, choices, Keys, () => ghostMenu = null)
@@ -529,12 +550,12 @@ public class LeaderboardView : Entity
 
   private static string Key(BoardRow row) => GhostComparisons.KeyOf(row) ?? "";
 
-  private void ChooseGhost(BoardRow row, Replay local, bool race)
+  private void ChooseGhost(BoardRow row, Replay local, GhostChoice choice)
   {
     Trial trial = current.Subject.Trial;
     if (local != null)
     {
-      Chosen(trial, local, race);
+      Chosen(row, trial, local, choice);
       return;
     }
     downloading = true;
@@ -555,15 +576,34 @@ public class LeaderboardView : Entity
         }
 
         RefreshIfOutdated(row, replay);
-        Chosen(trial, replay, race);
+        Chosen(row, trial, replay, choice);
       }
     );
   }
 
-  private void Chosen(Trial trial, Replay replay, bool race)
+  private void Chosen(BoardRow row, Trial trial, Replay replay, GhostChoice choice)
   {
     ghostMenu?.Dismiss();
-    ghost(trial, replay, race);
+    if (choice == GhostChoice.Plan)
+      GhostComparisons.Plan(row, replay, trial);
+    else if (choice == GhostChoice.Watch && Comparing)
+      GhostComparisons.Switch(row, replay, trial, WatchedRank());
+    else
+      ghost(trial, replay, choice == GhostChoice.Race);
+  }
+
+  private void CancelPlan()
+  {
+    GhostComparisons.Forget();
+    ghostMenu?.Dismiss();
+  }
+
+  private int WatchedRank()
+  {
+    Board chunk = current.Chunk;
+    if (chunk?.Rows.Find(GhostComparisons.IsWatched) is BoardRow row)
+      return row.Rank;
+    return chunk?.Me is BoardRow me && GhostComparisons.IsWatched(me) ? me.Rank : int.MaxValue;
   }
 
   private void AddFromMenu(BoardRow row, Replay local)

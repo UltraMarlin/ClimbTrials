@@ -166,8 +166,8 @@ public class GoalListDisplay : Entity
     Mode != GoalTimesDisplayMode.Off
     && RunManager.Trial?.Goals != null
     && RunManager.Run != null
-    && (!RunManager.Replaying || RunManager.Replay.IsOwn)
-    && !GhostComparisons.Showing;
+    && !RunManager.Replaying
+    && !RunHudLayout.PauseScreenOpen;
 
   public override void Render()
   {

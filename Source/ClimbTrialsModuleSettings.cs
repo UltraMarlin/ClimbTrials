@@ -48,6 +48,13 @@ public enum GoalTimesDisplayMode
   All,
 }
 
+public enum HideVfxMode
+{
+  Never,
+  WithHitboxes,
+  Always,
+}
+
 public enum GhostVisibility
 {
   Subtle,
@@ -99,6 +106,9 @@ public class ClimbTrialsModuleSettings : EverestModuleSettings
 
   [SettingSubText("modoptions_climbtrialsmodule_ghostvisibility_desc")]
   public GhostVisibility GhostVisibility { get; set; } = GhostVisibility.Subtle;
+
+  [SettingSubText("modoptions_climbtrialsmodule_hidevfxwhenpaused_desc")]
+  public HideVfxMode HideVfxWhenPaused { get; set; } = HideVfxMode.Always;
 
   [SettingSubText("modoptions_climbtrialsmodule_offlinemode_desc")]
   public bool OfflineMode { get; set; } = false;
