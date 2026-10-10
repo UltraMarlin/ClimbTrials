@@ -549,7 +549,7 @@ public static class RunManager
     )
       StopRecording(StopReason.State);
     if (Attempt.State == AttemptState.Running && InputCapture.FindRecordedPlayer() is Player runner)
-      Comparison?.CompareAt(runner.Position, Attempt.ElapsedTicks);
+      Comparison?.CompareAt(runner.Position, runner.StateMachine.State, Attempt.ElapsedTicks);
     HeartGoal.AfterUpdate(level);
     RoomGoal.AfterUpdate(level);
     if (level.Tracker.GetEntity<GhostLayer>() is GhostLayer ghosts)

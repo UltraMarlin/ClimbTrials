@@ -9,6 +9,7 @@ public enum SplitKind
   Waypoint,
   Collectible,
   Rect,
+  Boss,
 }
 
 public readonly record struct SplitKey(SplitKind Kind, string Room, string ToRoom, int Index);
@@ -35,6 +36,7 @@ public sealed class SplitMap
   public RunDefinition Run { get; }
   public MapData Map { get; }
   public bool SplitsOnRoomTransitions { get; }
+  public bool SplitsOnBossHits { get; }
   public string FinishOnEnterRoom { get; }
 
   private SplitMap(RunDefinition run, Dictionary<string, SplitPoint[]> pointsByRoom)
@@ -43,6 +45,7 @@ public sealed class SplitMap
     Map = run.Map;
     this.pointsByRoom = pointsByRoom;
     SplitsOnRoomTransitions = run.HasSplitCategory(SplitCategory.RoomTransition);
+    SplitsOnBossHits = run.HasSplitCategory(SplitCategory.Boss);
     FinishOnEnterRoom = run.FinishKind == FinishKind.RoomEnter ? run.FinishRoom : null;
   }
 

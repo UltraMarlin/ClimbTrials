@@ -32,7 +32,7 @@ public sealed class GhostSplits
       InputFrame frame = replay.Frames[shown[k]];
       if (!frame.HasPlayer)
         continue;
-      foreach (SplitKey key in detector.FindReachedSplits(frame.Position))
+      foreach (SplitKey key in detector.FindReachedSplits(frame.Position, frame.State))
         if (splits.ticksByKey.TryAdd(key, replay.TicksOfShownFrame(k)))
           splits.reachOrder.Add(key);
     }

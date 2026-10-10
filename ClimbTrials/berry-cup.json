@@ -1,0 +1,314 @@
+{
+  "id": "c3",
+  "name": "Berry Cup",
+  "description": "Only for real strawberry gamers.",
+  "order": 3,
+  "trials": [
+    {
+      "id": "t24",
+      "name": "What\u0027s updash",
+      "difficulty": "Normal",
+      "replayLimitSeconds": 120,
+      "run": {
+        "sid": "Celeste/7-Summit",
+        "mode": "Normal",
+        "startRoom": "e-08",
+        "spawn": [18160, -9784],
+        "spawnFacing": null,
+        "finishRoom": "e-08",
+        "finishKind": "roomEnter",
+        "finish": null,
+        "splitCategories": ["RoomTransition", "Strawberry", "Waypoint"],
+        "splitRects": [],
+        "waypoints": [
+          {
+            "room": "e-12",
+            "position": [18256, -10376],
+            "spawn": [18256, -10336],
+            "setsSpawn": true
+          }
+        ],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [
+          {
+            "room": "e-07",
+            "id": 473
+          },
+          {
+            "room": "e-05",
+            "id": 237
+          },
+          {
+            "room": "e-02",
+            "id": 7
+          }
+        ],
+        "requiredStrawberries": 2,
+        "requiredSummitGems": 0,
+        "dashes": null,
+        "grabless": false,
+        "noRefills": false,
+        "coreMode": null,
+        "dreamDash": null,
+        "introType": "Respawn"
+      },
+      "goals": {
+        "bronze": 30,
+        "silver": 24,
+        "gold": 22,
+        "diamond": 21,
+        "grandmaster": 19
+      }
+    },
+    {
+      "id": "t25",
+      "name": "Hi Theo",
+      "difficulty": "Normal",
+      "replayLimitSeconds": 90,
+      "run": {
+        "sid": "Celeste/1-ForsakenCity",
+        "mode": "Normal",
+        "startRoom": "6",
+        "spawn": [1320, -1040],
+        "spawnFacing": null,
+        "finishRoom": "6",
+        "finishKind": "roomEnter",
+        "finish": null,
+        "splitCategories": ["RoomTransition", "Strawberry", "Waypoint"],
+        "splitRects": [],
+        "waypoints": [
+          {
+            "room": "6z",
+            "position": [1256, -1080],
+            "spawn": [1256, -1056],
+            "setsSpawn": true
+          },
+          {
+            "room": "6z",
+            "position": [1032, -1168],
+            "spawn": [1008, -1112],
+            "setsSpawn": true
+          },
+          {
+            "room": "6zb",
+            "position": [696, -1152],
+            "spawn": [696, -1136],
+            "setsSpawn": true
+          }
+        ],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [
+          {
+            "room": "5z",
+            "id": 10
+          },
+          {
+            "room": "5",
+            "id": 21
+          },
+          {
+            "room": "5a",
+            "id": 2
+          },
+          {
+            "room": "3b",
+            "id": 2
+          },
+          {
+            "room": "3",
+            "id": 9
+          },
+          {
+            "room": "2",
+            "id": 11
+          },
+          {
+            "room": "s1",
+            "id": 9
+          },
+          {
+            "room": "7z",
+            "id": 3
+          }
+        ],
+        "requiredStrawberries": 1,
+        "requiredSummitGems": 0,
+        "dashes": null,
+        "grabless": false,
+        "noRefills": false,
+        "coreMode": null,
+        "dreamDash": null,
+        "introType": "Respawn"
+      },
+      "goals": {
+        "bronze": 16,
+        "silver": 14,
+        "gold": 12.5,
+        "diamond": 11.8,
+        "grandmaster": 11
+      }
+    },
+    {
+      "id": "t26",
+      "name": "Berry Chasm",
+      "difficulty": "Normal",
+      "replayLimitSeconds": 90,
+      "run": {
+        "sid": "Celeste/1-ForsakenCity",
+        "mode": "Normal",
+        "startRoom": "10zb",
+        "spawn": [3016, -2304],
+        "spawnFacing": null,
+        "finishRoom": "10a",
+        "finishKind": "roomEnter",
+        "finish": [3808, -2208, 24, 16],
+        "splitCategories": ["RoomTransition", "Strawberry", "Waypoint"],
+        "splitRects": [],
+        "waypoints": [
+          {
+            "room": "10z",
+            "position": [3192, -2336],
+            "spawn": [3192, -2320],
+            "setsSpawn": true
+          },
+          {
+            "room": "9c",
+            "position": [4156, -2040],
+            "spawn": null,
+            "setsSpawn": false
+          },
+          {
+            "room": "9c",
+            "position": [4024, -2096],
+            "spawn": null,
+            "setsSpawn": false
+          }
+        ],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [
+          {
+            "room": "8b",
+            "id": 1
+          },
+          {
+            "room": "9z",
+            "id": 3
+          },
+          {
+            "room": "7a",
+            "id": 12
+          },
+          {
+            "room": "8zb",
+            "id": 1
+          },
+          {
+            "room": "12z",
+            "id": 8
+          }
+        ],
+        "requiredStrawberries": 2,
+        "requiredSummitGems": 0,
+        "dashes": null,
+        "grabless": false,
+        "noRefills": false,
+        "coreMode": null,
+        "dreamDash": null,
+        "introType": "Respawn"
+      },
+      "goals": {
+        "bronze": 19,
+        "silver": 17,
+        "gold": 16,
+        "diamond": 14.6,
+        "grandmaster": 13.9
+      }
+    },
+    {
+      "id": "t27",
+      "name": "Shrine Exploration",
+      "difficulty": "Normal",
+      "replayLimitSeconds": 120,
+      "run": {
+        "sid": "Celeste/4-GoldenRidge",
+        "mode": "Normal",
+        "startRoom": "b-00",
+        "spawn": [4432, -1416],
+        "spawnFacing": null,
+        "finishRoom": "b-sec",
+        "finishKind": "heart",
+        "finish": null,
+        "splitCategories": ["RoomTransition", "Strawberry", "Waypoint"],
+        "splitRects": [],
+        "waypoints": [
+          {
+            "room": "b-04",
+            "position": [4056, -1364],
+            "spawn": [4056, -1360],
+            "setsSpawn": true
+          },
+          {
+            "room": "b-03",
+            "position": [4016, -1221],
+            "spawn": [4016, -1208],
+            "setsSpawn": true
+          }
+        ],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [
+          {
+            "room": "a-09",
+            "id": 12
+          },
+          {
+            "room": "a-10",
+            "id": 13
+          },
+          {
+            "room": "a-07",
+            "id": 16
+          },
+          {
+            "room": "a-06",
+            "id": 6
+          },
+          {
+            "room": "b-08",
+            "id": 11
+          },
+          {
+            "room": "c-00",
+            "id": 17
+          },
+          {
+            "room": "c-01",
+            "id": 26
+          }
+        ],
+        "requiredStrawberries": 3,
+        "requiredSummitGems": 0,
+        "dashes": null,
+        "grabless": false,
+        "noRefills": false,
+        "coreMode": null,
+        "dreamDash": null,
+        "introType": "Respawn"
+      },
+      "goals": {
+        "bronze": 44,
+        "silver": 38,
+        "gold": 35,
+        "diamond": 32,
+        "grandmaster": 30
+      }
+    }
+  ]
+}

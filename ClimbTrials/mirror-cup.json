@@ -1,0 +1,484 @@
+{
+  "id": "c4",
+  "name": "Mirror Cup",
+  "description": "Confront yourself and everyone else, or don't.",
+  "order": 4,
+  "trials": [
+    {
+      "id": "t28",
+      "name": "Going for a swim",
+      "difficulty": "Normal",
+      "replayLimitSeconds": 90,
+      "run": {
+        "sid": "Celeste/6-Reflection",
+        "mode": "Normal",
+        "startRoom": "00",
+        "spawn": [-832, -336],
+        "spawnFacing": null,
+        "finishRoom": "00",
+        "finishKind": "zone",
+        "finish": [-768, -384, 24, 48],
+        "splitCategories": ["Waypoint"],
+        "splitRects": [],
+        "waypoints": [
+          {
+            "room": "00",
+            "position": [-712, -300],
+            "spawn": null,
+            "setsSpawn": true
+          },
+          {
+            "room": "00",
+            "position": [-680, -208],
+            "spawn": null,
+            "setsSpawn": true
+          },
+          {
+            "room": "00",
+            "position": [-792, -208],
+            "spawn": null,
+            "setsSpawn": true
+          },
+          {
+            "room": "00",
+            "position": [-1208, -288],
+            "spawn": null,
+            "setsSpawn": true
+          },
+          {
+            "room": "00",
+            "position": [-1112, -200],
+            "spawn": null,
+            "setsSpawn": true
+          },
+          {
+            "room": "00",
+            "position": [-960, -264],
+            "spawn": null,
+            "setsSpawn": true
+          }
+        ],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 0,
+        "requiredSummitGems": 0,
+        "dashes": null,
+        "grabless": false,
+        "noRefills": false,
+        "coreMode": null,
+        "dreamDash": null,
+        "introType": "Respawn"
+      },
+      "goals": {
+        "bronze": 14,
+        "silver": 11,
+        "gold": 9,
+        "diamond": 8,
+        "grandmaster": 7.5
+      }
+    },
+    {
+      "id": "t32",
+      "name": "Who put this room here?",
+      "difficulty": "Normal",
+      "replayLimitSeconds": 60,
+      "run": {
+        "sid": "Celeste/6-Reflection",
+        "mode": "Normal",
+        "startRoom": "13",
+        "spawn": [4384, -2920],
+        "spawnFacing": "Right",
+        "finishRoom": "15",
+        "finishKind": "roomEnter",
+        "finish": [4928, -2976, 16, 48],
+        "splitCategories": ["RoomTransition"],
+        "splitRects": [
+          {
+            "room": "14b",
+            "rect": [4680, -2976, 16, 16]
+          },
+          {
+            "room": "14b",
+            "rect": [4680, -3096, 16, 16]
+          },
+          {
+            "room": "14b",
+            "rect": [4784, -3080, 16, 16]
+          }
+        ],
+        "waypoints": [],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 0,
+        "requiredSummitGems": 0,
+        "dashes": null,
+        "grabless": false,
+        "noRefills": false,
+        "coreMode": null,
+        "dreamDash": null,
+        "introType": "Respawn"
+      },
+      "goals": {
+        "bronze": 10,
+        "silver": 8.5,
+        "gold": 7.5,
+        "diamond": 6.5,
+        "grandmaster": 5.8
+      }
+    },
+    {
+      "id": "t33",
+      "name": "Bottom",
+      "difficulty": "Normal",
+      "replayLimitSeconds": 90,
+      "run": {
+        "sid": "Celeste/6-Reflection",
+        "mode": "Normal",
+        "startRoom": "15",
+        "spawn": [4936, -2800],
+        "spawnFacing": null,
+        "finishRoom": "19",
+        "finishKind": "roomEnter",
+        "finish": [6936, -2776, 16, 32],
+        "splitCategories": ["RoomTransition", "Waypoint"],
+        "splitRects": [
+          {
+            "room": "16a",
+            "rect": [5496, -2864, 16, 168]
+          },
+          {
+            "room": "18a",
+            "rect": [6584, -2752, 16, 96]
+          }
+        ],
+        "waypoints": [
+          {
+            "room": "16a",
+            "position": [5712, -2792],
+            "spawn": null,
+            "setsSpawn": false
+          },
+          {
+            "room": "18a",
+            "position": [6784, -2704],
+            "spawn": null,
+            "setsSpawn": false
+          }
+        ],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 0,
+        "requiredSummitGems": 0,
+        "dashes": null,
+        "grabless": false,
+        "noRefills": false,
+        "coreMode": null,
+        "dreamDash": null,
+        "introType": "Respawn"
+      },
+      "goals": {
+        "bronze": 25,
+        "silver": 22,
+        "gold": 20,
+        "diamond": 18,
+        "grandmaster": 17
+      }
+    },
+    {
+      "id": "t34",
+      "name": "Girl Boss",
+      "difficulty": "Normal",
+      "replayLimitSeconds": 120,
+      "run": {
+        "sid": "Celeste/6-Reflection",
+        "mode": "Normal",
+        "startRoom": "boss-01",
+        "spawn": [14512, 344],
+        "spawnFacing": null,
+        "finishRoom": "boss-04",
+        "finishKind": "roomEnter",
+        "finish": [16216, 736, 32, 16],
+        "splitCategories": ["RoomTransition", "Boss"],
+        "splitRects": [],
+        "waypoints": [],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 0,
+        "requiredSummitGems": 0,
+        "dashes": null,
+        "grabless": false,
+        "noRefills": false,
+        "coreMode": null,
+        "dreamDash": null,
+        "introType": "Respawn"
+      },
+      "goals": {
+        "bronze": 30,
+        "silver": 28,
+        "gold": 26,
+        "diamond": 24,
+        "grandmaster": 23.6
+      }
+    },
+    {
+      "id": "t36",
+      "name": "Worthy Opponent",
+      "difficulty": "Normal",
+      "replayLimitSeconds": 90,
+      "run": {
+        "sid": "Celeste/6-Reflection",
+        "mode": "Normal",
+        "startRoom": "boss-06",
+        "spawn": [16744, 1064],
+        "spawnFacing": null,
+        "finishRoom": "boss-08",
+        "finishKind": "roomEnter",
+        "finish": [17688, 1304, 32, 16],
+        "splitCategories": ["RoomTransition", "Boss"],
+        "splitRects": [],
+        "waypoints": [],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 0,
+        "requiredSummitGems": 0,
+        "dashes": null,
+        "grabless": false,
+        "noRefills": false,
+        "coreMode": null,
+        "dreamDash": null,
+        "introType": "Respawn"
+      },
+      "goals": {
+        "bronze": 16,
+        "silver": 14,
+        "gold": 12,
+        "diamond": 11,
+        "grandmaster": 10.8
+      }
+    },
+    {
+      "id": "t35",
+      "name": "Not a Mountain Climber",
+      "difficulty": "Normal",
+      "replayLimitSeconds": 180,
+      "run": {
+        "sid": "Celeste/6-Reflection",
+        "mode": "Normal",
+        "startRoom": "boss-13",
+        "spawn": [19760, 2600],
+        "spawnFacing": null,
+        "finishRoom": "boss-18",
+        "finishKind": "roomEnter",
+        "finish": [22272, 2816, 32, 16],
+        "splitCategories": ["RoomTransition", "Boss"],
+        "splitRects": [],
+        "waypoints": [],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 0,
+        "requiredSummitGems": 0,
+        "dashes": null,
+        "grabless": false,
+        "noRefills": false,
+        "coreMode": null,
+        "dreamDash": null,
+        "introType": "Respawn"
+      },
+      "goals": {
+        "bronze": 34,
+        "silver": 30,
+        "gold": 28,
+        "diamond": 26,
+        "grandmaster": 25.5
+      }
+    },
+    {
+      "id": "t30",
+      "name": "Level Up",
+      "difficulty": "Normal",
+      "replayLimitSeconds": 90,
+      "run": {
+        "sid": "Celeste/6-Reflection",
+        "mode": "Normal",
+        "startRoom": "after-00",
+        "spawn": [24920, 3448],
+        "spawnFacing": null,
+        "finishRoom": "after-01",
+        "finishKind": "zone",
+        "finish": [24808, 2144, 160, 24],
+        "splitCategories": [],
+        "splitRects": [
+          {
+            "room": "after-00",
+            "rect": [24832, 3296, 24, 96]
+          },
+          {
+            "room": "after-00",
+            "rect": [24768, 3168, 24, 72]
+          },
+          {
+            "room": "after-01",
+            "rect": [24864, 2808, 32, 24]
+          },
+          {
+            "room": "after-01",
+            "rect": [24888, 2648, 56, 16]
+          },
+          {
+            "room": "after-01",
+            "rect": [24848, 2416, 88, 16]
+          }
+        ],
+        "waypoints": [],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 0,
+        "requiredSummitGems": 0,
+        "dashes": 2,
+        "grabless": false,
+        "noRefills": false,
+        "coreMode": null,
+        "dreamDash": null,
+        "introType": "Respawn"
+      },
+      "goals": {
+        "bronze": 14,
+        "silver": 12.5,
+        "gold": 11.5,
+        "diamond": 10.8,
+        "grandmaster": 10.4
+      }
+    },
+    {
+      "id": "t31",
+      "name": "Clip that!",
+      "difficulty": "Expert",
+      "replayLimitSeconds": 180,
+      "run": {
+        "sid": "Celeste/6-Reflection",
+        "mode": "Normal",
+        "startRoom": "02b",
+        "spawn": [-1152, -1968],
+        "spawnFacing": "Left",
+        "finishRoom": "00",
+        "finishKind": "zone",
+        "finish": [-1168, -352, 104, 24],
+        "splitCategories": ["RoomTransition"],
+        "splitRects": [],
+        "waypoints": [],
+        "cameraOffsets": [
+          {
+            "room": "02",
+            "offset": [0, 1.6]
+          },
+          {
+            "room": "01",
+            "offset": [0, 1.6]
+          }
+        ],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 0,
+        "requiredSummitGems": 0,
+        "dashes": null,
+        "grabless": false,
+        "noRefills": false,
+        "coreMode": null,
+        "dreamDash": null,
+        "introType": "Respawn"
+      },
+      "goals": {
+        "bronze": 42,
+        "silver": 36,
+        "gold": 30,
+        "diamond": 28,
+        "grandmaster": 26
+      }
+    },
+    {
+      "id": "t29",
+      "name": "Risky Climbing",
+      "difficulty": "Expert",
+      "replayLimitSeconds": 180,
+      "run": {
+        "sid": "Celeste/6-Reflection",
+        "mode": "Normal",
+        "startRoom": "after-01",
+        "spawn": [24920, 2432],
+        "spawnFacing": "Right",
+        "finishRoom": "after-02",
+        "finishKind": "roomEnter",
+        "finish": [24872, 1016, 32, 24],
+        "splitCategories": ["Waypoint"],
+        "splitRects": [
+          {
+            "room": "after-01",
+            "rect": [24816, 1984, 136, 16]
+          },
+          {
+            "room": "after-01",
+            "rect": [24840, 1856, 88, 16]
+          },
+          {
+            "room": "after-01",
+            "rect": [24864, 1432, 64, 24]
+          }
+        ],
+        "waypoints": [
+          {
+            "room": "after-01",
+            "position": [24856, 1704],
+            "spawn": [24848, 1720],
+            "setsSpawn": true
+          },
+          {
+            "room": "after-01",
+            "position": [24964, 2140],
+            "spawn": [24968, 2152],
+            "setsSpawn": true
+          },
+          {
+            "room": "after-01",
+            "position": [24928, 1832],
+            "spawn": [24936, 1848],
+            "setsSpawn": true
+          }
+        ],
+        "cameraOffsets": [],
+        "bloomBaseAdd": null,
+        "lightingAlphaAdd": null,
+        "ignoredStrawberries": [],
+        "requiredStrawberries": 0,
+        "requiredSummitGems": 0,
+        "dashes": 2,
+        "grabless": false,
+        "noRefills": false,
+        "coreMode": null,
+        "dreamDash": null,
+        "introType": "Respawn"
+      },
+      "goals": {
+        "bronze": 60,
+        "silver": 40,
+        "gold": 30,
+        "diamond": 22,
+        "grandmaster": 18
+      }
+    }
+  ]
+}

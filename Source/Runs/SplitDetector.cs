@@ -10,13 +10,19 @@ public sealed class SplitDetector(SplitMap course)
   private readonly List<SplitKey> reached = [];
   private LevelData room;
   private SplitPoint[] points = [];
+  private int previousState = -1;
+  private int bossHitsInRoom;
 
-  public List<SplitKey> FindReachedSplits(Vector2 position)
+  public List<SplitKey> FindReachedSplits(Vector2 position, int state)
   {
     reached.Clear();
     UpdateRoom(position);
     if (room != null)
+    {
       AddTouchedPoints(position);
+      AddBossHit(state);
+    }
+    previousState = state;
     return reached;
   }
 
@@ -30,6 +36,7 @@ public sealed class SplitDetector(SplitMap course)
     LevelData previous = room;
     room = next;
     points = course.PointsIn(next.Name);
+    bossHitsInRoom = 0;
     if (
       previous == null
       || !course.SplitsOnRoomTransitions
@@ -48,5 +55,17 @@ public sealed class SplitDetector(SplitMap course)
     foreach (SplitPoint point in points)
       if (point.Box.Overlaps(body) && taken.Add(point.Key))
         reached.Add(point.Key);
+  }
+
+  private void AddBossHit(int state)
+  {
+    if (state == Player.StIntroRespawn)
+      bossHitsInRoom = 0;
+    if (!course.SplitsOnBossHits || state != Player.StAttract || previousState == Player.StAttract)
+      return;
+    bossHitsInRoom++;
+    SplitKey key = new(SplitKind.Boss, room.Name, null, bossHitsInRoom);
+    if (taken.Add(key))
+      reached.Add(key);
   }
 }

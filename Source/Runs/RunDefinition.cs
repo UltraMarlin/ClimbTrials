@@ -23,6 +23,7 @@ public enum SplitCategory
   RoomTransition,
   Strawberry,
   Gem,
+  Boss,
 }
 
 public readonly record struct SplitRect(string Room, Rectangle Rect);
