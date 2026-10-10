@@ -36,8 +36,7 @@ public static class PauseMenu
     if (Replace(menu, "menu_pause_return", back) < 0)
       menu.Insert(restartIndex + 1, back);
 
-    if (!RunManager.Replaying || RunManager.Replay.RecorderVersion >= Compatibility.RaceRowSince)
-      menu.Insert(menu.Items.IndexOf(back), BuildRaceRow());
+    menu.Insert(menu.Items.IndexOf(back), BuildRaceRow());
 
     if (
       !RunManager.Replaying
