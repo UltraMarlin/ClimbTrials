@@ -536,6 +536,8 @@ public class LeaderboardView : Entity
       return Dialog.Clean("climbtrials_ghost_no_replay");
     if (row.ReplayFormat != Replay.FormatVersion)
       return Dialog.Clean("climbtrials_ghost_old_format");
+    if (GhostCache.IsOlderTrial(row.ReplayId, row.Ticks))
+      return Dialog.Clean("climbtrials_ghost_old_trial");
     if (ClimbTrialsModule.Settings.OfflineMode)
       return Dialog.Clean("climbtrials_offline_mode");
     return downloading ? Dialog.Clean("climbtrials_ghost_downloading") : null;
@@ -563,6 +565,7 @@ public class LeaderboardView : Entity
       row.ReplayId,
       row.Ticks,
       row.Me,
+      trial,
       replay =>
       {
         downloading = false;
@@ -571,7 +574,8 @@ public class LeaderboardView : Entity
 
         if (replay == null)
         {
-          notice.Show(Dialog.Clean("climbtrials_ghost_failed"), NoticeSeconds);
+          if (!GhostCache.IsOlderTrial(row.ReplayId, row.Ticks))
+            notice.Show(Dialog.Clean("climbtrials_ghost_failed"), NoticeSeconds);
           return;
         }
 
@@ -620,6 +624,7 @@ public class LeaderboardView : Entity
       row.ReplayId,
       row.Ticks,
       row.Me,
+      trial,
       replay =>
       {
         downloading = false;
@@ -627,7 +632,8 @@ public class LeaderboardView : Entity
           return;
         if (replay == null)
         {
-          notice.Show(Dialog.Clean("climbtrials_ghost_failed"), NoticeSeconds);
+          if (!GhostCache.IsOlderTrial(row.ReplayId, row.Ticks))
+            notice.Show(Dialog.Clean("climbtrials_ghost_failed"), NoticeSeconds);
           return;
         }
         RefreshIfOutdated(row, replay);
@@ -672,6 +678,7 @@ public class LeaderboardView : Entity
       row.ReplayId,
       row.Ticks,
       row.Me,
+      trial,
       replay =>
       {
         pendingAdds.Remove(key);
@@ -679,7 +686,10 @@ public class LeaderboardView : Entity
           return;
         if (replay == null)
         {
-          notice.Show(Dialog.Clean("climbtrials_ghost_failed"), NoticeSeconds);
+          notice.Show(
+            GhostReason(row, null) ?? Dialog.Clean("climbtrials_ghost_failed"),
+            NoticeSeconds
+          );
           return;
         }
         RefreshIfOutdated(row, replay);

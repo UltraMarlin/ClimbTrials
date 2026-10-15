@@ -26,6 +26,7 @@ CLIMBTRIALS_UNNAMED_GHOST=             ghost
 CLIMBTRIALS_PB_IMPROVED=               PB improved:
 CLIMBTRIALS_GHOST_DOWNLOADING=         Downloading...
 CLIMBTRIALS_GHOST_OLD_FORMAT=          Recorded with an older version
+CLIMBTRIALS_GHOST_OLD_TRIAL=           Recorded on an older version of this trial
 CLIMBTRIALS_GHOST_NO_REPLAY=           No replay for this time
 CLIMBTRIALS_GHOST_FAILED=              Could not load this replay
 CLIMBTRIALS_ADD_COMPARISON=            Add Comparison

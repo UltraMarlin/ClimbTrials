@@ -17,7 +17,7 @@ public enum ServerError
 {
   None,
   Offline,
-  UnknownClient,
+  PlayerDeleted,
   UpdateRequired,
   NameTaken,
   NameInvalid,
@@ -171,12 +171,16 @@ public static class ServerClient
   {
     if (Settings.OfflineMode)
     {
-      Deliver(path, new ServerResult<T>(default, ServerError.Offline, OfflineModeMessage), onDone);
+      RunCallback(
+        path,
+        new ServerResult<T>(default, ServerError.Offline, OfflineModeMessage),
+        onDone
+      );
       return;
     }
     if (!TryBaseUri(out Uri baseUri))
     {
-      Deliver(path, new ServerResult<T>(default, ServerError.Offline, UrlRefused), onDone);
+      RunCallback(path, new ServerResult<T>(default, ServerError.Offline, UrlRefused), onDone);
       return;
     }
 
@@ -193,7 +197,8 @@ public static class ServerClient
         EndRequest();
         if (!result.Ok)
           Logger.Log(LogLevel.Info, LogTag, $"{path}: {result.Error}, {result.Message}");
-        Deliver(path, result, onDone);
+        Identity.UpdateFromAnswer(result.Error, clientId);
+        RunCallback(path, result, onDone);
       });
     });
   }
@@ -280,7 +285,7 @@ public static class ServerClient
     catch (JsonException) { }
     ServerError code = error?.Error switch
     {
-      "unknown_client" => ServerError.UnknownClient,
+      "player_deleted" => ServerError.PlayerDeleted,
       "update_required" => ServerError.UpdateRequired,
       "name_taken" => ServerError.NameTaken,
       "name_invalid" => ServerError.NameInvalid,
@@ -293,18 +298,12 @@ public static class ServerClient
     return new ServerResult<T>(default, code, error?.Message);
   }
 
-  private static void Deliver<T>(
+  private static void RunCallback<T>(
     string path,
     ServerResult<T> result,
     Action<ServerResult<T>> onDone
   )
   {
-    if (result.Error == ServerError.UnknownClient)
-      Identity.Forget();
-    if (result.Error == ServerError.Banned)
-      Identity.Banned = true;
-    else if (result.Ok)
-      Identity.Banned = false;
     try
     {
       onDone(result);

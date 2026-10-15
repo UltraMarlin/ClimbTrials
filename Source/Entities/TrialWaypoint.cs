@@ -15,6 +15,7 @@ public class TrialWaypoint : Entity
   private static readonly Color IdleColor = Calc.HexToColor("6ded87");
   private static readonly Color TakenColor = Color.White;
   private const int BufferSize = 32;
+  private static readonly Random particleRandom = new();
 
   public readonly int Index;
   private readonly WaypointDef definition;
@@ -76,14 +77,22 @@ public class TrialWaypoint : Entity
     icon.Rate = 4f;
     Audio.Play(TouchSound, Position);
     Level level = SceneAs<Level>();
-    for (int i = 0; i < 32; i++)
+    Calc.PushRandom(particleRandom);
+    try
     {
-      float angle = Calc.Random.NextFloat(MathF.PI * 2f);
-      level.Particles.Emit(
-        TouchSwitch.P_FireWhite,
-        Position + Calc.AngleToVector(angle, 6f),
-        angle
-      );
+      for (int i = 0; i < 32; i++)
+      {
+        float angle = Calc.Random.NextFloat(MathF.PI * 2f);
+        level.Particles.Emit(
+          TouchSwitch.P_FireWhite,
+          Position + Calc.AngleToVector(angle, 6f),
+          angle
+        );
+      }
+    }
+    finally
+    {
+      Calc.PopRandom();
     }
   }
 

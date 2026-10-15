@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Replays;
 using Monocle;
 
@@ -12,8 +13,18 @@ public static class GhostCache
 
   private static readonly Dictionary<string, Replay> replays = [];
   private static readonly List<string> order = [];
+  private static readonly Dictionary<string, long> olderTrial = [];
 
-  public static void Fetch(string replayId, long ticks, bool own, Action<Replay> onDone)
+  public static bool IsOlderTrial(string replayId, long ticks) =>
+    replayId != null && olderTrial.TryGetValue(replayId, out long stale) && stale == ticks;
+
+  public static void Fetch(
+    string replayId,
+    long ticks,
+    bool own,
+    Trial trial,
+    Action<Replay> onDone
+  )
   {
     if (string.IsNullOrEmpty(replayId))
     {
@@ -35,16 +46,27 @@ public static class GhostCache
           onDone(null);
           return;
         }
-        onDone(Read(replayId, own, result.Value));
+        onDone(Read(replayId, ticks, own, trial, result.Value));
       }
     );
   }
 
-  private static Replay Read(string replayId, bool own, DownloadedReplay downloaded)
+  private static Replay Read(
+    string replayId,
+    long ticks,
+    bool own,
+    Trial trial,
+    DownloadedReplay downloaded
+  )
   {
     try
     {
       Replay replay = Replay.FromBytes(downloaded.Bytes);
+      if (!replay.TrialHash.AsSpan().SequenceEqual(trial.DefinitionHash))
+      {
+        olderTrial[replayId] = replay.Ticks;
+        return null;
+      }
       replay.IsOwn = own;
       replay.OwnerName = downloaded.OwnerName;
       replay.ServerReplayId = replayId;

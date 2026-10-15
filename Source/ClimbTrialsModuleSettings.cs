@@ -96,6 +96,19 @@ public class GoalIndicatorSettings
 
 public class ClimbTrialsModuleSettings : EverestModuleSettings
 {
+  [SettingIgnore]
+  [SettingMaxLength(20)]
+  public string PlayerName { get; set; } = "";
+
+  [SettingIgnore]
+  public bool PlayerNameChosen { get; set; }
+
+  [SettingIgnore]
+  public string ClientId { get; set; } = "";
+
+  [SettingIgnore]
+  public string ServerUrl { get; set; } = "https://climb-trials-server.mabidev.de";
+
   [SettingRange(min: 1, max: 5)]
   public int CountdownLength { get; set; } = 3;
   public CountdownMode CountdownMode { get; set; } = CountdownMode.Fast;
@@ -112,23 +125,6 @@ public class ClimbTrialsModuleSettings : EverestModuleSettings
 
   [SettingSubText("modoptions_climbtrialsmodule_offlinemode_desc")]
   public bool OfflineMode { get; set; } = false;
-
-  [SettingIgnore]
-  [SettingMaxLength(20)]
-  public string PlayerName { get; set; } = "";
-
-  [SettingIgnore]
-  public bool PlayerNameChosen { get; set; }
-
-  [SettingIgnore]
-  public string ClientId { get; set; } = "";
-
-  [SettingIgnore]
-  [SettingMaxLength(16)]
-  public string Key { get; set; } = "";
-
-  [SettingIgnore]
-  public string ServerUrl { get; set; } = "https://climb-trials-server.mabidev.de";
 
   [SettingSubHeader("modoptions_climbtrialsmodule_runbinds")]
   public ButtonBinding Retry { get; set; }

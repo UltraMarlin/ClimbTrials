@@ -27,8 +27,6 @@ public static class Identity
 
   public static string ClientId => Registered ? Settings.ClientId : null;
 
-  public static string Key => string.IsNullOrEmpty(Settings.Key) ? null : Settings.Key;
-
   public static bool Banned { get; set; }
 
   public static RegistrationState Registration =>
@@ -79,9 +77,19 @@ public static class Identity
     Save();
   }
 
-  public static void Forget()
+  public static void UpdateFromAnswer(ServerError error, string sentClientId)
   {
-    Logger.Log(LogLevel.Info, LogTag, "the server did not know this client id, dropped it");
+    if (error == ServerError.PlayerDeleted && sentClientId == ClientId)
+      Forget();
+    if (error == ServerError.Banned)
+      Banned = true;
+    else if (error == ServerError.None)
+      Banned = false;
+  }
+
+  private static void Forget()
+  {
+    Logger.Log(LogLevel.Info, LogTag, "the server deleted this player, dropped the client id");
     Store("", "");
   }
 

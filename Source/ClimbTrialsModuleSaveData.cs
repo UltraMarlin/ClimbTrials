@@ -12,5 +12,7 @@ public class TrialRecord
 
 public class ClimbTrialsModuleSaveData : EverestModuleSaveData
 {
+  public int Version { get; set; } = 1;
+
   public Dictionary<string, TrialRecord> PersonalBests { get; set; } = [];
 }
