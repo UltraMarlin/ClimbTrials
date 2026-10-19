@@ -1,0 +1,11 @@
+{
+  "json.schemas": [
+    {
+      "fileMatch": [
+        "/ClimbTrials/*.json",
+        "/ClimbTrialsTest/*.json"
+      ],
+      "url": "./.vscode/campaign.schema.json"
+    }
+  ]
+}

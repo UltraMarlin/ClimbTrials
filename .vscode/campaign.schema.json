@@ -1,0 +1,402 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "trials"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9_-]{1,64}$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": ["string", "null"],
+      "default": "",
+      "description": "Default: \"\""
+    },
+    "order": {
+      "type": "integer",
+      "minimum": -1000000,
+      "maximum": 1000000,
+      "default": 0,
+      "description": "Default: 0"
+    },
+    "trials": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/trial"
+      }
+    }
+  },
+  "definitions": {
+    "trial": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "difficulty", "run", "goals"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,64}$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "difficulty": {
+          "enum": ["Normal", "Hard", "Expert"]
+        },
+        "replayLimitSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000,
+          "default": 120,
+          "description": "Default: 120"
+        },
+        "run": {
+          "$ref": "#/definitions/run"
+        },
+        "goals": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["bronze", "silver", "gold", "diamond", "grandmaster"],
+          "properties": {
+            "bronze": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "silver": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "gold": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "diamond": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "grandmaster": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          }
+        }
+      }
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sid", "startRoom", "spawn", "finishRoom"],
+      "properties": {
+        "sid": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mode": {
+          "enum": ["Normal", "BSide", "CSide", null],
+          "default": "Normal",
+          "description": "Default: \"Normal\""
+        },
+        "startRoom": {
+          "type": "string",
+          "minLength": 1
+        },
+        "spawn": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": -1000000,
+            "maximum": 1000000
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "spawnFacing": {
+          "enum": ["Left", "Right", null],
+          "default": null,
+          "description": "Default: null"
+        },
+        "finishRoom": {
+          "type": "string",
+          "minLength": 1
+        },
+        "finishKind": {
+          "enum": ["zone", "heart", "roomEnter", null],
+          "default": "zone",
+          "description": "Default: \"zone\""
+        },
+        "finish": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": -1000000,
+                "maximum": 1000000
+              },
+              "minItems": 4,
+              "maxItems": 4
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "waypoints": {
+          "type": ["array", "null"],
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["room", "position"],
+            "properties": {
+              "room": {
+                "type": "string",
+                "minLength": 1
+              },
+              "position": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": -1000000,
+                  "maximum": 1000000
+                },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "spawn": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "number",
+                      "minimum": -1000000,
+                      "maximum": 1000000
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Default: null"
+              },
+              "setsSpawn": {
+                "type": ["boolean", "null"],
+                "default": true,
+                "description": "Default: true"
+              }
+            }
+          },
+          "default": [],
+          "description": "Default: []"
+        },
+        "cameraOffsets": {
+          "type": ["array", "null"],
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["room", "offset"],
+            "properties": {
+              "room": {
+                "type": "string",
+                "minLength": 1
+              },
+              "offset": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": -1000000,
+                  "maximum": 1000000
+                },
+                "minItems": 2,
+                "maxItems": 2
+              }
+            }
+          },
+          "default": [],
+          "description": "Default: []"
+        },
+        "bloomBaseAdd": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -1000000,
+              "maximum": 1000000
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Default: null"
+        },
+        "lightingAlphaAdd": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -1000000,
+              "maximum": 1000000
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Default: null"
+        },
+        "ignoredStrawberries": {
+          "type": ["array", "null"],
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["room", "id"],
+            "properties": {
+              "room": {
+                "type": "string",
+                "minLength": 1
+              },
+              "id": {
+                "type": "integer",
+                "minimum": -1000000,
+                "maximum": 1000000
+              }
+            }
+          },
+          "default": [],
+          "description": "Default: []"
+        },
+        "requiredStrawberries": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 1000000,
+          "default": 0,
+          "description": "Default: 0"
+        },
+        "requiredSummitGems": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 6,
+          "default": 0,
+          "description": "Default: 0"
+        },
+        "dashes": {
+          "enum": [0, 1, 2, null],
+          "default": null,
+          "description": "Default: null"
+        },
+        "grabless": {
+          "type": ["boolean", "null"],
+          "default": false,
+          "description": "Default: false"
+        },
+        "noRefills": {
+          "type": ["boolean", "null"],
+          "default": false,
+          "description": "Default: false"
+        },
+        "coreMode": {
+          "enum": ["Hot", "Cold", null],
+          "default": null,
+          "description": "Default: null"
+        },
+        "dreamDash": {
+          "type": ["boolean", "null"],
+          "default": null,
+          "description": "Default: null"
+        },
+        "introType": {
+          "enum": ["Respawn", "WalkInRight", "WalkInLeft", "Jump", "WakeUp", "None", null],
+          "default": "Respawn",
+          "description": "Default: \"Respawn\""
+        },
+        "splitCategories": {
+          "type": ["array", "null"],
+          "uniqueItems": true,
+          "items": {
+            "enum": ["Waypoint", "RoomTransition", "Strawberry", "Gem", "Boss"]
+          },
+          "default": [],
+          "description": "Default: []"
+        },
+        "splitRects": {
+          "type": ["array", "null"],
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["room", "rect"],
+            "properties": {
+              "room": {
+                "type": "string",
+                "minLength": 1
+              },
+              "rect": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": -1000000,
+                  "maximum": 1000000
+                },
+                "minItems": 4,
+                "maxItems": 4
+              }
+            }
+          },
+          "default": [],
+          "description": "Default: []"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["finishKind"],
+            "properties": {
+              "finishKind": {
+                "const": "heart"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "finish": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "anyOf": [
+              {
+                "not": {
+                  "required": ["finishKind"]
+                }
+              },
+              {
+                "properties": {
+                  "finishKind": {
+                    "enum": ["zone", null]
+                  }
+                }
+              }
+            ]
+          },
+          "then": {
+            "required": ["finish"],
+            "properties": {
+              "finish": {
+                "type": "array"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
