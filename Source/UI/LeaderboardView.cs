@@ -12,7 +12,6 @@ namespace Celeste.Mod.ClimbTrials.UI;
 
 public class LeaderboardView : Entity
 {
-  public const float SlideDistance = 1080f;
   private const float MessageScale = 0.8f;
   private const float NoticeY = 975f;
   private const float NoticeScale = 0.6f;
@@ -63,7 +62,11 @@ public class LeaderboardView : Entity
   private int pageDirection;
   private bool sliding;
   private bool ended;
-  private float slideY = -SlideDistance;
+  private readonly float coveredFrom;
+  private float backdropFrom;
+  private float opened;
+  private float cover;
+  private float rise;
 
   public bool Focused { get; set; } = true;
 
@@ -79,9 +82,13 @@ public class LeaderboardView : Entity
     Action<BoardSubject> closed,
     Action<Trial, Replay, bool> ghost = null,
     Bookmark? resume = null,
-    BoardOptions options = null
+    BoardOptions options = null,
+    float coveredFrom = 0f,
+    float backdropFrom = 0f
   )
   {
+    this.coveredFrom = coveredFrom;
+    this.backdropFrom = backdropFrom;
     this.slid = slid;
     this.closed = closed;
     this.ghost = ghost;
@@ -98,7 +105,6 @@ public class LeaderboardView : Entity
   public Bookmark Showing =>
     new(current.Subject.Id, page, current.Menu?.Slot ?? BoardMenu.HeaderSlot);
 
-  private float Opened => 1f + slideY / SlideDistance;
   private bool Gone => ended || Scene == null;
 
   private int IndexOf(BoardSubject subject)
@@ -117,36 +123,70 @@ public class LeaderboardView : Entity
       backdrop = new Backdrop(this);
       scene.Add(backdrop);
     }
+    if (coveredFrom > 0f)
+      SetOpened(0f, coveredFrom, Motion.OpenRise);
     Fetch(resume?.Selection ?? 0);
     ShowHeaderWhileLoading(current);
-    if (resume == null && options.Slides)
-      Add(new Coroutine(Slide(opening: true)));
+
+    if (resume == null)
+      Add(new Coroutine(Open()));
     else
-      SetSlide(1f);
+      SetOpened(1f, 1f, 0f);
   }
 
-  private IEnumerator Slide(bool opening)
+  private IEnumerator Open()
   {
     sliding = true;
-    for (float t = 0f; t < OuiTrials.SwitchDuration; t += Engine.RawDeltaTime)
+    bool overworld = !options.InsideLevel;
+    if (overworld)
     {
-      float ease = Ease.CubeOut(t / OuiTrials.SwitchDuration);
-      SetSlide(opening ? ease : 1f - ease);
+      Transition cover = Motion.BoardCover;
+      float start = cover.InStart * coveredFrom;
+      for (float elapsed = start; elapsed < cover.Duration; elapsed += Engine.RawDeltaTime)
+      {
+        SetCover(cover, elapsed, Math.Max(coveredFrom, cover.Leaving(elapsed)));
+        yield return null;
+      }
+    }
+    else
+    {
+      Transition open = Motion.LevelBoardOpen;
+      for (float elapsed = 0f; elapsed < open.Duration; elapsed += Engine.RawDeltaTime)
+      {
+        SetCover(open, elapsed, open.Leaving(elapsed));
+        yield return null;
+      }
+    }
+    SetOpened(1f, 1f, 0f);
+    backdropFrom = 0f;
+    sliding = false;
+  }
+
+  private IEnumerator FadeOut()
+  {
+    sliding = true;
+    Transition cover = Motion.BoardCover;
+    for (float elapsed = 0f; elapsed < cover.Duration; elapsed += Engine.RawDeltaTime)
+    {
+      float along = cover.Duration - elapsed;
+      SetCover(cover, along, cover.Leaving(along));
       yield return null;
     }
-    SetSlide(opening ? 1f : 0f);
-    sliding = false;
-    if (opening)
-      yield break;
+    SetOpened(0f, 0f, 0f);
     Discard();
     closed(current.Subject);
   }
 
-  private void SetSlide(float progress)
+  private void SetCover(Transition cover, float elapsed, float beneath) =>
+    SetOpened(cover.Arriving(elapsed), beneath, Motion.Rise(cover.ArrivingMove(elapsed)));
+
+  private void SetOpened(float rows, float under, float lift)
   {
-    slideY = (progress - 1f) * SlideDistance;
+    opened = rows;
+    cover = under;
+    rise = lift;
     Place();
-    slid(progress);
+    slid(cover);
   }
 
   private void Place()
@@ -158,17 +198,18 @@ public class LeaderboardView : Entity
 
   private void PlaceMenu(Shown shown)
   {
-    Vector2 at = new(shown.X, BoardLayout.MenuTop + slideY);
+    Vector2 at = new(shown.X, BoardLayout.MenuTop + rise);
+    float alpha = shown.Alpha * dim * opened;
     if (shown.Menu != null)
     {
       shown.Menu.Position = at;
-      shown.Menu.Alpha = shown.Alpha * dim;
+      shown.Menu.Alpha = alpha;
       shown.Menu.SetFocus(Focused && !sliding && ghostMenu == null && shown == current);
     }
     if (shown.Leaving != null)
     {
       shown.Leaving.Position = at;
-      shown.Leaving.Alpha = shown.Alpha * dim;
+      shown.Leaving.Alpha = alpha;
       shown.Leaving.Focused = false;
     }
   }
@@ -192,7 +233,7 @@ public class LeaderboardView : Entity
       shown.Leaving?.Discard();
       shown.Leaving = previous;
       previous.RenderAsFocused = true;
-      shown.Menu.EntryOffsetX = turned * BoardLayout.PageSlideDistance;
+      shown.Menu.EntryOffsetX = turned * Motion.PageDistance;
       shown.Menu.EntryAlpha = 0f;
       Add(new Coroutine(PageRoutine(shown, previous, shown.Menu, turned)));
     }
@@ -212,19 +253,20 @@ public class LeaderboardView : Entity
       yield return null;
     leaving.HeaderVisible = false;
     leaving.RenderAsFocused = false;
-    float distance = BoardLayout.PageSlideDistance;
-    for (float t = 0f; t < BoardLayout.PageSlideDuration; t += Engine.RawDeltaTime)
-    {
-      float ease = Ease.CubeOut(t / BoardLayout.PageSlideDuration);
-      leaving.EntryOffsetX = -direction * distance * ease;
-      leaving.EntryAlpha = 1f - ease;
-      if (shown.Menu == entering)
+    yield return Motion.Slide(
+      Motion.PageTurn,
+      direction,
+      Motion.PageDistance,
+      (outX, outAlpha, inX, inAlpha) =>
       {
-        entering.EntryOffsetX = direction * distance * (1f - ease);
-        entering.EntryAlpha = ease;
+        leaving.EntryOffsetX = outX;
+        leaving.EntryAlpha = outAlpha;
+        if (shown.Menu != entering)
+          return;
+        entering.EntryOffsetX = inX;
+        entering.EntryAlpha = inAlpha;
       }
-      yield return null;
-    }
+    );
     leaving.Discard();
     if (shown.Leaving == leaving)
       shown.Leaving = null;
@@ -333,14 +375,16 @@ public class LeaderboardView : Entity
 
   private IEnumerator SwitchRoutine(int direction)
   {
-    yield return OuiTrials.SwitchSlide(
+    yield return Motion.Slide(
+      Motion.ScreenSlide,
       direction,
-      (outX, inX, ease) =>
+      Motion.SlideDistance,
+      (outX, outAlpha, inX, inAlpha) =>
       {
-        outgoing.X = outX;
-        outgoing.Alpha = 1f - ease;
-        current.X = inX;
-        current.Alpha = ease;
+        outgoing.X = ListScreen.OnScreenX + outX;
+        outgoing.Alpha = outAlpha;
+        current.X = ListScreen.OnScreenX + inX;
+        current.Alpha = inAlpha;
         Place();
       }
     );
@@ -376,11 +420,12 @@ public class LeaderboardView : Entity
   {
     Audio.Play(SFX.ui_main_button_back);
     requestSequence++;
-    if (options.Slides)
+    if (!options.InsideLevel)
     {
-      Add(new Coroutine(Slide(opening: false)));
+      Add(new Coroutine(FadeOut()));
       return;
     }
+    slid(0f);
     Discard();
     closed(current.Subject);
   }
@@ -507,7 +552,14 @@ public class LeaderboardView : Entity
           () => ChooseGhost(row, local, GhostChoice.Plan)
         )
       );
-    ghostMenu = new GhostMenu(row, current.Subject, choices, Keys, () => ghostMenu = null)
+    ghostMenu = new GhostMenu(
+      row,
+      current.Subject,
+      choices,
+      Keys,
+      options.InsideLevel,
+      () => ghostMenu = null
+    )
     {
       Depth = options.DepthBase - 2,
     };
@@ -727,10 +779,10 @@ public class LeaderboardView : Entity
 
   private void DrawMessage(string key, Shown shown)
   {
-    Color color = Color.White * (shown.Alpha * dim);
+    Color color = Color.White * (shown.Alpha * dim * opened);
     ActiveFont.DrawOutline(
       Dialog.Clean(key),
-      new Vector2(shown.X, BoardLayout.MessageY + slideY),
+      new Vector2(shown.X, BoardLayout.MessageY + rise),
       new Vector2(0.5f, 0.5f),
       Vector2.One * MessageScale,
       color,
@@ -752,7 +804,9 @@ public class LeaderboardView : Entity
 
     public override void Render()
     {
-      float alpha = view.options.BackdropAlpha * view.Opened;
+      float alpha = view.options.BackdropAlpha * view.cover;
+      if (view.backdropFrom > 0f)
+        alpha = MathHelper.Lerp(view.backdropFrom, alpha, view.opened);
       Draw.Rect(-1f, -1f, 1922f, 1082f, Color.Black * alpha);
     }
   }

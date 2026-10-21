@@ -47,32 +47,39 @@ public sealed class Board
   public BoardRow Me { get; set; }
 }
 
-public sealed class CampaignStandings
+public sealed class ServerRecord
 {
-  public string Name { get; set; }
-  public List<TrialStanding> Trials { get; set; } = [];
+  public string TrialId { get; set; }
+  public int? Rank { get; set; }
+  public long? Ticks { get; set; }
+  public DateTime? AchievedAt { get; set; }
 }
 
-public sealed class CampaignTotal
+public sealed class CampaignRecords
+{
+  public string Name { get; set; }
+  public List<ServerRecord> Trials { get; set; } = [];
+}
+
+public sealed class CampaignStanding
 {
   public string CampaignId { get; set; }
   public int Total { get; set; }
   public int? Rank { get; set; }
-  public long? Ticks { get; set; }
-  public Medal? Medal { get; set; }
-  public DateTime? CompletedAt { get; set; }
 }
 
-public sealed class CampaignTotals
+public sealed class HubAnswer
 {
   public string Name { get; set; }
-  public List<CampaignTotal> Campaigns { get; set; } = [];
+  public DateTime ServerTime { get; set; }
+  public List<CampaignStanding> Campaigns { get; set; } = [];
 }
 
 public sealed class SubmissionAnswer
 {
   public bool Accepted { get; set; }
   public TrialStanding Standing { get; set; }
+  public CampaignStanding Campaign { get; set; }
 }
 
 public enum StandingsState
@@ -92,14 +99,16 @@ public static class Standings
     public DateTime FetchedAt;
     public StandingsState State;
     public bool Fetching;
-    public DateTime MiniBoardTriedAt;
+    public DateTime TriedAt;
   }
 
   private delegate void BoardRequest(int offset, int limit, Action<ServerResult<Board>> onDone);
 
-  private static readonly Dictionary<string, Entry<CampaignStandings>> entries = [];
+  private static readonly Entry<HubAnswer> hub = new();
 
-  private static readonly Entry<CampaignTotals> totals = new();
+  private static readonly Dictionary<string, Entry<CampaignRecords>> records = [];
+
+  private static readonly Dictionary<string, Entry<TrialStanding>> standings = [];
 
   public const int ChunkRows = 150;
 
@@ -113,12 +122,16 @@ public static class Standings
     List<Action<ServerResult<Board>>>
   > waiting = [];
 
+  private static int identityGeneration;
+
   private static ClimbTrialsModuleSettings Settings => ClimbTrialsModule.Settings;
 
   public static StandingsState State(Campaign campaign) =>
-    campaign == null ? StandingsState.Idle : EntryOf(campaign).State;
+    campaign == null ? StandingsState.Idle : RecordsOf(campaign).State;
 
-  public static StandingsState TotalsState => totals.State;
+  public static StandingsState HubState => hub.State;
+
+  public static StandingsState MiniBoardState(Trial trial) => StandingOf(trial.Id).State;
 
   public static string OfflineNote =>
     Dialog.Clean(Settings.OfflineMode ? "climbtrials_offline_mode_lower" : "climbtrials_offline");
@@ -131,49 +144,120 @@ public static class Standings
       || Settings.OfflineMode
     );
 
+  public static void EnsureFreshHub()
+  {
+    if (!NeedsFetch(hub))
+      return;
+
+    hub.Fetching = true;
+    Identity.EnsureRegistered(() => FetchHub(retried: false));
+  }
+
+  private static void FetchHub(bool retried) =>
+    AskCurrent<HubAnswer>(
+      ServerClient.GetHub,
+      result => ReceiveHub(result, retried),
+      passDeleted: !retried
+    );
+
+  private static void ReceiveHub(ServerResult<HubAnswer> result, bool retried)
+  {
+    if (result.Error == ServerError.PlayerDeleted && !retried)
+    {
+      Identity.EnsureRegistered(() => FetchHub(retried: true));
+      return;
+    }
+    if (Accept(hub, result))
+      AdoptName(result.Value.Name);
+  }
+
+  private static void AskCurrent<T>(
+    Action<Action<ServerResult<T>>> request,
+    Action<ServerResult<T>> receive,
+    bool passDeleted = false
+  )
+  {
+    int asked = identityGeneration;
+    request(result =>
+    {
+      bool deleted = passDeleted && result.Error == ServerError.PlayerDeleted;
+      if (asked != identityGeneration && !deleted)
+        AskCurrent(request, receive, passDeleted);
+      else
+        receive(result);
+    });
+  }
+
   public static void EnsureFresh(Campaign campaign)
   {
-    Entry<CampaignStandings> entry = EntryOf(campaign);
+    Entry<CampaignRecords> entry = RecordsOf(campaign);
     if (!NeedsFetch(entry))
       return;
 
     entry.Fetching = true;
-    ServerClient.GetStandings(campaign.Id, result => Receive(entry, result));
-  }
-
-  public static void RefreshMiniBoard(Campaign campaign)
-  {
-    if (campaign == null || Settings.OfflineMode)
-      return;
-
-    Entry<CampaignStandings> entry = EntryOf(campaign);
-    DateTime now = DateTime.UtcNow;
-    bool fresh =
-      entry.State == StandingsState.Ready && (now - entry.FetchedAt).TotalSeconds < FreshSeconds;
-    if (entry.Fetching || fresh || (now - entry.MiniBoardTriedAt).TotalSeconds < FreshSeconds)
-      return;
-
-    entry.Fetching = true;
-    entry.MiniBoardTriedAt = now;
-    ServerClient.GetStandings(
-      campaign.Id,
-      result =>
-      {
-        if (result.Ok)
-          Receive(entry, result);
-        else
-          entry.Fetching = false;
-      }
+    AskCurrent<CampaignRecords>(
+      done => ServerClient.GetRecords(campaign.Id, done),
+      result => ReceiveRecords(entry, result)
     );
   }
 
-  public static void EnsureFreshTotals()
+  private static void ReceiveRecords(
+    Entry<CampaignRecords> entry,
+    ServerResult<CampaignRecords> result
+  )
   {
-    if (!NeedsFetch(totals))
+    if (!Accept(entry, result))
       return;
 
-    totals.Fetching = true;
-    ServerClient.GetCampaignTotals(ReceiveTotals);
+    AdoptName(result.Value.Name);
+    TrialRecords.Adopt(
+      result
+        .Value.Trials.Where(r => r.Ticks != null)
+        .Select(r => (r.TrialId, r.Ticks.Value, r.AchievedAt ?? DateTime.UtcNow))
+    );
+  }
+
+  public static void RefreshMiniBoard(Trial trial)
+  {
+    if (
+      trial == null
+      || Settings.OfflineMode
+      || Settings.HudSettings.Leaderboard == LeaderboardMode.Off
+    )
+      return;
+
+    Entry<TrialStanding> entry = StandingOf(trial.Id);
+    DateTime now = DateTime.UtcNow;
+    bool fresh =
+      entry.State == StandingsState.Ready && (now - entry.FetchedAt).TotalSeconds < FreshSeconds;
+    if (entry.Fetching || fresh || (now - entry.TriedAt).TotalSeconds < FreshSeconds)
+      return;
+
+    entry.Fetching = true;
+    entry.TriedAt = now;
+    AskCurrent<TrialStanding>(
+      done => ServerClient.GetTrialStanding(trial.Id, done),
+      result => ReceiveStanding(entry, result)
+    );
+  }
+
+  private static void ReceiveStanding(
+    Entry<TrialStanding> entry,
+    ServerResult<TrialStanding> result
+  )
+  {
+    entry.Fetching = false;
+    if (!result.Ok)
+    {
+      if (entry.Value == null)
+        entry.State = StandingsState.Offline;
+      return;
+    }
+    StoreStanding(result.Value);
+    if (result.Value.Ticks is long ticks)
+      TrialRecords.Adopt([
+        (result.Value.TrialId, ticks, result.Value.AchievedAt ?? DateTime.UtcNow),
+      ]);
   }
 
   private static bool Accept<T>(Entry<T> entry, ServerResult<T> result)
@@ -191,32 +275,24 @@ public static class Standings
     return true;
   }
 
-  private static void Receive(
-    Entry<CampaignStandings> entry,
-    ServerResult<CampaignStandings> result
-  )
-  {
-    if (!Accept(entry, result))
-      return;
-
-    AdoptName(result.Value.Name);
-    TrialRecords.Adopt(
-      result
-        .Value.Trials.Where(s => s.Ticks != null)
-        .Select(s => (s.TrialId, s.Ticks.Value, s.AchievedAt ?? DateTime.UtcNow))
-    );
-  }
-
-  private static void ReceiveTotals(ServerResult<CampaignTotals> result)
-  {
-    if (Accept(totals, result))
-      AdoptName(result.Value.Name);
-  }
-
   private static void AdoptName(string name)
   {
     if (name != null && name != Settings.PlayerName)
       Identity.AdoptName(name);
+  }
+
+  public static void MarkStale()
+  {
+    identityGeneration++;
+    hub.FetchedAt = DateTime.MinValue;
+    foreach (Entry<CampaignRecords> entry in records.Values)
+      entry.FetchedAt = DateTime.MinValue;
+    foreach (Entry<TrialStanding> entry in standings.Values)
+    {
+      entry.FetchedAt = DateTime.MinValue;
+      entry.TriedAt = DateTime.MinValue;
+    }
+    chunks.Clear();
   }
 
   private static string TrialKey(string trialId) => $"trial:{trialId}";
@@ -290,35 +366,70 @@ public static class Standings
     );
   }
 
-  public static TrialStanding StandingFor(Trial trial)
+  public static TrialStanding StandingFor(Trial trial) => StandingOf(trial.Id).Value;
+
+  public static ServerRecord RecordFor(Trial trial)
   {
     Campaign campaign = Campaigns.CampaignOf(trial);
     if (campaign == null)
       return null;
-    return EntryOf(campaign).Value?.Trials.Find(s => s.TrialId == trial.Id);
+    return RecordsOf(campaign).Value?.Trials.Find(r => r.TrialId == trial.Id);
   }
 
-  public static CampaignTotal TotalFor(Campaign campaign) =>
-    campaign == null ? null : totals.Value?.Campaigns.Find(c => c.CampaignId == campaign.Id);
+  public static CampaignStanding CampaignStandingFor(Campaign campaign) =>
+    campaign == null ? null : hub.Value?.Campaigns.Find(c => c.CampaignId == campaign.Id);
 
-  public static void Replace(TrialStanding standing)
+  public static void Replace(SubmissionAnswer answer)
   {
-    if (standing == null)
+    if (answer?.Standing == null)
       return;
-    totals.State = StandingsState.Idle;
-    Trial trial = Campaigns.FindTrial(standing.TrialId);
+    string trialId = answer.Standing.TrialId;
+    Trial trial = Campaigns.FindTrial(trialId);
     Campaign campaign = trial == null ? null : Campaigns.CampaignOf(trial);
-    DropChunks(TrialKey(standing.TrialId));
+    DropChunks(TrialKey(trialId));
     if (campaign != null)
       DropChunks(CampaignKey(campaign.Id));
-    CampaignStandings board = campaign == null ? null : EntryOf(campaign).Value;
-    if (board == null)
+    StoreStanding(answer.Standing);
+    if (answer.Campaign != null)
+      StoreCampaignStanding(answer.Campaign);
+  }
+
+  private static void StoreStanding(TrialStanding standing)
+  {
+    Entry<TrialStanding> entry = StandingOf(standing.TrialId);
+    entry.Value = standing;
+    entry.FetchedAt = DateTime.UtcNow;
+    entry.State = StandingsState.Ready;
+
+    Trial trial = Campaigns.FindTrial(standing.TrialId);
+    Campaign campaign = trial == null ? null : Campaigns.CampaignOf(trial);
+    List<ServerRecord> rows = campaign == null ? null : RecordsOf(campaign).Value?.Trials;
+    if (rows == null)
       return;
-    int index = board.Trials.FindIndex(s => s.TrialId == standing.TrialId);
+    ServerRecord record = new()
+    {
+      TrialId = standing.TrialId,
+      Rank = standing.Rank,
+      Ticks = standing.Ticks,
+      AchievedAt = standing.AchievedAt,
+    };
+    int index = rows.FindIndex(r => r.TrialId == standing.TrialId);
     if (index < 0)
-      board.Trials.Add(standing);
+      rows.Add(record);
     else
-      board.Trials[index] = standing;
+      rows[index] = record;
+  }
+
+  private static void StoreCampaignStanding(CampaignStanding standing)
+  {
+    List<CampaignStanding> campaigns = hub.Value?.Campaigns;
+    if (campaigns == null)
+      return;
+    int index = campaigns.FindIndex(c => c.CampaignId == standing.CampaignId);
+    if (index < 0)
+      campaigns.Add(standing);
+    else
+      campaigns[index] = standing;
   }
 
   private static void DropChunks(string key)
@@ -327,12 +438,17 @@ public static class Standings
       chunks.Remove(at);
   }
 
-  private static Entry<CampaignStandings> EntryOf(Campaign campaign)
+  private static Entry<CampaignRecords> RecordsOf(Campaign campaign) =>
+    EntryIn(records, campaign.Id);
+
+  private static Entry<TrialStanding> StandingOf(string trialId) => EntryIn(standings, trialId);
+
+  private static Entry<T> EntryIn<T>(Dictionary<string, Entry<T>> entries, string id)
   {
-    if (!entries.TryGetValue(campaign.Id, out Entry<CampaignStandings> entry))
+    if (!entries.TryGetValue(id, out Entry<T> entry))
     {
-      entry = new Entry<CampaignStandings>();
-      entries[campaign.Id] = entry;
+      entry = new Entry<T>();
+      entries[id] = entry;
     }
     return entry;
   }

@@ -624,7 +624,7 @@ public static class RunManager
     int runSeed = Calc.Random.Next();
     Determinism.Reseed(runSeed);
     Recorder.Begin(Trial, loadSeed, runSeed, introType, level);
-    Standings.RefreshMiniBoard(Campaigns.CampaignOf(Trial));
+    Standings.RefreshMiniBoard(Trial);
   }
 
   private static void SuppressVanillaTimer(

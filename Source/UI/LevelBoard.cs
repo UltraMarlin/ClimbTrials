@@ -14,11 +14,12 @@ public static class LevelBoard
     if (!RunManager.Replaying)
       GhostComparisons.Forget();
     pauseMenu.Focused = false;
+    pauseMenu.Visible = false;
     level.PauseMainMenuOpen = false;
     level.Add(
       new LeaderboardView(
         BoardSubject.Alone(RunManager.Trial),
-        progress => pauseMenu.Visible = progress < 1f,
+        _ => { },
         _ => ClosedOverPause(level, pauseMenu),
         StartGhost,
         options: BoardOptions.InLevel(MenuKeys.Live, comparing: false, plans: !RunManager.Replaying)

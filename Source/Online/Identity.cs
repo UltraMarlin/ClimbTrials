@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.Runs;
 
@@ -17,6 +18,7 @@ public static class Identity
   private const string LogTag = "ClimbTrials/Identity";
 
   private static bool registering;
+  private static readonly List<Action> afterRegistration = [];
   private static bool failed;
   private static bool saveDue;
 
@@ -38,11 +40,18 @@ public static class Identity
   public static string NameOf(Replay replay) =>
     replay.IsOwn ? Settings.PlayerName : replay.OwnerName;
 
-  public static void EnsureRegistered()
+  public static void EnsureRegistered(Action then = null)
   {
     if (saveDue)
       Save();
-    if (Registered || registering)
+    if (Registered)
+    {
+      then?.Invoke();
+      return;
+    }
+    if (then != null)
+      afterRegistration.Add(then);
+    if (registering)
       return;
     registering = true;
     failed = false;
@@ -53,6 +62,10 @@ public static class Identity
         Store(result.Value.ClientId, result.Value.Name);
       else
         failed = true;
+      List<Action> waiting = [.. afterRegistration];
+      afterRegistration.Clear();
+      foreach (Action action in waiting)
+        action();
     });
   }
 
@@ -62,6 +75,7 @@ public static class Identity
     Settings.PlayerName = name;
     Settings.PlayerNameChosen = false;
     Save();
+    Standings.MarkStale();
   }
 
   public static void AdoptName(string name)
@@ -75,6 +89,7 @@ public static class Identity
     Settings.PlayerName = name;
     Settings.PlayerNameChosen = true;
     Save();
+    Standings.MarkStale();
   }
 
   public static void UpdateFromAnswer(ServerError error, string sentClientId)

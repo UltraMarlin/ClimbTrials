@@ -1,4 +1,5 @@
 using System.Collections;
+using Celeste.Mod.ClimbTrials.Online;
 using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.Runs;
 using Microsoft.Xna.Framework;
@@ -11,21 +12,27 @@ public abstract class ListScreen : Oui
   public const float OnScreenX = 960f;
   public const float TitleY = 120f;
   private const float StatusY = 1060f;
-  private const float NoticeY = 975f;
+  protected const float NoticeY = 975f;
+  private const float OfflineY = 190f;
+  private const float OfflineScale = 0.45f;
   private const float NoticeScale = 0.6f;
-
-  private const float SlideWidth = 1920f;
 
   protected TrialsMenu menu;
   protected readonly TransientText notice = new();
   protected string hintKey;
   protected float x = OnScreenX;
   protected float alpha;
-  protected float yOffset;
   private float dim = 1f;
   protected abstract int ScreenDepth { get; }
+  protected virtual string TitleKey => "climbtrials_campaigns_title";
 
-  private static int DepthOf(Oui other) => (other as ListScreen)?.ScreenDepth ?? 0;
+  public static int DepthOf(Oui other) =>
+    other switch
+    {
+      ListScreen screen => screen.ScreenDepth,
+      OuiClimbTrialsOptions => OuiClimbTrialsOptions.ScreenDepth,
+      _ => 0,
+    };
 
   protected bool IsCurrentScreen => Overworld.Current == this || Overworld.Next == this;
 
@@ -47,6 +54,19 @@ public abstract class ListScreen : Oui
   {
     dim = value;
     menu?.Alpha = alpha * dim;
+  }
+
+  protected void DrawOfflineNote(StandingsState state)
+  {
+    if (state != StandingsState.Offline)
+      return;
+    ActiveFont.Draw(
+      Standings.OfflineNote,
+      new Vector2(menu.X, OfflineY),
+      new Vector2(0.5f, 0.5f),
+      Vector2.One * OfflineScale,
+      RowLayout.Dim * menu.Alpha
+    );
   }
 
   public override IEnumerator Enter(Oui from)
@@ -72,19 +92,16 @@ public abstract class ListScreen : Oui
     bool handedOver = Reopen();
     float side = DepthOf(from) > ScreenDepth ? -1f : 1f;
 
-    for (float ease = 0f; ease < 1f; ease += Engine.DeltaTime * 4f)
+    if (from != null)
     {
-      x = OnScreenX + side * SlideWidth * (1f - Ease.CubeOut(ease));
-      alpha = Ease.CubeOut(ease);
-      menu.X = x;
-      menu.Alpha = alpha;
-      yield return null;
+      PlaceSlide(side * Motion.SlideDistance, 0f);
+      yield return Motion.EnterScreen(side, PlaceSlide);
     }
 
     x = OnScreenX;
     alpha = 1f;
     menu.X = x;
-    menu.Alpha = alpha;
+    menu.Alpha = alpha * dim;
     if (handedOver)
       yield break;
 
@@ -99,17 +116,34 @@ public abstract class ListScreen : Oui
     CancelTransitions();
     menu.Focused = false;
     float side = DepthOf(next) > ScreenDepth ? -1f : 1f;
-    for (float ease = 0f; ease < 1f; ease += Engine.DeltaTime * 4f)
-    {
-      x = OnScreenX + side * SlideWidth * Ease.CubeIn(ease);
-      alpha = 1f - Ease.CubeIn(ease);
-      menu.X = x;
-      menu.Alpha = alpha;
-      yield return null;
-    }
-    menu.RemoveSelf();
+    TrialsMenu leaving = menu;
+    yield return Motion.LeaveScreen(
+      this,
+      side,
+      (offset, shown) =>
+      {
+        if (menu == leaving)
+          PlaceSlide(offset, shown);
+      },
+      () => Gone(leaving)
+    );
+  }
+
+  private void Gone(TrialsMenu leaving)
+  {
+    leaving.RemoveSelf();
+    if (menu != leaving)
+      return;
     menu = null;
     Visible = false;
+  }
+
+  private void PlaceSlide(float offset, float shown)
+  {
+    x = OnScreenX + offset;
+    alpha = shown;
+    menu.X = x;
+    menu.Alpha = alpha * dim;
   }
 
   public override void Update()
@@ -124,8 +158,8 @@ public abstract class ListScreen : Oui
       return;
     float totalAlpha = alpha * dim;
     ActiveFont.DrawOutline(
-      Dialog.Clean("climbtrials_trials_title"),
-      new Vector2(x, TitleY + yOffset),
+      Dialog.Clean(TitleKey),
+      new Vector2(x, TitleY),
       new Vector2(0.5f, 0.5f),
       Vector2.One * 1.6f,
       Color.White * totalAlpha,
@@ -134,11 +168,11 @@ public abstract class ListScreen : Oui
     );
     RenderHeader();
     RenderPrompts(totalAlpha);
-    notice.Render(new Vector2(x, NoticeY + yOffset), NoticeScale, totalAlpha);
+    notice.Render(new Vector2(x, NoticeY), NoticeScale, totalAlpha);
     if (hintKey != null && !notice.Showing)
       TextOutline.DrawDim(
         $"{Dialog.Clean("climbtrials_hint_prefix")} {Dialog.Clean(hintKey)}",
-        new Vector2(x, NoticeY + yOffset),
+        new Vector2(x, NoticeY),
         new Vector2(0.5f, 0.5f),
         NoticeScale,
         totalAlpha
@@ -146,7 +180,7 @@ public abstract class ListScreen : Oui
     if (ModCheck.OthersLoaded)
       ActiveFont.DrawOutline(
         ModCheck.MenuWarning(),
-        new Vector2(x, StatusY + yOffset),
+        new Vector2(x, StatusY),
         new Vector2(0.5f, 0.5f),
         Vector2.One * 0.45f,
         Color.White * 0.7f * totalAlpha,

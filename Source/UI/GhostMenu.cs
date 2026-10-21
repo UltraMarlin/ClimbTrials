@@ -9,7 +9,7 @@ namespace Celeste.Mod.ClimbTrials.UI;
 
 public readonly record struct GhostOption(string Label, Func<string> Reason, Action Chosen);
 
-public class GhostMenu : FadingMenu
+public class GhostMenu : MenuOnTop
 {
   private const float MenuLift = 80f;
   private const float HeaderScale = 1f;
@@ -26,8 +26,10 @@ public class GhostMenu : FadingMenu
     BoardSubject subject,
     IEnumerable<GhostOption> options,
     MenuKeys keys,
+    bool inLevel,
     Action closed
   )
+    : base(inLevel)
   {
     this.keys = keys;
     this.closed = closed;

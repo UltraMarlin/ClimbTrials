@@ -16,21 +16,6 @@ public class TrialsMenu : TextMenu
   public Action OnSwitchLeft;
   public Action OnSwitchRight;
 
-  private float yOffset;
-
-  public float YOffset
-  {
-    get => yOffset;
-    set
-    {
-      Position.Y += value - yOffset;
-      yOffset = value;
-    }
-  }
-
-  private float ViewTop => ListTop + yOffset;
-  private float ViewBottom => ListBottom + yOffset;
-
   public TrialsMenu()
   {
     AutoScroll = false;
@@ -44,12 +29,12 @@ public class TrialsMenu : TextMenu
   {
     get
     {
-      float viewport = ViewBottom - ViewTop;
+      float viewport = ListBottom - ListTop;
       float height = SettledHeight();
       if (height <= viewport)
-        return ViewTop;
-      float centered = ViewTop + viewport / 2f - SettledOffsetOf(Current);
-      return Calc.Clamp(centered, ViewBottom - height, ViewTop);
+        return ListTop;
+      float centered = ListTop + viewport / 2f - SettledOffsetOf(Current);
+      return Calc.Clamp(centered, ListBottom - height, ListTop);
     }
   }
 
@@ -127,7 +112,7 @@ public class TrialsMenu : TextMenu
 
   private float EdgeFade(float y, float height)
   {
-    float inside = Math.Min(y - ViewTop, ViewBottom - y);
+    float inside = Math.Min(y - ListTop, ListBottom - y);
     return Calc.Clamp(inside / (height * 0.5f), 0f, 1f);
   }
 }

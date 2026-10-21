@@ -8,31 +8,31 @@ public sealed record BoardOptions(
   float BackdropAlpha,
   bool Comparing,
   int DepthBase,
-  bool Slides,
+  bool InsideLevel,
   bool Plans = false
 )
 {
   private const double InLevelMaxAgeSeconds = 20;
-  private const float InLevelBackdropAlpha = 0.7f;
   private const int InLevelDepthBase = -100000;
+  private const int OverworldDepthBase = -10;
 
   public static readonly BoardOptions Overworld = new(
     MenuKeys.Live,
     Standings.FreshSeconds,
-    0f,
+    Motion.BoardBackdropAlpha,
     false,
-    0,
-    true
+    OverworldDepthBase,
+    false
   );
 
   public static BoardOptions InLevel(MenuKeys keys, bool comparing, bool plans = false) =>
     new(
       keys,
       InLevelMaxAgeSeconds,
-      InLevelBackdropAlpha,
+      Motion.LevelBoardBackdropAlpha,
       comparing,
       InLevelDepthBase,
-      false,
+      true,
       plans
     );
 }

@@ -87,10 +87,14 @@ public static class ServerClient
   public static void Rename(string name, Action<ServerResult<RenameAnswer>> onDone) =>
     Send("/v1/me/name", HttpMethod.Put, Json(JsonSerializer.Serialize(new { name })), onDone);
 
-  public static void GetStandings(
-    string campaignId,
-    Action<ServerResult<CampaignStandings>> onDone
-  ) => Send($"/v1/campaigns/{campaignId}/standings", HttpMethod.Get, null, onDone, passive: true);
+  public static void GetHub(Action<ServerResult<HubAnswer>> onDone) =>
+    Send("/v1/hub", HttpMethod.Get, null, onDone, passive: true);
+
+  public static void GetRecords(string campaignId, Action<ServerResult<CampaignRecords>> onDone) =>
+    Send($"/v1/campaigns/{campaignId}/records", HttpMethod.Get, null, onDone, passive: true);
+
+  public static void GetTrialStanding(string trialId, Action<ServerResult<TrialStanding>> onDone) =>
+    Send($"/v1/trials/{trialId}/standing", HttpMethod.Get, null, onDone, passive: true);
 
   public static void GetBoard(
     string trialId,
@@ -105,9 +109,6 @@ public static class ServerClient
       onDone,
       passive: true
     );
-
-  public static void GetCampaignTotals(Action<ServerResult<CampaignTotals>> onDone) =>
-    Send("/v1/campaigns/totals", HttpMethod.Get, null, onDone, passive: true);
 
   public static void GetCampaignBoard(
     string campaignId,

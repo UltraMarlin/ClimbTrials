@@ -86,7 +86,6 @@ public class HudSettings
 [SettingSubMenu]
 public class GoalIndicatorSettings
 {
-  [SettingSubText("modoptions_climbtrialsmodule_goalindicator_desc")]
   public GoalIndicatorMode Style { get; set; } = GoalIndicatorMode.Subtle;
   public GoalIndicatorTargets Targets { get; set; } = GoalIndicatorTargets.EachCondition;
 

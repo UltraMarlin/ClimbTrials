@@ -34,6 +34,7 @@ public class LeaderboardDisplay : Entity
   private bool cachedGoalsShown;
   private float cachedShift;
   private GoalTimesDisplayMode cachedGoalMode;
+  private bool cachedOfflineMode;
   private bool built;
   private float rowsTop = RunHudLayout.ListY;
   private float rowHeight;
@@ -98,12 +99,13 @@ public class LeaderboardDisplay : Entity
     if (trial == null)
       return;
     TrialStanding standing = Standings.StandingFor(trial);
-    StandingsState state = Standings.State(Campaigns.CampaignOf(trial));
+    StandingsState state = Standings.MiniBoardState(trial);
     LeaderboardMode mode = Mode;
     long best = TrialRecords.Get(trial.Id)?.BestTicks ?? long.MaxValue;
     bool goalsShown = GoalListDisplay.Shown;
     float shift = RunHudLayout.ColumnShift;
     GoalTimesDisplayMode goalMode = ClimbTrialsModule.Settings.HudSettings.GoalTimes;
+    bool offlineMode = ClimbTrialsModule.Settings.OfflineMode;
     bool same =
       built
       && ReferenceEquals(standing, cachedStanding)
@@ -112,7 +114,8 @@ public class LeaderboardDisplay : Entity
       && best == cachedBest
       && goalsShown == cachedGoalsShown
       && shift == cachedShift
-      && goalMode == cachedGoalMode;
+      && goalMode == cachedGoalMode
+      && offlineMode == cachedOfflineMode;
     if (same)
       return;
     built = true;
@@ -123,6 +126,7 @@ public class LeaderboardDisplay : Entity
     cachedGoalsShown = goalsShown;
     cachedShift = shift;
     cachedGoalMode = goalMode;
+    cachedOfflineMode = offlineMode;
 
     textScale = mode == LeaderboardMode.Subtle ? SubtleTextScale : NormalTextScale;
     textAlpha = mode == LeaderboardMode.Subtle ? SubtleTextAlpha : NormalTextAlpha;
@@ -144,15 +148,12 @@ public class LeaderboardDisplay : Entity
 
   private static List<Row> RowsOf(TrialStanding standing, StandingsState state)
   {
-    if (standing == null || state == StandingsState.Offline)
-      return
-      [
-        Message(
-          ClimbTrialsModule.Settings.OfflineMode
-            ? "climbtrials_offline_mode"
-            : "climbtrials_board_unavailable"
-        ),
-      ];
+    if (ClimbTrialsModule.Settings.OfflineMode)
+      return [Message("climbtrials_offline_mode")];
+    if (state == StandingsState.Offline)
+      return [Message("climbtrials_board_unavailable")];
+    if (standing == null)
+      return [];
     if (standing.Total == 0)
       return [Message("climbtrials_board_no_times")];
     List<Row> rows = [];

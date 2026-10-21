@@ -29,7 +29,7 @@ public static class MainMenuEntry
         {
           Audio.Play(SFX.ui_main_button_select);
           Audio.Play(SFX.ui_main_whoosh_large_in);
-          menu.Overworld.Goto<OuiCampaigns>();
+          menu.Overworld.Goto<OuiHub>();
         }
       )
     );

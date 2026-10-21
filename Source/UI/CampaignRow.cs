@@ -6,15 +6,13 @@ using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.UI;
 
-public class CampaignRow : TextMenu.Item
+public class CampaignRow : SlidingRow
 {
   public readonly Campaign Campaign;
-  private float ease;
 
   public CampaignRow(Campaign campaign)
   {
     Campaign = campaign;
-    Selectable = true;
   }
 
   private string CountText =>
@@ -25,8 +23,6 @@ public class CampaignRow : TextMenu.Item
       "climbtrials_campaign_trials"
     );
 
-  public override float Height() => RowLayout.RowHeight;
-
   public override float LeftWidth() =>
     RowLayout.CampaignNameX
     + ActiveFont.Measure(Campaign.Name).X
@@ -35,17 +31,11 @@ public class CampaignRow : TextMenu.Item
 
   public override float RightWidth() => RowLayout.RightColumnWidth;
 
-  public override void Update()
-  {
-    bool selected = Container.Focused && Container.Current == this;
-    ease = Calc.Approach(ease, selected ? 1f : 0f, 6f * Engine.DeltaTime);
-  }
-
   public override void Render(Vector2 position, bool highlighted)
   {
     float alpha = Container.Alpha;
-    Vector2 rowStart = position + new Vector2(Ease.CubeInOut(ease) * RowLayout.SlideDistance, 0f);
-    float rightEdge = rowStart.X + Container.Width - RowLayout.SlideDistance;
+    Vector2 rowStart = RowStart(position);
+    float rightEdge = rowStart.X + Container.Width - RowLayout.HoveredRowShift;
 
     Color nameColor = highlighted ? Container.HighlightColor : Color.White;
     ActiveFont.DrawOutline(
@@ -93,7 +83,7 @@ public class CampaignRow : TextMenu.Item
     }
 
     RankText.Draw(
-      Standings.TotalFor(Campaign)?.Rank,
+      Standings.CampaignStandingFor(Campaign)?.Rank,
       new Vector2(medalCenter, rowStart.Y + RowLayout.RankLift),
       alpha
     );

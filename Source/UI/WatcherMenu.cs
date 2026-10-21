@@ -5,7 +5,7 @@ using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.UI;
 
-public class WatcherMenu : FadingMenu
+public class WatcherMenu : MenuOnTop
 {
   private const float HighlightInterval = 0.1f;
 
@@ -18,6 +18,7 @@ public class WatcherMenu : FadingMenu
   public bool Covered;
 
   public WatcherMenu(Action resume, Action play, Action race, Action board, Action leave)
+    : base(inLevel: true)
   {
     this.resume = resume;
     Focused = false;

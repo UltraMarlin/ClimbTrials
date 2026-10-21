@@ -383,10 +383,11 @@ public static class Replayer
     if (menu == null || menu.Covered || RunManager.Trial == null)
       return;
     menu.Covered = true;
+    menu.RowsAlpha = 0f;
     WatcherOverlay.Add(
       board = new LeaderboardView(
         BoardSubject.Alone(RunManager.Trial),
-        progress => menu?.RowsAlpha = 1f - progress,
+        _ => { },
         _ => CloseBoard(),
         LeaveForGhost,
         options: BoardOptions.InLevel(MenuKeys.Watcher, comparing: true)

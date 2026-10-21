@@ -83,7 +83,7 @@ public static class Uploader
 
       if (result.Ok)
       {
-        Standings.Replace(result.Value.Standing);
+        Standings.Replace(result.Value);
         StoreAndReport(
           trialId,
           new Upload(UploadState.Accepted, result.Value.Standing?.Rank, null),

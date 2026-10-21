@@ -103,6 +103,7 @@ public static class Campaigns
   public static IReadOnlyList<Campaign> All { get; private set; } = [];
   public static string LoadError { get; private set; }
   private static int lastIssued;
+  private static readonly string[] RetiredTrialIds = ["t08", "t10", "t11", "t13"];
 
   public static void Load()
   {
@@ -130,8 +131,11 @@ public static class Campaigns
   public static string NextTrialId()
   {
     int highest = lastIssued;
-    foreach (Trial trial in All.SelectMany(c => c.Trials))
-      if (TrialNumber(trial.Id) is int number && number > highest)
+    IEnumerable<string> taken = All.SelectMany(c => c.Trials)
+      .Select(t => t.Id)
+      .Concat(RetiredTrialIds);
+    foreach (string id in taken)
+      if (TrialNumber(id) is int number && number > highest)
         highest = number;
     lastIssued = highest + 1;
     return $"t{lastIssued:00}";

@@ -8,7 +8,7 @@ using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.UI;
 
-public class TrialModeMenu : FadingMenu
+public class TrialModeMenu : MenuOnTop
 {
   private const float MenuLift = 80f;
   private const float TitleScale = 1.2f;
@@ -33,18 +33,19 @@ public class TrialModeMenu : FadingMenu
     Action board,
     Action closed
   )
+    : base(inLevel: false)
   {
     this.closed = closed;
     Position.Y -= MenuLift;
 
     Campaign campaign = Campaigns.CampaignOf(trial);
     TrialRecord record = TrialRecords.Get(trial.Id);
-    TrialStanding standing = Standings.StandingFor(trial);
+    ServerRecord serverRecord = Standings.RecordFor(trial);
     StandingsState state = Standings.State(campaign);
 
     Add(new TitleItem(trial));
     if (record != null)
-      Add(new PbItem(record, standing));
+      Add(new PbItem(record, serverRecord));
     if (state == StandingsState.Offline)
       Add(new NoteItem(Standings.OfflineNote, RowLayout.Dim));
     if (record != null)
@@ -57,7 +58,7 @@ public class TrialModeMenu : FadingMenu
       Add(new Button(Dialog.Clean("climbtrials_trials_watch_pb")).Pressed(watch));
       Add(new Button(Dialog.Clean("climbtrials_race_pb_ghost")).Pressed(race));
     }
-    if (record != null && !OnBoard(record, standing))
+    if (record != null && !OnBoard(record, serverRecord))
       AddSubmitRow(trial, record, state, submit);
     Add(new Button(Dialog.Clean("climbtrials_trials_leaderboard")).Pressed(board));
 
@@ -66,8 +67,8 @@ public class TrialModeMenu : FadingMenu
     OnPause = Back;
   }
 
-  private static bool OnBoard(TrialRecord record, TrialStanding standing) =>
-    standing?.Ticks is long serverTicks && serverTicks <= record.BestTicks;
+  private static bool OnBoard(TrialRecord record, ServerRecord serverRecord) =>
+    serverRecord?.Ticks is long serverTicks && serverTicks <= record.BestTicks;
 
   private void AddSubmitRow(Trial trial, TrialRecord record, StandingsState state, Action submit)
   {
@@ -157,9 +158,9 @@ public class TrialModeMenu : FadingMenu
     }
   }
 
-  private class PbItem(TrialRecord record, TrialStanding standing) : Item
+  private class PbItem(TrialRecord record, ServerRecord serverRecord) : Item
   {
-    private readonly string label = standing?.Rank is int rank
+    private readonly string label = serverRecord?.Rank is int rank
       ? $"{Dialog.Clean("climbtrials_pb")} #{rank}:"
       : Dialog.Clean("climbtrials_pb");
     private readonly string time = TimeText.Format(record.BestTicks);

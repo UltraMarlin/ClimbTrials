@@ -7,18 +7,14 @@ using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.UI;
 
-public class TrialRow : TextMenu.Item
+public class TrialRow : SlidingRow
 {
   public readonly Trial Trial;
-  private float ease;
 
   public TrialRow(Trial trial)
   {
     Trial = trial;
-    Selectable = true;
   }
-
-  public override float Height() => RowLayout.RowHeight;
 
   public override float LeftWidth() => RowLayout.NameX + ActiveFont.Measure(Trial.Name).X;
 
@@ -28,17 +24,11 @@ public class TrialRow : TextMenu.Item
 
   public override void RightPressed() => (Container as TrialsMenu)?.OnSwitchRight?.Invoke();
 
-  public override void Update()
-  {
-    bool selected = Container.Focused && Container.Current == this;
-    ease = Calc.Approach(ease, selected ? 1f : 0f, 6f * Engine.DeltaTime);
-  }
-
   public override void Render(Vector2 position, bool highlighted)
   {
     float alpha = Container.Alpha;
-    Vector2 rowStart = position + new Vector2(Ease.CubeInOut(ease) * RowLayout.SlideDistance, 0f);
-    float rightEdge = rowStart.X + Container.Width - RowLayout.SlideDistance;
+    Vector2 rowStart = RowStart(position);
+    float rightEdge = rowStart.X + Container.Width - RowLayout.HoveredRowShift;
 
     GFX.Gui[Trial.SkullTexture]
       .DrawCentered(rowStart + new Vector2(RowLayout.IconX, 0f), Color.White * alpha, Vector2.One);
@@ -82,7 +72,7 @@ public class TrialRow : TextMenu.Item
     }
 
     RankText.Draw(
-      Standings.StandingFor(Trial)?.Rank,
+      Standings.RecordFor(Trial)?.Rank,
       new Vector2(medalCenter, rowStart.Y + RowLayout.RankLift),
       alpha
     );
