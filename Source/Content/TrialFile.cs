@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using Celeste.Mod.ClimbTrials.Runs;
 using Microsoft.Xna.Framework;
@@ -79,6 +80,12 @@ public static class TrialFile
     }
     Logger.Log(LogLevel.Info, LogTag, $"loaded {campaigns.Count} campaigns, {trials} trials");
     return campaigns;
+  }
+
+  public static Campaign ParseCampaign(string text, string source)
+  {
+    using JsonDocument document = Parse(Encoding.UTF8.GetBytes(text), source);
+    return ReadCampaign(document.RootElement, source).Campaign;
   }
 
   private static JsonDocument Parse(byte[] bytes, string file)

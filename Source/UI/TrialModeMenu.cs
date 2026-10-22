@@ -15,7 +15,6 @@ public class TrialModeMenu : MenuOnTop
   private const float TitleHeight = 100f;
   private const float PbScale = 1.0f;
   private const float PbHeight = 42f;
-  private const float NoteHeight = 42f;
   private const float DateScale = 0.45f;
   private const float DateHeight = 32f;
   private const float OptionsGap = 40f;
@@ -46,8 +45,6 @@ public class TrialModeMenu : MenuOnTop
     Add(new TitleItem(trial));
     if (record != null)
       Add(new PbItem(record, serverRecord));
-    if (state == StandingsState.Offline)
-      Add(new NoteItem(Standings.OfflineNote, RowLayout.Dim));
     if (record != null)
       Add(new DateItem(record));
 
@@ -77,13 +74,17 @@ public class TrialModeMenu : MenuOnTop
     bool needsReplay = trial.FitsReplayLimit(record.BestTicks);
     bool submitting = upload.State == UploadState.Submitting;
     bool offlineMode = ClimbTrialsModule.Settings.OfflineMode;
+    SubmitRefusal refusal = Events.RefusalFor(trial);
+    bool paused = Standings.SubmissionsPaused;
     bool live =
       record.Submittable
       && (hasReplay || !needsReplay)
       && !Identity.Banned
+      && refusal == SubmitRefusal.None
       && !offlineMode
       && state == StandingsState.Ready
       && Identity.Registered
+      && !paused
       && !submitting;
 
     DimButton row = new(Dialog.Clean("climbtrials_trials_submit_pb"), live, submit);
@@ -95,20 +96,27 @@ public class TrialModeMenu : MenuOnTop
       reason = Dialog.Clean("climbtrials_submit_unsubmittable");
     else if (!hasReplay && needsReplay)
       reason = Dialog.Clean("climbtrials_submit_no_replay");
+    else if (refusal != SubmitRefusal.None)
+      reason = Uploader.RefusalReason(refusal);
     else if (offlineMode)
       reason = Dialog.Clean("climbtrials_offline_mode");
     else if (state == StandingsState.Offline)
-      reason = Dialog.Clean("climbtrials_submit_offline");
+      reason = Dialog.Clean("climbtrials_offline");
     else if (state == StandingsState.Idle)
       reason = Dialog.Clean("climbtrials_submit_loading");
     else if (Identity.Registration == RegistrationState.Registering)
       reason = Dialog.Clean("climbtrials_connecting");
     else if (!Identity.Registered)
       reason = Dialog.Clean("climbtrials_not_connected");
+    else if (paused)
+      reason = Dialog.Clean("climbtrials_submit_paused");
     else if (submitting)
       reason = Dialog.Clean("climbtrials_submitting");
     else if (upload.State == UploadState.Failed)
-      reason = upload.Message;
+      reason =
+        upload.Refusal != SubmitRefusal.None
+          ? Uploader.RefusalReason(upload.Refusal)
+          : upload.Message;
     if (reason != null)
       RowDescription.Attach(this, row, reason);
   }
@@ -182,19 +190,6 @@ public class TrialModeMenu : MenuOnTop
         position.Y + TimeText.Height(Style) / 2f
       );
       TimeText.Draw(baseline, time, Style, Color.White * alpha);
-    }
-  }
-
-  private class NoteItem(string text, Color color) : Item
-  {
-    public override float Height() => NoteHeight;
-
-    public override float LeftWidth() => ActiveFont.Measure(text).X * PbScale;
-
-    public override void Render(Vector2 position, bool highlighted)
-    {
-      float left = position.X + (Container.Width - LeftWidth()) / 2f;
-      Outline(text, new Vector2(left, position.Y), PbScale, color * Container.Alpha);
     }
   }
 

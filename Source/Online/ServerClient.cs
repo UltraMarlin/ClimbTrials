@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.Helpers;
@@ -25,6 +26,10 @@ public enum ServerError
   Rejected,
   RateLimited,
   Banned,
+  SubmissionsPaused,
+  EventClosed,
+  NotInvited,
+  NotFound,
 }
 
 public readonly record struct ServerResult<T>(T Value, ServerError Error, string Message)
@@ -53,7 +58,11 @@ public static class ServerClient
   private const int PassiveIconDelayMs = 300;
   private static int pending;
   private static bool iconShown;
-  private static readonly JsonSerializerOptions json = new() { PropertyNameCaseInsensitive = true };
+  private static readonly JsonSerializerOptions json = new()
+  {
+    PropertyNameCaseInsensitive = true,
+    Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+  };
 
   private static ClimbTrialsModuleSettings Settings => ClimbTrialsModule.Settings;
 
@@ -87,8 +96,16 @@ public static class ServerClient
   public static void Rename(string name, Action<ServerResult<RenameAnswer>> onDone) =>
     Send("/v1/me/name", HttpMethod.Put, Json(JsonSerializer.Serialize(new { name })), onDone);
 
-  public static void GetHub(Action<ServerResult<HubAnswer>> onDone) =>
-    Send("/v1/hub", HttpMethod.Get, null, onDone, passive: true);
+  public static void GetHub(
+    IEnumerable<(string Id, string Hash)> heldEvents,
+    Action<ServerResult<HubAnswer>> onDone
+  )
+  {
+    string body = JsonSerializer.Serialize(
+      new { have = heldEvents.Select(held => new { id = held.Id, hash = held.Hash }) }
+    );
+    Send("/v1/hub", HttpMethod.Post, Json(body), onDone, passive: true);
+  }
 
   public static void GetRecords(string campaignId, Action<ServerResult<CampaignRecords>> onDone) =>
     Send($"/v1/campaigns/{campaignId}/records", HttpMethod.Get, null, onDone, passive: true);
@@ -294,6 +311,10 @@ public static class ServerClient
       "rejected" => ServerError.Rejected,
       "rate_limited" => ServerError.RateLimited,
       "banned" => ServerError.Banned,
+      "submissions_paused" => ServerError.SubmissionsPaused,
+      "event_closed" => ServerError.EventClosed,
+      "not_invited" => ServerError.NotInvited,
+      "not_found" => ServerError.NotFound,
       _ => ServerError.Offline,
     };
     return new ServerResult<T>(default, code, error?.Message);

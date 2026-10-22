@@ -123,10 +123,12 @@ public static class Campaigns
   }
 
   public static Trial FindTrial(string id) =>
-    All.SelectMany(c => c.Trials).FirstOrDefault(t => t.Id == id);
+    All.SelectMany(c => c.Trials).FirstOrDefault(t => t.Id == id) ?? Events.FindTrial(id);
 
   public static Campaign CampaignOf(Trial trial) =>
-    All.FirstOrDefault(c => c.Trials.Contains(trial));
+    All.FirstOrDefault(c => c.Trials.Contains(trial)) ?? Events.Of(trial)?.Campaign;
+
+  public static bool IsEvent(Campaign campaign) => Events.Of(campaign) != null;
 
   public static string NextTrialId()
   {
@@ -151,14 +153,6 @@ public static class Campaigns
     return int.TryParse(id[1..], out int number) ? number : null;
   }
 
-  public static int IndexOf(Campaign campaign)
-  {
-    for (int i = 0; i < All.Count; i++)
-      if (All[i] == campaign)
-        return i;
-    return 0;
-  }
-
   public static void Validate()
   {
     HashSet<string> campaignIds = [];
@@ -167,15 +161,20 @@ public static class Campaigns
     {
       if (!campaignIds.Add(campaign.Id))
         throw new InvalidOperationException($"duplicate campaign id '{campaign.Id}'");
-      if (campaign.Trials.Count == 0)
-        throw new InvalidOperationException($"campaign '{campaign.Id}' has no trials");
-      foreach (Trial trial in campaign.Trials)
-      {
-        if (!trialIds.Add(trial.Id))
-          throw new InvalidOperationException($"duplicate trial id '{trial.Id}'");
-        if (trial.ReplayLimitSeconds < 1)
-          throw new InvalidOperationException($"trial '{trial.Id}' has a replay limit below 1 s");
-      }
+      CheckTrials(campaign, trialIds);
+    }
+  }
+
+  public static void CheckTrials(Campaign campaign, HashSet<string> trialIds)
+  {
+    if (campaign.Trials.Count == 0)
+      throw new InvalidOperationException($"campaign '{campaign.Id}' has no trials");
+    foreach (Trial trial in campaign.Trials)
+    {
+      if (!trialIds.Add(trial.Id))
+        throw new InvalidOperationException($"duplicate trial id '{trial.Id}'");
+      if (trial.ReplayLimitSeconds < 1)
+        throw new InvalidOperationException($"trial '{trial.Id}' has a replay limit below 1 s");
     }
   }
 }

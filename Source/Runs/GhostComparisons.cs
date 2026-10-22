@@ -95,7 +95,7 @@ public static class GhostComparisons
       return;
     Forget();
     trialId = trial.Id;
-    switchingTo = new Watched(KeyOf(row), replay, row.Rank);
+    switchingTo = new Watched(KeyOf(row), replay, row.RankOrLast);
   }
 
   public static void Switch(BoardRow row, Replay replay, Trial trial, int watchedRank)
@@ -128,7 +128,7 @@ public static class GhostComparisons
       ghosts.Add(playingAsGhost);
     }
     chosenWas = chosen;
-    switchingTo = new Watched(KeyOf(row), replay, row.Rank);
+    switchingTo = new Watched(KeyOf(row), replay, row.RankOrLast);
     RunManager.ShowGhosts();
   }
 
@@ -144,7 +144,7 @@ public static class GhostComparisons
       GhostSplits splits = GhostSplits.Compute(planned.Replay, CourseOf(trial));
       ghosts.Add(new(planned.Key, planned.Replay, chosen.Color, splits, planned.Rank));
     }
-    switchingTo = new Watched(KeyOf(row), replay, row.Rank);
+    switchingTo = new Watched(KeyOf(row), replay, row.RankOrLast);
   }
 
   public static void CancelSwitch()
@@ -178,7 +178,7 @@ public static class GhostComparisons
       Forget();
     trialId = trial.Id;
     GhostSplits splits = GhostSplits.Compute(replay, CourseOf(trial));
-    ComparedGhost added = new(KeyOf(row), replay, NextColor(), splits, row.Rank);
+    ComparedGhost added = new(KeyOf(row), replay, NextColor(), splits, row.RankOrLast);
     ghosts.Add(added);
     if (switchingTo != null && RunManager.Replay is Replay playing && added.Key == KeyOf(playing))
       playingAsGhost = added;

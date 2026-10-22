@@ -14,20 +14,24 @@ public class OuiTrials : ListScreen
 {
   public const Overworld.StartMode ReturnStartMode = (Overworld.StartMode)5602393;
   public static Trial ReturnTrial;
-
   public static LeaderboardView.Bookmark? ReturnBoard;
 
-  private const float NameY = TitleY + 70f;
+  public static bool ReturnsToList =>
+    ReturnTrial != null && Campaigns.CampaignOf(ReturnTrial) != null;
+
+  private const float HeaderLift = 24f;
+  private const float NameY = TitleY - HeaderLift + 70f;
   private const float NameScale = 0.8f;
   private const float ArrowGap = 50f;
-  private const float TotalY = TitleY + 115f;
+  private const float TimingY = TitleY - HeaderLift + 115f;
+  private const float TimingScale = 0.6f;
   private const float TotalScale = 0.6f;
   private const float TotalLabelGap = 16f;
-  private const float OfflineY = TotalY + 34f;
-  private const float OfflineScale = 0.45f;
-  private const float TrialsListTop = 280f;
+  private const float TrialsListTop = 240f;
+  private const float TrialsListBottom = 920f;
   private const float NoticeSeconds = 5f;
 
+  private List<Campaign> listed;
   private int campaignIndex;
   private Campaign outgoingCampaign;
   private TrialsMenu outgoing;
@@ -39,15 +43,28 @@ public class OuiTrials : ListScreen
 
   protected override int ScreenDepth => 3;
 
+  protected override float TitleLift => HeaderLift;
+
+  protected override StandingsState ServerState => Standings.State(Campaign);
+
+  protected override string TitleKey =>
+    Campaigns.IsEvent(Campaign) ? "climbtrials_events_title" : base.TitleKey;
+
+  private List<Campaign> Listed => listed ??= [.. Campaigns.All];
+
   public Campaign Campaign
   {
-    get => Campaigns.All[campaignIndex];
-    set => campaignIndex = Campaigns.IndexOf(value);
+    get => Listed[campaignIndex];
+    set
+    {
+      listed = Campaigns.IsEvent(value) ? Events.Ordered() : [.. Campaigns.All];
+      campaignIndex = Math.Max(0, listed.IndexOf(value));
+    }
   }
 
   protected override TrialsMenu BuildMenu()
   {
-    TrialsMenu built = new() { ListTop = TrialsListTop };
+    TrialsMenu built = new() { ListTop = TrialsListTop, ListBottom = TrialsListBottom };
     rows.Clear();
     foreach (Trial trial in Campaign.Trials)
     {
@@ -63,7 +80,10 @@ public class OuiTrials : ListScreen
     {
       built.Focused = false;
       Audio.Play(SFX.ui_main_button_back);
-      Overworld.Goto<OuiCampaigns>();
+      if (Campaigns.IsEvent(Campaign))
+        Overworld.Goto<OuiEvents>();
+      else
+        Overworld.Goto<OuiCampaigns>();
     };
     return built;
   }
@@ -80,7 +100,7 @@ public class OuiTrials : ListScreen
 
   public override bool IsStart(Overworld overworld, Overworld.StartMode start)
   {
-    if (start != ReturnStartMode || ReturnTrial == null)
+    if (start != ReturnStartMode || !ReturnsToList)
       return false;
     Campaign = Campaigns.CampaignOf(ReturnTrial);
     Add(new Coroutine(Enter(null)));
@@ -92,13 +112,13 @@ public class OuiTrials : ListScreen
     if (outgoing != null)
       return;
 
-    int count = Campaigns.All.Count;
+    int count = Listed.Count;
     if (count < 2)
       return;
 
     outgoingCampaign = Campaign;
     campaignIndex = (campaignIndex + direction + count) % count;
-    Standings.EnsureFresh(Campaign);
+    RefreshCampaign();
     Audio.Play(direction > 0 ? SFX.ui_main_button_toggle_on : SFX.ui_main_button_toggle_off);
     outgoing = menu;
     outgoing.Focused = false;
@@ -163,7 +183,14 @@ public class OuiTrials : ListScreen
   protected override void FetchOnline()
   {
     Identity.EnsureRegistered();
+    RefreshCampaign();
+  }
+
+  private void RefreshCampaign()
+  {
     Standings.EnsureFresh(Campaign);
+    if (Campaigns.IsEvent(Campaign))
+      Standings.EnsureFreshHub();
   }
 
   private void Choose(Trial trial)
@@ -197,7 +224,7 @@ public class OuiTrials : ListScreen
   {
     open = null;
     SetDim(1f);
-    Standings.EnsureFresh(Campaign);
+    RefreshCampaign();
     if (Focused)
       menu.Focused = true;
   }
@@ -290,7 +317,7 @@ public class OuiTrials : ListScreen
       menu.Selection = menu.Items.IndexOf(rows[index]);
       menu.Current?.OnEnter?.Invoke();
     }
-    Standings.EnsureFresh(Campaign);
+    RefreshCampaign();
     menu.Focused = true;
     Focused = true;
   }
@@ -382,55 +409,68 @@ public class OuiTrials : ListScreen
     ButtonRow.DrawCenter(Dialog.Clean("climbtrials_trials_leaderboard"), Input.MenuJournal, alpha);
   }
 
-  private static void DrawCampaignHeader(Campaign campaign, float atX, float alpha, bool active)
+  private void DrawCampaignHeader(Campaign campaign, float atX, float alpha, bool active)
   {
     Color dim = RowLayout.Dim * alpha;
-    float nameY = NameY;
-    float totalY = TotalY;
-    ActiveFont.Draw(
+    Color white = Color.White * alpha;
+    ActiveFont.DrawOutline(
       campaign.Name,
-      new Vector2(atX, nameY),
+      new Vector2(atX, NameY),
       new Vector2(0.5f, 0.5f),
       Vector2.One * NameScale,
-      dim
+      white,
+      2f,
+      TextOutline.StrokeFor(white)
     );
-    if (Campaigns.All.Count > 1)
+    if (Listed.Count > 1)
     {
       Color arrows = active ? TrialsMenu.Highlight * alpha : dim;
       MTexture arrow = GFX.Gui["dotarrow_outline"];
       float half = ActiveFont.Measure(campaign.Name).X * NameScale / 2f + ArrowGap;
-      arrow.DrawCentered(new Vector2(atX + half, nameY), arrows);
-      arrow.DrawCentered(new Vector2(atX - half, nameY), arrows, new Vector2(-1f, 1f));
+      arrow.DrawCentered(new Vector2(atX + half, NameY), arrows);
+      arrow.DrawCentered(new Vector2(atX - half, NameY), arrows, new Vector2(-1f, 1f));
     }
-    CampaignRecord record = TrialRecords.Totals(campaign);
-    if (Standings.State(campaign) == StandingsState.Offline)
-      ActiveFont.Draw(
-        Standings.OfflineNote,
-        new Vector2(atX, record.TotalTicks == null ? totalY : OfflineY),
+    EventCampaign eventCampaign = Events.Of(campaign);
+    if (eventCampaign != null)
+      TextOutline.DrawDim(
+        EventTiming.PhaseText(eventCampaign),
+        new Vector2(atX, TimingY),
         new Vector2(0.5f, 0.5f),
-        Vector2.One * OfflineScale,
+        TimingScale,
         dim
       );
+    if (!notice.Showing)
+      DrawTotal(campaign, eventCampaign != null, atX, alpha);
+  }
+
+  private static void DrawTotal(Campaign campaign, bool isEvent, float atX, float alpha)
+  {
+    CampaignRecord record = TrialRecords.Totals(campaign);
     if (record.TotalTicks is not long total)
       return;
-
-    string label = Dialog.Clean("climbtrials_trials_campaign_total");
+    string label = Dialog.Clean(
+      isEvent ? "climbtrials_trials_event_total" : "climbtrials_trials_campaign_total"
+    );
     string text = TimeText.Format(total);
+    TimeStyle style = TimeText.Hud.At(TotalScale);
     float labelWidth = ActiveFont.Measure(label).X * TotalScale;
-    float timeWidth = TimeText.Width(text, TimeText.Hud.At(TotalScale));
+    float timeWidth = TimeText.Width(text, style);
     float left = atX - (labelWidth + TotalLabelGap + timeWidth) / 2f;
-    ActiveFont.Draw(
+    Color white = Color.White * alpha;
+    ActiveFont.DrawOutline(
       label,
-      new Vector2(left, totalY),
+      new Vector2(left, NoticeY),
       new Vector2(0f, 0.5f),
       Vector2.One * TotalScale,
-      dim
+      white,
+      2f,
+      TextOutline.StrokeFor(white)
     );
-    float baseline = totalY + TimeText.Height(TimeText.Hud.At(TotalScale)) / 2f;
+    float baseline = NoticeY + TimeText.Height(style) / 2f;
     TimeText.Draw(
       new Vector2(left + labelWidth + TotalLabelGap, baseline),
       text,
-      TimeText.Hud.At(TotalScale),
+      style,
       MedalIcon.TextColor(record.Medal) * alpha
     );
   }

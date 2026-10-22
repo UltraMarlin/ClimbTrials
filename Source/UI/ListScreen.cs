@@ -13,9 +13,11 @@ public abstract class ListScreen : Oui
   public const float TitleY = 120f;
   private const float StatusY = 1060f;
   protected const float NoticeY = 975f;
-  private const float OfflineY = 190f;
-  private const float OfflineScale = 0.45f;
+  private const float OfflineX = 60f;
+  private const float OfflineLabelY = 1024f;
+  private const float OfflineScale = 0.5f;
   private const float NoticeScale = 0.6f;
+  private const float PollSeconds = 180f;
 
   protected TrialsMenu menu;
   protected readonly TransientText notice = new();
@@ -23,8 +25,10 @@ public abstract class ListScreen : Oui
   protected float x = OnScreenX;
   protected float alpha;
   private float dim = 1f;
+  private float sinceFetch;
   protected abstract int ScreenDepth { get; }
   protected virtual string TitleKey => "climbtrials_campaigns_title";
+  protected virtual float TitleLift => 0f;
 
   public static int DepthOf(Oui other) =>
     other switch
@@ -56,17 +60,22 @@ public abstract class ListScreen : Oui
     menu?.Alpha = alpha * dim;
   }
 
-  protected void DrawOfflineNote(StandingsState state)
+  protected abstract StandingsState ServerState { get; }
+
+  private void DrawOfflineLabel()
   {
-    if (state != StandingsState.Offline)
-      return;
-    ActiveFont.Draw(
-      Standings.OfflineNote,
-      new Vector2(menu.X, OfflineY),
-      new Vector2(0.5f, 0.5f),
-      Vector2.One * OfflineScale,
-      RowLayout.Dim * menu.Alpha
-    );
+    string key =
+      ClimbTrialsModule.Settings.OfflineMode ? "climbtrials_offline_mode"
+      : ServerState == StandingsState.Offline ? "climbtrials_offline"
+      : null;
+    if (key != null)
+      TextOutline.DrawDim(
+        Dialog.Clean(key),
+        new Vector2(OfflineX, OfflineLabelY),
+        new Vector2(0f, 0.5f),
+        OfflineScale,
+        alpha
+      );
   }
 
   public override IEnumerator Enter(Oui from)
@@ -83,6 +92,7 @@ public abstract class ListScreen : Oui
     TrialRecords.EnsureLoaded();
     ReplayStore.Refresh();
     FetchOnline();
+    sinceFetch = 0f;
     menu = BuildMenu();
     menu.Selection = InitialSelection(from);
     menu.Focused = false;
@@ -150,6 +160,13 @@ public abstract class ListScreen : Oui
   {
     base.Update();
     notice.Update(Engine.RawDeltaTime);
+    if (!Focused || menu?.Focused != true)
+      return;
+    sinceFetch += Engine.RawDeltaTime;
+    if (sinceFetch < PollSeconds)
+      return;
+    sinceFetch = 0f;
+    FetchOnline();
   }
 
   public override void Render()
@@ -159,7 +176,7 @@ public abstract class ListScreen : Oui
     float totalAlpha = alpha * dim;
     ActiveFont.DrawOutline(
       Dialog.Clean(TitleKey),
-      new Vector2(x, TitleY),
+      new Vector2(x, TitleY - TitleLift),
       new Vector2(0.5f, 0.5f),
       Vector2.One * 1.6f,
       Color.White * totalAlpha,
@@ -168,6 +185,7 @@ public abstract class ListScreen : Oui
     );
     RenderHeader();
     RenderPrompts(totalAlpha);
+    DrawOfflineLabel();
     notice.Render(new Vector2(x, NoticeY), NoticeScale, totalAlpha);
     if (hintKey != null && !notice.Showing)
       TextOutline.DrawDim(

@@ -15,6 +15,10 @@ public class CampaignRow : SlidingRow
     Campaign = campaign;
   }
 
+  public virtual bool ShowsDescription => true;
+
+  public virtual bool ShowsCount => true;
+
   private string CountText =>
     TrialText.Pluralize(
       Campaign.Trials.Count,
@@ -26,8 +30,9 @@ public class CampaignRow : SlidingRow
   public override float LeftWidth() =>
     RowLayout.CampaignNameX
     + ActiveFont.Measure(Campaign.Name).X
-    + RowLayout.CountGap
-    + ActiveFont.Measure(CountText).X * RowLayout.CountScale;
+    + (
+      ShowsCount ? RowLayout.CountGap + ActiveFont.Measure(CountText).X * RowLayout.CountScale : 0f
+    );
 
   public override float RightWidth() => RowLayout.RightColumnWidth;
 
@@ -47,15 +52,18 @@ public class CampaignRow : SlidingRow
       2f,
       TextOutline.StrokeFor(nameColor * alpha)
     );
-    float countX =
-      RowLayout.CampaignNameX + ActiveFont.Measure(Campaign.Name).X + RowLayout.CountGap;
-    ActiveFont.Draw(
-      CountText,
-      rowStart + new Vector2(countX, 0f),
-      new Vector2(0f, 0.5f),
-      Vector2.One * RowLayout.CountScale,
-      RowLayout.Dim * alpha
-    );
+    if (ShowsCount)
+    {
+      float countX =
+        RowLayout.CampaignNameX + ActiveFont.Measure(Campaign.Name).X + RowLayout.CountGap;
+      ActiveFont.Draw(
+        CountText,
+        rowStart + new Vector2(countX, 0f),
+        new Vector2(0f, 0.5f),
+        Vector2.One * RowLayout.CountScale,
+        RowLayout.Dim * alpha
+      );
+    }
 
     CampaignRecord record = TrialRecords.Totals(Campaign);
     string text = record.TotalTicks is long total ? TimeText.Format(total) : null;

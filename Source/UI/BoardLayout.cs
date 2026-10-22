@@ -23,4 +23,8 @@ public static class BoardLayout
   public const float RuleGap = 6f;
   public const float RuleAlpha = 0.3f;
   public const float MessageY = 560f;
+  public const float SecondLineGap = 28f;
+  public const float SecondLineGrowth = 24f;
+  public const float SecondLineLift = SecondLineGrowth;
+  public const float HiddenTimeAlpha = 0.5f;
 }

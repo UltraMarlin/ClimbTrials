@@ -19,20 +19,22 @@ public sealed class RenameAnswer
 
 public sealed class BoardRow
 {
-  public int Rank { get; set; }
+  public int? Rank { get; set; }
   public string Name { get; set; }
-  public long Ticks { get; set; }
-  public DateTime AchievedAt { get; set; }
+  public long? Ticks { get; set; }
+  public DateTime? AchievedAt { get; set; }
   public bool Me { get; set; }
   public string ReplayId { get; set; }
   public int? ReplayFormat { get; set; }
   public Medal? Medal { get; set; }
+  public int RankOrLast => Rank ?? int.MaxValue;
 }
 
 public sealed class TrialStanding
 {
   public string TrialId { get; set; }
-  public int Total { get; set; }
+  public BoardMode BoardMode { get; set; }
+  public int? Total { get; set; }
   public int? Rank { get; set; }
   public long? Ticks { get; set; }
   public DateTime? AchievedAt { get; set; }
@@ -41,7 +43,9 @@ public sealed class TrialStanding
 
 public sealed class Board
 {
-  public int Total { get; set; }
+  public BoardMode BoardMode { get; set; }
+  public ReplayMode ReplayMode { get; set; }
+  public int? Total { get; set; }
   public int Offset { get; set; }
   public List<BoardRow> Rows { get; set; } = [];
   public BoardRow Me { get; set; }
@@ -58,13 +62,14 @@ public sealed class ServerRecord
 public sealed class CampaignRecords
 {
   public string Name { get; set; }
+  public bool SubmissionsPaused { get; set; }
   public List<ServerRecord> Trials { get; set; } = [];
 }
 
 public sealed class CampaignStanding
 {
   public string CampaignId { get; set; }
-  public int Total { get; set; }
+  public int? Total { get; set; }
   public int? Rank { get; set; }
 }
 
@@ -72,7 +77,9 @@ public sealed class HubAnswer
 {
   public string Name { get; set; }
   public DateTime ServerTime { get; set; }
+  public bool SubmissionsPaused { get; set; }
   public List<CampaignStanding> Campaigns { get; set; } = [];
+  public List<EventInfo> Events { get; set; } = [];
 }
 
 public sealed class SubmissionAnswer
@@ -133,8 +140,7 @@ public static class Standings
 
   public static StandingsState MiniBoardState(Trial trial) => StandingOf(trial.Id).State;
 
-  public static string OfflineNote =>
-    Dialog.Clean(Settings.OfflineMode ? "climbtrials_offline_mode_lower" : "climbtrials_offline");
+  public static bool SubmissionsPaused { get; set; }
 
   private static bool NeedsFetch<T>(Entry<T> entry) =>
     !entry.Fetching
@@ -146,7 +152,8 @@ public static class Standings
 
   public static void EnsureFreshHub()
   {
-    if (!NeedsFetch(hub))
+    bool crossed = !hub.Fetching && Events.CrossedSinceAnswer();
+    if (!NeedsFetch(hub) && !crossed)
       return;
 
     hub.Fetching = true;
@@ -155,7 +162,7 @@ public static class Standings
 
   private static void FetchHub(bool retried) =>
     AskCurrent<HubAnswer>(
-      ServerClient.GetHub,
+      done => ServerClient.GetHub(Events.HeldDefinitions(), done),
       result => ReceiveHub(result, retried),
       passDeleted: !retried
     );
@@ -167,8 +174,42 @@ public static class Standings
       Identity.EnsureRegistered(() => FetchHub(retried: true));
       return;
     }
-    if (Accept(hub, result))
-      AdoptName(result.Value.Name);
+    if (!Accept(hub, result))
+      return;
+    HubAnswer answer = result.Value;
+    AdoptName(answer.Name);
+    SubmissionsPaused = answer.SubmissionsPaused;
+    EventsReceived received = Events.Receive(answer.Events, answer.ServerTime);
+    Uploader.ForgetRefusals();
+    if (received.Missing)
+      MarkHubStale();
+    foreach (string id in received.ModesChanged)
+      DropEventBoards(id);
+    foreach (EventInfo info in answer.Events ?? [])
+      answer.Campaigns.Add(
+        new CampaignStanding
+        {
+          CampaignId = info.Id,
+          Total = info.Total,
+          Rank = info.Rank,
+        }
+      );
+  }
+
+  public static void MarkHubStale() => hub.FetchedAt = DateTime.MinValue;
+
+  private static void DropEventBoards(string eventId)
+  {
+    DropChunks(CampaignKey(eventId));
+    foreach (string trialId in Events.TrialIdsOf(eventId))
+    {
+      DropChunks(TrialKey(trialId));
+      if (standings.TryGetValue(trialId, out Entry<TrialStanding> entry))
+      {
+        entry.FetchedAt = DateTime.MinValue;
+        entry.TriedAt = DateTime.MinValue;
+      }
+    }
   }
 
   private static void AskCurrent<T>(
@@ -206,10 +247,13 @@ public static class Standings
     ServerResult<CampaignRecords> result
   )
   {
+    if (result.Error == ServerError.NotFound)
+      MarkHubStale();
     if (!Accept(entry, result))
       return;
 
     AdoptName(result.Value.Name);
+    SubmissionsPaused = result.Value.SubmissionsPaused;
     TrialRecords.Adopt(
       result
         .Value.Trials.Where(r => r.Ticks != null)
@@ -249,6 +293,8 @@ public static class Standings
     entry.Fetching = false;
     if (!result.Ok)
     {
+      if (result.Error == ServerError.NotFound)
+        MarkHubStale();
       if (entry.Value == null)
         entry.State = StandingsState.Offline;
       return;

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Replays;
@@ -15,7 +16,12 @@ public enum UploadState
   Failed,
 }
 
-public readonly record struct Upload(UploadState State, int? Rank, string Message);
+public readonly record struct Upload(
+  UploadState State,
+  int? Rank,
+  string Message,
+  SubmitRefusal Refusal = SubmitRefusal.None
+);
 
 public static class Uploader
 {
@@ -26,6 +32,13 @@ public static class Uploader
   private static readonly Dictionary<string, int> versions = [];
 
   public static Upload UploadFor(string trialId) => uploads.GetValueOrDefault(trialId);
+
+  public static void ForgetRefusals()
+  {
+    foreach ((string trialId, Upload upload) in uploads.ToList())
+      if (upload.Refusal != SubmitRefusal.None)
+        uploads.Remove(trialId);
+  }
 
   public static void Start(Trial trial, Replay replay, Action<Upload> report)
   {
@@ -83,6 +96,7 @@ public static class Uploader
 
       if (result.Ok)
       {
+        Standings.SubmissionsPaused = false;
         Standings.Replace(result.Value);
         StoreAndReport(
           trialId,
@@ -103,7 +117,13 @@ public static class Uploader
         return;
       }
 
-      StoreAndReport(trialId, new Upload(UploadState.Failed, null, MessageFor(result)), report);
+      if (result.Error == ServerError.SubmissionsPaused)
+        Standings.SubmissionsPaused = true;
+      SubmitRefusal refusal = RefusalOf(result.Error, trialId);
+      if (refusal != SubmitRefusal.None)
+        Standings.MarkHubStale();
+      string message = refusal != SubmitRefusal.None ? RefusalNotice(refusal) : MessageFor(result);
+      StoreAndReport(trialId, new Upload(UploadState.Failed, null, message, refusal), report);
     };
     if (submission.Time != null)
       ServerClient.SubmitTime(trialId, submission.Time, onDone);
@@ -111,12 +131,37 @@ public static class Uploader
       ServerClient.Submit(trialId, submission.ReplayBytes, onDone);
   }
 
+  private static SubmitRefusal RefusalOf(ServerError error, string trialId) =>
+    error switch
+    {
+      ServerError.EventClosed => SubmitRefusal.EventClosed,
+      ServerError.NotInvited => SubmitRefusal.NotInvited,
+      ServerError.NotFound when Events.Of(Campaigns.FindTrial(trialId)) != null =>
+        SubmitRefusal.EventGone,
+      _ => SubmitRefusal.None,
+    };
+
   private static string MessageFor(ServerResult<SubmissionAnswer> result) =>
     result.Error switch
     {
       ServerError.Rejected when result.Message != null => result.Message,
       ServerError.UpdateRequired => Dialog.Clean("climbtrials_update_required"),
       ServerError.Banned => Dialog.Clean("climbtrials_submit_banned"),
+      ServerError.SubmissionsPaused => NotSubmitted(Dialog.Clean("climbtrials_submit_paused")),
       _ => Dialog.Clean("climbtrials_submit_failed"),
     };
+
+  public static string RefusalReason(SubmitRefusal refusal) =>
+    refusal switch
+    {
+      SubmitRefusal.EventClosed => Dialog.Clean("climbtrials_submit_event_closed"),
+      SubmitRefusal.NotInvited => Dialog.Clean("climbtrials_submit_not_invited"),
+      SubmitRefusal.EventGone => Dialog.Clean("climbtrials_event_gone"),
+      _ => null,
+    };
+
+  public static string RefusalNotice(SubmitRefusal refusal) => NotSubmitted(RefusalReason(refusal));
+
+  private static string NotSubmitted(string reason) =>
+    Dialog.Get("climbtrials_notice_not_submitted").Replace("{0}", reason);
 }

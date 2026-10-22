@@ -84,6 +84,9 @@ public class TrialRow : SlidingRow
     if (record.Submittable && (!needsReplay || ReplayStore.Exists(Trial.Id)))
       return;
 
+    if (Events.RefusalFor(Trial) != SubmitRefusal.None)
+      return;
+
     Color mark = Colors.Warning * alpha;
     ActiveFont.DrawOutline(
       RowLayout.Mark,

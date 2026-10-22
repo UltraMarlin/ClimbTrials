@@ -7,11 +7,11 @@ namespace Celeste.Mod.ClimbTrials.UI;
 public class TrialsMenu : TextMenu
 {
   public const float ListMinWidth = 1200f;
-  public const float ListBottom = 960f;
 
   public static readonly Color Highlight = HighlightColorA;
 
   public float ListTop = 240f;
+  public float ListBottom = 960f;
 
   public Action OnSwitchLeft;
   public Action OnSwitchRight;

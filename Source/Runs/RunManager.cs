@@ -693,12 +693,7 @@ public static class RunManager
           ReplayStore.Delete(Trial.Id);
         ClimbTrialsModuleSettings settings = ClimbTrialsModule.Settings;
         if (settings.PbAutoSubmit && submittable && !settings.OfflineMode)
-        {
-          if (Identity.Registered)
-            Uploader.Start(Trial, recorded, upload => ReportUpload(Trial, upload));
-          else
-            ShowNotice("climbtrials_not_connected");
-        }
+          AutoSubmit(recorded);
         if (RaceReplay?.IsOwn == true)
           RaceReplay = recorded;
       }
@@ -709,6 +704,23 @@ public static class RunManager
       $"run '{Trial?.Id}' finished in {TimeText.Format(Attempt.ElapsedTicks)}"
     );
     return true;
+  }
+
+  private static void AutoSubmit(Replay recorded)
+  {
+    SubmitRefusal refusal = Events.RefusalFor(Trial);
+    if (refusal != SubmitRefusal.None)
+    {
+      ShowText(Uploader.RefusalNotice(refusal), warning: true);
+      return;
+    }
+    if (!Identity.Registered)
+    {
+      ShowNotice("climbtrials_not_connected");
+      return;
+    }
+    Trial trial = Trial;
+    Uploader.Start(trial, recorded, upload => ReportUpload(trial, upload));
   }
 
   private static void ApplyAssists(SaveData saveData)

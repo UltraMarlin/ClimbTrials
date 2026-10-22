@@ -16,8 +16,15 @@ public abstract class BoardSubject
   public abstract string CountKey { get; }
   public abstract IReadOnlyList<BoardSubject> Siblings { get; }
   public abstract void Fetch(int chunk, double maxAgeSeconds, Action<ServerResult<Board>> onDone);
-  public abstract Medal ShownMedal(BoardRow row);
+  public abstract Campaign Campaign { get; }
   public virtual Trial Trial => null;
+
+  public EventCampaign Event => Events.Of(Campaign);
+
+  public Medal ShownMedal(BoardRow row, BoardMode mode) =>
+    mode == BoardMode.FullTimes ? MedalOf(row) : Medal.None;
+
+  protected abstract Medal MedalOf(BoardRow row);
 
   public static BoardSubject Of(Trial trial) => new TrialSubject(trial, alone: false);
 
@@ -32,9 +39,10 @@ public abstract class BoardSubject
     public override MTexture Skull => GFX.Gui[trial.SkullTexture];
     public override string CountKey => "climbtrials_board_runners";
     public override Trial Trial => trial;
+    public override Campaign Campaign => Campaigns.CampaignOf(trial);
 
     public override IReadOnlyList<BoardSubject> Siblings =>
-      !alone && Campaigns.CampaignOf(trial) is Campaign campaign
+      !alone && Campaign is Campaign campaign
         ? campaign.Trials.Select(t => Of(t)).ToList()
         : [this];
 
@@ -44,11 +52,11 @@ public abstract class BoardSubject
       Action<ServerResult<Board>> onDone
     ) => Standings.FetchTrialBoard(trial, chunk, maxAgeSeconds, onDone);
 
-    public override Medal ShownMedal(BoardRow row) =>
-      trial.Goals == null
+    protected override Medal MedalOf(BoardRow row) =>
+      trial.Goals == null || row.Ticks is not long ticks
         ? Medal.None
         : GoalTimes.HideUnreachedGrandmaster(
-          trial.Goals.MedalReached(row.Ticks),
+          trial.Goals.MedalReached(ticks),
           trial.Goals.MedalReached(TrialRecords.Get(trial.Id)?.BestTicks ?? long.MaxValue)
         );
   }
@@ -59,9 +67,9 @@ public abstract class BoardSubject
     public override string Name => campaign.Name;
     public override MTexture Skull => null;
     public override string CountKey => "climbtrials_board_runners";
-
+    public override Campaign Campaign => campaign;
     public override IReadOnlyList<BoardSubject> Siblings =>
-      Campaigns.All.Select(c => Of(c)).ToList();
+      (Campaigns.IsEvent(campaign) ? Events.Ordered() : Campaigns.All).Select(c => Of(c)).ToList();
 
     public override void Fetch(
       int chunk,
@@ -69,7 +77,7 @@ public abstract class BoardSubject
       Action<ServerResult<Board>> onDone
     ) => Standings.FetchCampaignBoard(campaign, chunk, maxAgeSeconds, onDone);
 
-    public override Medal ShownMedal(BoardRow row) =>
+    protected override Medal MedalOf(BoardRow row) =>
       GoalTimes.HideUnreachedGrandmaster(
         row.Medal ?? Medal.None,
         TrialRecords.Totals(campaign).Medal

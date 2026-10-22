@@ -22,6 +22,9 @@ public static class RowLayout
   public const float WordScale = 0.8f;
   public const float MarkGap = 12f;
   public const string Mark = "!";
+  public const float EventRowHeight = 140f;
+  public const float TimingLineY = 90f;
+  public const float TimingScale = 0.6f;
   public static readonly Color Dim = Color.White * 0.7f;
 
   public static float MarkWidth => ActiveFont.Measure(Mark).X * PbScale;

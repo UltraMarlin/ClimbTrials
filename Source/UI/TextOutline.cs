@@ -20,9 +20,16 @@ public static class TextOutline
     Vector2 justify,
     float scale,
     float alpha
+  ) => DrawDim(text, position, justify, scale, Colors.DimText * alpha);
+
+  public static void DrawDim(
+    string text,
+    Vector2 position,
+    Vector2 justify,
+    float scale,
+    Color color
   )
   {
-    Color color = Colors.DimText * alpha;
     ActiveFont.DrawOutline(
       text,
       position,

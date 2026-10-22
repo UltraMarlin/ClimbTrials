@@ -23,6 +23,7 @@ public static class TimeText
   public static readonly TimeStyle Large = new(2.8f, 0f, 3.5f, 0.7f, RoundStroke: true);
   public const float SignGap = 4f;
   public const float LineBelowBaseline = 16f;
+  public const string HiddenSlots = "0:00.000";
 
   private static float numberWidth;
   private static float spacerWidth;
@@ -94,7 +95,16 @@ public static class TimeText
     return numberHeight * style.Scale;
   }
 
-  public static void Draw(Vector2 baseline, string text, TimeStyle style, Color color)
+  public static void DrawHidden(Vector2 baseline, TimeStyle style, Color color) =>
+    Draw(baseline, HiddenSlots, style, color, digitsAsDashes: true);
+
+  public static void Draw(
+    Vector2 baseline,
+    string text,
+    TimeStyle style,
+    Color color,
+    bool digitsAsDashes = false
+  )
   {
     MeasureFontWidth();
     PixelFont font = Dialog.Languages["english"].Font;
@@ -117,11 +127,12 @@ public static class TimeText
       Vector2 justify = sign ? new(1f, 1f) : new(0.5f, 1f);
       Vector2 scale = Vector2.One * charScale * style.Scale;
       Color stroke = TextOutline.StrokeFor(color);
+      string glyph = digitsAsDashes && char.IsDigit(c) ? "-" : c.ToString();
       if (style.RoundStroke)
         TextOutline.DrawRoundOutline(
           font,
           faceSize,
-          c.ToString(),
+          glyph,
           position,
           justify,
           scale,
@@ -130,16 +141,7 @@ public static class TimeText
           stroke
         );
       else
-        font.DrawOutline(
-          faceSize,
-          c.ToString(),
-          position,
-          justify,
-          scale,
-          color,
-          style.Stroke,
-          stroke
-        );
+        font.DrawOutline(faceSize, glyph, position, justify, scale, color, style.Stroke, stroke);
       x += w;
     }
   }

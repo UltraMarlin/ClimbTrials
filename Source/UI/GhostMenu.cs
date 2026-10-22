@@ -24,6 +24,7 @@ public class GhostMenu : MenuOnTop
   public GhostMenu(
     BoardRow row,
     BoardSubject subject,
+    BoardMode mode,
     IEnumerable<GhostOption> options,
     MenuKeys keys,
     bool inLevel,
@@ -40,7 +41,7 @@ public class GhostMenu : MenuOnTop
       RenderAsFocused = true;
     }
 
-    Add(new HeaderItem(row, subject));
+    Add(new HeaderItem(row, subject, mode));
     Add(new Gap(OptionsGap));
     foreach (GhostOption option in options)
       Add(new OptionButton(option));
@@ -95,10 +96,12 @@ public class GhostMenu : MenuOnTop
     public Func<string> Reason => option.Reason;
   }
 
-  private class HeaderItem(BoardRow row, BoardSubject subject) : Item
+  private class HeaderItem(BoardRow row, BoardSubject subject, BoardMode mode) : Item
   {
-    private readonly string label = $"{RankText.Format(row.Rank)} {row.Name}";
-    private readonly string time = TimeText.Format(row.Ticks);
+    private readonly string label = row.Rank is int rank
+      ? $"{RankText.Format(rank)} {row.Name}"
+      : row.Name;
+    private readonly string time = TimeText.Format(row.Ticks.GetValueOrDefault());
     private static TimeStyle Style => TimeText.Hud.At(HeaderScale);
     private float LabelWidth => ActiveFont.Measure(label).X * HeaderScale;
 
@@ -124,7 +127,8 @@ public class GhostMenu : MenuOnTop
         left + LabelWidth + LabelGap,
         position.Y + TimeText.Height(Style) / 2f
       );
-      TimeText.Draw(baseline, time, Style, MedalIcon.TextColor(subject.ShownMedal(row)) * alpha);
+      Color timeColor = MedalIcon.TextColor(subject.ShownMedal(row, mode)) * alpha;
+      TimeText.Draw(baseline, time, Style, timeColor);
     }
   }
 }

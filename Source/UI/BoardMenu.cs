@@ -49,16 +49,25 @@ public class BoardMenu : TextMenu
       return;
     foreach (BoardRow row in page.Rows)
     {
-      EntryRow entry = new(row, subject, pinned: false);
+      EntryRow entry = new(row, subject, page.BoardMode, pinned: false);
       entries.Add(entry);
       Add(entry);
+    }
+    if (page.BoardMode == BoardMode.OwnTimeOnly && page.Rows.Count == 0 && page.Me != null)
+    {
+      EntryRow alone = new(page.Me, subject, page.BoardMode, pinned: false);
+      entries.Add(alone);
+      Add(alone);
+      return;
     }
     if (page.Me == null || page.Rows.Count == 0)
       return;
     int emptyRows = BoardLayout.PageRows - page.Rows.Count;
     Add(new Gap(emptyRows * BoardLayout.RowHeight + 2f * BoardLayout.RuleGap));
-    Add(own = new EntryRow(page.Me, subject, pinned: true));
+    Add(own = new EntryRow(page.Me, subject, page.BoardMode, pinned: true));
   }
+
+  public float TopLift => header.HasSecondLine ? BoardLayout.SecondLineLift : 0f;
 
   public BoardPage Page => page;
 
@@ -178,7 +187,7 @@ public class BoardMenu : TextMenu
     if (!HasEntries || !HeaderVisible)
       return;
 
-    float top = Position.Y + BoardLayout.HeaderHeight + ItemSpacing;
+    float top = Position.Y + header.Height() + ItemSpacing;
     float centerY = top + EntriesSpan / 2f;
     float half = Math.Max(BoardLayout.PageArrowX, Width / 2f + BoardLayout.PageArrowGap);
     MTexture arrow = GFX.Gui["dotarrow_outline"];
@@ -194,6 +203,7 @@ public class BoardMenu : TextMenu
   public static void DrawRow(
     BoardRow row,
     BoardSubject subject,
+    BoardMode mode,
     Vector2 left,
     float width,
     float alpha,
@@ -204,14 +214,24 @@ public class BoardMenu : TextMenu
     Vector2 justify = new(0f, 0.5f);
     Vector2 scale = Vector2.One * BoardLayout.TextScale;
     Color stroke = TextOutline.StrokeFor(color);
-    Vector2 rankAt = left + new Vector2(BoardLayout.RankX, 0f);
-    ActiveFont.DrawOutline(RankText.Format(row.Rank), rankAt, justify, scale, color, 2f, stroke);
+    if (row.Rank is int rank)
+    {
+      Vector2 rankAt = left + new Vector2(BoardLayout.RankX, 0f);
+      ActiveFont.DrawOutline(RankText.Format(rank), rankAt, justify, scale, color, 2f, stroke);
+    }
     Vector2 nameAt = left + new Vector2(BoardLayout.NameX, 0f);
     ActiveFont.DrawOutline(row.Name, nameAt, justify, scale, color, 2f, stroke);
     DrawMarker(row, left, alpha);
 
-    string time = TimeText.Format(row.Ticks);
-    Medal medal = subject.ShownMedal(row);
+    if (row.Ticks is not long ticks)
+    {
+      float hiddenWidth = TimeText.Width(TimeText.HiddenSlots, Style);
+      Vector2 hiddenAt = new(left.X + width - hiddenWidth, left.Y + TimeText.Height(Style) / 2f);
+      TimeText.DrawHidden(hiddenAt, Style, Color.White * (BoardLayout.HiddenTimeAlpha * alpha));
+      return;
+    }
+    string time = TimeText.Format(ticks);
+    Medal medal = subject.ShownMedal(row, mode);
     float timeWidth = TimeText.Width(time, Style);
     Vector2 baseline = new(left.X + width - timeWidth, left.Y + TimeText.Height(Style) / 2f);
     TimeText.Draw(baseline, time, Style, MedalIcon.TextColor(medal) * alpha);
@@ -257,15 +277,28 @@ public class BoardMenu : TextMenu
 
     private float SkullSpan => Skull == null ? 0f : Skull.Width + BoardLayout.IconGap;
 
+    private readonly BoardMode mode;
+    private readonly bool runnersShown;
+    private readonly bool noteShown;
+
     public HeaderRow(BoardSubject subject, BoardPage page, bool switchable)
     {
       this.subject = subject;
       this.page = page;
       this.switchable = switchable;
       Selectable = switchable;
+      mode = page?.BoardMode ?? subject.Event?.Info.BoardMode ?? BoardMode.FullTimes;
+      runnersShown = mode != BoardMode.OwnTimeOnly;
+      noteShown = NoteText() != null;
     }
 
-    public override float Height() => BoardLayout.HeaderHeight;
+    public bool HasSecondLine => runnersShown && noteShown;
+
+    public override float Height() =>
+      BoardLayout.HeaderHeight + (HasSecondLine ? BoardLayout.SecondLineGrowth : 0f);
+
+    private string NoteText() =>
+      subject.Event is EventCampaign campaign ? EventTiming.BoardNote(campaign, mode) : null;
 
     public override float LeftWidth() =>
       SkullSpan + ActiveFont.Measure(subject.Name).X * BoardLayout.NameScale;
@@ -307,35 +340,49 @@ public class BoardMenu : TextMenu
 
       if (page == null)
         return;
-      string runners = Dialog.Get(subject.CountKey).Replace("{0}", page.Total.ToString());
-      Vector2 runnersAt = new(centerX, top + BoardLayout.RunnersY);
-      Vector2 runnersScale = Vector2.One * BoardLayout.RunnersScale;
+      float lineY = top + BoardLayout.RunnersY;
+      if (runnersShown && page.Total.HasValue)
+      {
+        DrawHeaderLine(
+          Dialog.Get(subject.CountKey).Replace("{0}", $"{page.Total}"),
+          centerX,
+          lineY,
+          alpha
+        );
+        lineY += BoardLayout.SecondLineGap;
+      }
+      if (noteShown && NoteText() is string note)
+        DrawHeaderLine(note, centerX, lineY, alpha);
+    }
+
+    private static void DrawHeaderLine(string text, float centerX, float y, float alpha) =>
       ActiveFont.Draw(
-        runners,
-        runnersAt,
+        text,
+        new Vector2(centerX, y),
         new Vector2(0.5f, 0.5f),
-        runnersScale,
+        Vector2.One * BoardLayout.RunnersScale,
         Colors.DimText * alpha
       );
-    }
   }
 
   private class EntryRow : Item
   {
     public readonly BoardRow Row;
     private readonly BoardSubject subject;
+    private readonly BoardMode mode;
     private readonly bool pinned;
     private readonly string time;
 
-    public EntryRow(BoardRow row, BoardSubject subject, bool pinned)
+    public EntryRow(BoardRow row, BoardSubject subject, BoardMode mode, bool pinned)
     {
       Row = row;
       this.subject = subject;
+      this.mode = mode;
       this.pinned = pinned;
-      time = TimeText.Format(row.Ticks);
+      time = row.Ticks is long ticks ? TimeText.Format(ticks) : TimeText.HiddenSlots;
       Selectable = true;
-
-      if (subject.Trial != null)
+      bool interactive = row.Me || mode != BoardMode.RanksOnly;
+      if (subject.Trial != null && interactive)
         Pressed(() => (Container as BoardMenu)?.OnEntry?.Invoke(row));
     }
 
@@ -361,11 +408,12 @@ public class BoardMenu : TextMenu
         float ruleY = position.Y - Height() / 2f - BoardLayout.RuleGap;
         Color rule = Color.White * (BoardLayout.RuleAlpha * Container.Alpha);
         Draw.Rect(position.X, ruleY, Container.Width, 1f, rule);
-        DrawRow(Row, subject, position, Container.Width, Container.Alpha, highlighted);
+        DrawRow(Row, subject, mode, position, Container.Width, Container.Alpha, highlighted);
         return;
       }
       Vector2 left = position + new Vector2(menu.EntryOffsetX, 0f);
-      DrawRow(Row, subject, left, Container.Width, Container.Alpha * menu.EntryAlpha, highlighted);
+      float rowAlpha = Container.Alpha * menu.EntryAlpha;
+      DrawRow(Row, subject, mode, left, Container.Width, rowAlpha, highlighted);
     }
   }
 }

@@ -26,6 +26,7 @@ public class LeaderboardView : Entity
     Loading,
     Ready,
     Offline,
+    EventGone,
   }
 
   private sealed class Shown(BoardSubject subject)
@@ -198,7 +199,8 @@ public class LeaderboardView : Entity
 
   private void PlaceMenu(Shown shown)
   {
-    Vector2 at = new(shown.X, BoardLayout.MenuTop + rise);
+    float lift = shown.Menu?.TopLift ?? 0f;
+    Vector2 at = new(shown.X, BoardLayout.MenuTop - lift + rise);
     float alpha = shown.Alpha * dim * opened;
     if (shown.Menu != null)
     {
@@ -305,7 +307,10 @@ public class LeaderboardView : Entity
   {
     if (!result.Ok)
     {
-      target.State = BoardState.Offline;
+      bool gone = result.Error == ServerError.NotFound && target.Subject.Event != null;
+      if (gone)
+        Standings.MarkHubStale();
+      target.State = gone ? BoardState.EventGone : BoardState.Offline;
       target.Chunk = null;
       ShowMenu(target, BoardMenu.HeaderSlot);
       return;
@@ -335,7 +340,7 @@ public class LeaderboardView : Entity
       return;
 
     int next = BoardPage.ChunkOf(page) + 1;
-    if (next * Standings.ChunkRows >= chunk.Total)
+    if (chunk.Total is not int total || next * Standings.ChunkRows >= total)
       return;
 
     current.Subject.Fetch(next, options.MaxAgeSeconds, _ => { });
@@ -510,7 +515,8 @@ public class LeaderboardView : Entity
 
   private void OpenGhostMenu(BoardRow row)
   {
-    if (ghost == null || current.Subject.Trial == null || ghostMenu != null)
+    bool timed = row.Ticks.HasValue;
+    if (ghost == null || current.Subject.Trial == null || ghostMenu != null || !timed)
       return;
 
     Audio.Play(SFX.ui_main_button_select);
@@ -555,6 +561,7 @@ public class LeaderboardView : Entity
     ghostMenu = new GhostMenu(
       row,
       current.Subject,
+      current.Chunk?.BoardMode ?? BoardMode.FullTimes,
       choices,
       Keys,
       options.InsideLevel,
@@ -584,16 +591,21 @@ public class LeaderboardView : Entity
   {
     if (local != null)
       return null;
+    if (!row.Me && ReplaysLocked)
+      return EventTiming.LockedReplays(current.Subject.Event);
     if (row.ReplayId == null)
       return Dialog.Clean("climbtrials_ghost_no_replay");
     if (row.ReplayFormat != Replay.FormatVersion)
       return Dialog.Clean("climbtrials_ghost_old_format");
-    if (GhostCache.IsOlderTrial(row.ReplayId, row.Ticks))
+    if (GhostCache.IsOlderTrial(row.ReplayId, row.Ticks.GetValueOrDefault()))
       return Dialog.Clean("climbtrials_ghost_old_trial");
     if (ClimbTrialsModule.Settings.OfflineMode)
       return Dialog.Clean("climbtrials_offline_mode");
     return downloading ? Dialog.Clean("climbtrials_ghost_downloading") : null;
   }
+
+  private bool ReplaysLocked =>
+    current.Chunk?.ReplayMode == ReplayMode.OrganizersOnly && current.Subject.Event != null;
 
   private static string WatchedReason(BoardRow row) =>
     GhostComparisons.IsWatched(row) ? Dialog.Clean("climbtrials_ghost_watching") : null;
@@ -615,7 +627,7 @@ public class LeaderboardView : Entity
     downloading = true;
     GhostCache.Fetch(
       row.ReplayId,
-      row.Ticks,
+      row.Ticks.GetValueOrDefault(),
       row.Me,
       trial,
       replay =>
@@ -626,7 +638,7 @@ public class LeaderboardView : Entity
 
         if (replay == null)
         {
-          if (!GhostCache.IsOlderTrial(row.ReplayId, row.Ticks))
+          if (!GhostCache.IsOlderTrial(row.ReplayId, row.Ticks.GetValueOrDefault()))
             notice.Show(Dialog.Clean("climbtrials_ghost_failed"), NoticeSeconds);
           return;
         }
@@ -658,8 +670,10 @@ public class LeaderboardView : Entity
   {
     Board chunk = current.Chunk;
     if (chunk?.Rows.Find(GhostComparisons.IsWatched) is BoardRow row)
-      return row.Rank;
-    return chunk?.Me is BoardRow me && GhostComparisons.IsWatched(me) ? me.Rank : int.MaxValue;
+      return row.RankOrLast;
+    return chunk?.Me is BoardRow me && GhostComparisons.IsWatched(me)
+      ? me.RankOrLast
+      : int.MaxValue;
   }
 
   private void AddFromMenu(BoardRow row, Replay local)
@@ -674,7 +688,7 @@ public class LeaderboardView : Entity
     downloading = true;
     GhostCache.Fetch(
       row.ReplayId,
-      row.Ticks,
+      row.Ticks.GetValueOrDefault(),
       row.Me,
       trial,
       replay =>
@@ -684,7 +698,7 @@ public class LeaderboardView : Entity
           return;
         if (replay == null)
         {
-          if (!GhostCache.IsOlderTrial(row.ReplayId, row.Ticks))
+          if (!GhostCache.IsOlderTrial(row.ReplayId, row.Ticks.GetValueOrDefault()))
             notice.Show(Dialog.Clean("climbtrials_ghost_failed"), NoticeSeconds);
           return;
         }
@@ -728,7 +742,7 @@ public class LeaderboardView : Entity
     pendingAdds.Add(key);
     GhostCache.Fetch(
       row.ReplayId,
-      row.Ticks,
+      row.Ticks.GetValueOrDefault(),
       row.Me,
       trial,
       replay =>
@@ -772,9 +786,18 @@ public class LeaderboardView : Entity
       DrawMessage("climbtrials_board_unavailable", shown);
       return;
     }
+    if (shown.State == BoardState.EventGone)
+    {
+      DrawMessage("climbtrials_event_gone", shown);
+      return;
+    }
     BoardPage shownPage = shown.Menu?.Page;
-    if (shownPage != null && shownPage.Rows.Count == 0)
+    if (shownPage == null || shownPage.Rows.Count > 0)
+      return;
+    if (shownPage.BoardMode != BoardMode.OwnTimeOnly)
       DrawMessage("climbtrials_board_no_times", shown);
+    else if (shownPage.Me == null)
+      DrawMessage("climbtrials_board_no_own_time", shown);
   }
 
   private void DrawMessage(string key, Shown shown)

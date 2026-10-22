@@ -14,10 +14,12 @@ public class OuiHub : ListScreen
   private const float NoticeSeconds = 5f;
   private const float LoadErrorScale = 0.5f;
   private const float CampaignsIconScale = 1.1f;
+  private const string EventsIcon = "collectables/goldberry";
 
   private static readonly Regex NameRule = new($"^[A-Za-z0-9 _.-]{{1,{NameMaxLength}}}$");
 
   private HubRow campaignsRow;
+  private HubRow eventsRow;
   private HubRow optionsRow;
   private HubRow nameRow;
 
@@ -30,6 +32,7 @@ public class OuiHub : ListScreen
   public override IEnumerator Enter(Oui from)
   {
     hintKey = Campaigns.LoadError == null ? Hints.Pick() : null;
+    Events.ApplyPending();
     return base.Enter(from);
   }
 
@@ -45,6 +48,14 @@ public class OuiHub : ListScreen
     );
     campaignsRow.Pressed(OpenCampaigns);
     built.Add(campaignsRow);
+    eventsRow = new HubRow(
+      () => Dialog.Clean("climbtrials_hub_events"),
+      () => Events.All.Count > 0,
+      EventsIcon,
+      outlineIcon: false
+    );
+    eventsRow.Pressed(OpenEvents);
+    built.Add(eventsRow);
     optionsRow = new HubRow(
       () => Dialog.Clean("climbtrials_hub_options"),
       () => true,
@@ -70,12 +81,13 @@ public class OuiHub : ListScreen
     Standings.EnsureFreshHub();
   }
 
+  protected override StandingsState ServerState => Standings.HubState;
+
   protected override void RenderHeader()
   {
     if (menu == null)
       return;
 
-    DrawOfflineNote(Standings.HubState);
     if (Campaigns.LoadError == null || notice.Showing)
       return;
 
@@ -97,6 +109,7 @@ public class OuiHub : ListScreen
     {
       OuiModOptionString => nameRow,
       OuiClimbTrialsOptions => optionsRow,
+      OuiEvents => eventsRow,
       _ when Campaigns.LoadError != null => optionsRow,
       _ => campaignsRow,
     };
@@ -106,6 +119,8 @@ public class OuiHub : ListScreen
   public override void Update()
   {
     base.Update();
+    if (menu?.Focused == true && Events.HasPending)
+      Events.ApplyPending();
     if (menu?.Current is not HubRow row || !row.Disabled)
       return;
     menu.Current.OnLeave?.Invoke();
@@ -115,8 +130,9 @@ public class OuiHub : ListScreen
 
   public override bool IsStart(Overworld overworld, Overworld.StartMode start)
   {
-    if (start != OuiTrials.ReturnStartMode || OuiTrials.ReturnTrial != null)
+    if (start != OuiTrials.ReturnStartMode || OuiTrials.ReturnsToList)
       return false;
+    OuiTrials.ReturnTrial = null;
     Add(new Coroutine(Enter(null)));
     return true;
   }
@@ -131,6 +147,18 @@ public class OuiHub : ListScreen
     Audio.Play(SFX.ui_main_button_select);
     menu.Focused = false;
     Overworld.Goto<OuiCampaigns>();
+  }
+
+  private void OpenEvents()
+  {
+    if (Events.All.Count == 0)
+    {
+      Audio.Play(SFX.ui_main_button_invalid);
+      return;
+    }
+    Audio.Play(SFX.ui_main_button_select);
+    menu.Focused = false;
+    Overworld.Goto<OuiEvents>();
   }
 
   private void OpenOptions()

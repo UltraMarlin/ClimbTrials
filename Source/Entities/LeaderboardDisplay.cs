@@ -51,7 +51,8 @@ public class LeaderboardDisplay : Entity
     string Time,
     Color Color,
     bool Message = false,
-    float NameFit = 1f
+    float NameFit = 1f,
+    bool HiddenTime = false
   );
 
   public LeaderboardDisplay()
@@ -152,23 +153,24 @@ public class LeaderboardDisplay : Entity
       return [Message("climbtrials_offline_mode")];
     if (state == StandingsState.Offline)
       return [Message("climbtrials_board_unavailable")];
-    if (standing == null)
+    if (standing == null || standing.BoardMode == BoardMode.OwnTimeOnly)
       return [];
     if (standing.Total == 0)
       return [Message("climbtrials_board_no_times")];
     List<Row> rows = [];
     foreach (BoardRow row in standing.Window)
     {
-      if (rows.Count == 3 && row.Rank > 4)
+      if (rows.Count == 3 && row.Rank is int rank && rank > 4)
         rows.Add(new Row(Ellipsis, "", "", Color.White));
       Color color = row.Me ? myTimeColor : Color.White;
       rows.Add(
         new Row(
-          $"#{row.Rank}",
+          row.Rank is int place ? RankText.Format(place) : "",
           row.Name,
-          TimeText.Format(row.Ticks),
+          row.Ticks is long ticks ? TimeText.Format(ticks) : "",
           color,
-          NameFit: NameFitFor(row.Name)
+          NameFit: NameFitFor(row.Name),
+          HiddenTime: row.Ticks == null
         )
       );
     }
@@ -194,7 +196,8 @@ public class LeaderboardDisplay : Entity
       if (!row.Message)
         rankColumn = Math.Max(rankColumn, rank);
       widestName = Math.Max(widestName, ActiveFont.Measure(row.Name).X * textScale * row.NameFit);
-      widestTime = Math.Max(widestTime, TimeText.Width(row.Time, timeStyle));
+      string time = row.HiddenTime ? TimeText.HiddenSlots : row.Time;
+      widestTime = Math.Max(widestTime, TimeText.Width(time, timeStyle));
     }
     nameX = RankX + rankColumn + columnGap;
     float timeX = nameX + widestName + columnGap;
@@ -250,7 +253,13 @@ public class LeaderboardDisplay : Entity
         1.35f,
         Color.Black
       );
-    if (row.Time.Length > 0)
+    if (row.HiddenTime)
+    {
+      float right = widest - TimeText.Width(TimeText.HiddenSlots, timeStyle);
+      Vector2 baseline = new(right, y + TimeText.Height(timeStyle) / 2f);
+      TimeText.DrawHidden(baseline, timeStyle, Color.White * BoardLayout.HiddenTimeAlpha);
+    }
+    else if (row.Time.Length > 0)
     {
       float right = widest - TimeText.Width(row.Time, timeStyle);
       Vector2 baseline = new(right, y + TimeText.Height(timeStyle) / 2f);
