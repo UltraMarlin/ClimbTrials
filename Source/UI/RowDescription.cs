@@ -4,7 +4,7 @@ namespace Celeste.Mod.ClimbTrials.UI;
 
 public static class RowDescription
 {
-  public const float Lift = 16f;
+  private const float BelowRowCentre = 29f;
 
   public static void Attach(TextMenu menu, TextMenu.Item row, string text)
   {
@@ -12,7 +12,6 @@ public static class RowDescription
     TextMenuExt.EaseInSubHeaderExt description = (TextMenuExt.EaseInSubHeaderExt)
       menu.Items[menu.Items.IndexOf(row) + 1];
     description.IncludeWidthInMeasurement = false;
-    float centreShift = (RowLayout.RowHeight - row.Height()) / 2f;
-    description.Offset = new Vector2(0f, -Lift + centreShift);
+    description.Offset = new Vector2(0f, BelowRowCentre - row.Height() / 2f);
   }
 }

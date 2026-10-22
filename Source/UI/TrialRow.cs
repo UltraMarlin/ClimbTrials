@@ -46,10 +46,7 @@ public class TrialRow : SlidingRow
     TrialRecord record = TrialRecords.Get(Trial.Id);
     float timeRight = rightEdge - RowLayout.MarkGap - RowLayout.MarkWidth;
     string best = record == null ? null : TimeText.Format(record.BestTicks);
-    float width = TimeText.Width(
-      best ?? RowLayout.RankSlotTime,
-      TimeText.Hud.At(RowLayout.PbScale)
-    );
+    float width = TimeText.Width(best ?? TimeText.TypicalTime, TimeText.Hud.At(RowLayout.PbScale));
     float medalCenter = timeRight - width - RowLayout.MedalGap;
     if (record == null)
       DrawWord("new", timeRight, rowStart.Y, alpha);
@@ -73,7 +70,7 @@ public class TrialRow : SlidingRow
 
     RankText.Draw(
       Standings.RecordFor(Trial)?.Rank,
-      new Vector2(medalCenter, rowStart.Y + RowLayout.RankLift),
+      new Vector2(medalCenter, rowStart.Y + RowLayout.RankDrop),
       alpha
     );
 

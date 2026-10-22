@@ -23,7 +23,7 @@ public static class TimeText
   public static readonly TimeStyle Large = new(2.8f, 0f, 3.5f, 0.7f, RoundStroke: true);
   public const float SignGap = 4f;
   public const float LineBelowBaseline = 16f;
-  public const string HiddenSlots = "0:00.000";
+  public const string TypicalTime = "0:00.000";
 
   private static float numberWidth;
   private static float spacerWidth;
@@ -96,7 +96,7 @@ public static class TimeText
   }
 
   public static void DrawHidden(Vector2 baseline, TimeStyle style, Color color) =>
-    Draw(baseline, HiddenSlots, style, color, digitsAsDashes: true);
+    Draw(baseline, TypicalTime, style, color, digitsAsDashes: true);
 
   public static void Draw(
     Vector2 baseline,

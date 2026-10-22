@@ -13,9 +13,6 @@ namespace Celeste.Mod.ClimbTrials.UI;
 public class LeaderboardView : Entity
 {
   private const float MessageScale = 0.8f;
-  private const float NoticeY = 975f;
-  private const float NoticeScale = 0.6f;
-  private const float NoticeSeconds = 5f;
   private const float PromptGap = 48f;
   private const float BlockedPromptAlpha = 0.4f;
 
@@ -474,7 +471,7 @@ public class LeaderboardView : Entity
     if (sliding)
       return;
 
-    notice.Render(new Vector2(current.X, NoticeY), NoticeScale, 1f);
+    notice.Render(new Vector2(current.X, ScreenLayout.NoticeY), ScreenLayout.NoticeScale, 1f);
     if (outgoing == null && current.State == BoardState.Offline && RetryAllowed)
       ButtonRow.DrawCenter(Dialog.Clean("climbtrials_board_retry"), Input.MenuConfirm, dim);
     else if (Comparing)
@@ -581,7 +578,10 @@ public class LeaderboardView : Entity
       return null;
     if (!ReplayStore.TryLoad(trial, out Replay replay, out string failure))
     {
-      notice.Show(Dialog.Get("climbtrials_replay_deleted").Replace("{0}", failure), NoticeSeconds);
+      notice.Show(
+        Dialog.Get("climbtrials_replay_deleted").Replace("{0}", failure),
+        ScreenLayout.NoticeSeconds
+      );
       return null;
     }
     return replay.Ticks == row.Ticks ? replay : null;
@@ -639,7 +639,7 @@ public class LeaderboardView : Entity
         if (replay == null)
         {
           if (!GhostCache.IsOlderTrial(row.ReplayId, row.Ticks.GetValueOrDefault()))
-            notice.Show(Dialog.Clean("climbtrials_ghost_failed"), NoticeSeconds);
+            notice.Show(Dialog.Clean("climbtrials_ghost_failed"), ScreenLayout.NoticeSeconds);
           return;
         }
 
@@ -699,7 +699,7 @@ public class LeaderboardView : Entity
         if (replay == null)
         {
           if (!GhostCache.IsOlderTrial(row.ReplayId, row.Ticks.GetValueOrDefault()))
-            notice.Show(Dialog.Clean("climbtrials_ghost_failed"), NoticeSeconds);
+            notice.Show(Dialog.Clean("climbtrials_ghost_failed"), ScreenLayout.NoticeSeconds);
           return;
         }
         RefreshIfOutdated(row, replay);
@@ -729,7 +729,7 @@ public class LeaderboardView : Entity
     string reason = GhostReason(row, local) ?? WatchedReason(row);
     if (reason != null)
     {
-      notice.Show(reason, NoticeSeconds);
+      notice.Show(reason, ScreenLayout.NoticeSeconds);
       return;
     }
     Trial trial = current.Subject.Trial;
@@ -754,7 +754,7 @@ public class LeaderboardView : Entity
         {
           notice.Show(
             GhostReason(row, null) ?? Dialog.Clean("climbtrials_ghost_failed"),
-            NoticeSeconds
+            ScreenLayout.NoticeSeconds
           );
           return;
         }
@@ -774,7 +774,11 @@ public class LeaderboardView : Entity
   {
     if (replay.Ticks == row.Ticks || current.Subject.Trial is not Trial trial)
       return;
-    notice.Show(Dialog.Clean("climbtrials_board_outdated"), NoticeSeconds, warning: false);
+    notice.Show(
+      Dialog.Clean("climbtrials_board_outdated"),
+      ScreenLayout.NoticeSeconds,
+      warning: false
+    );
     Standings.DropTrialBoard(trial);
     Fetch(KeepSelection);
   }

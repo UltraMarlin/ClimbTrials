@@ -196,7 +196,7 @@ public class LeaderboardDisplay : Entity
       if (!row.Message)
         rankColumn = Math.Max(rankColumn, rank);
       widestName = Math.Max(widestName, ActiveFont.Measure(row.Name).X * textScale * row.NameFit);
-      string time = row.HiddenTime ? TimeText.HiddenSlots : row.Time;
+      string time = row.HiddenTime ? TimeText.TypicalTime : row.Time;
       widestTime = Math.Max(widestTime, TimeText.Width(time, timeStyle));
     }
     nameX = RankX + rankColumn + columnGap;
@@ -255,7 +255,7 @@ public class LeaderboardDisplay : Entity
       );
     if (row.HiddenTime)
     {
-      float right = widest - TimeText.Width(TimeText.HiddenSlots, timeStyle);
+      float right = widest - TimeText.Width(TimeText.TypicalTime, timeStyle);
       Vector2 baseline = new(right, y + TimeText.Height(timeStyle) / 2f);
       TimeText.DrawHidden(baseline, timeStyle, Color.White * BoardLayout.HiddenTimeAlpha);
     }

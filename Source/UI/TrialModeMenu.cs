@@ -10,14 +10,12 @@ namespace Celeste.Mod.ClimbTrials.UI;
 
 public class TrialModeMenu : MenuOnTop
 {
-  private const float MenuLift = 80f;
   private const float TitleScale = 1.2f;
   private const float TitleHeight = 100f;
   private const float PbScale = 1.0f;
   private const float PbHeight = 42f;
   private const float DateScale = 0.45f;
   private const float DateHeight = 32f;
-  private const float OptionsGap = 40f;
   private const float IconGap = 16f;
   private const float LabelGap = 16f;
 

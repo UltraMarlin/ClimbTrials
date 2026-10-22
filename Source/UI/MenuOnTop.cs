@@ -6,6 +6,8 @@ namespace Celeste.Mod.ClimbTrials.UI;
 
 public abstract class MenuOnTop : TextMenu
 {
+  protected const float MenuLift = 80f;
+  protected const float OptionsGap = 40f;
   private const float ReasonGap = 40f;
   private const float ReasonScale = 0.6f;
 

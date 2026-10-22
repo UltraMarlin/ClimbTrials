@@ -225,7 +225,7 @@ public class BoardMenu : TextMenu
 
     if (row.Ticks is not long ticks)
     {
-      float hiddenWidth = TimeText.Width(TimeText.HiddenSlots, Style);
+      float hiddenWidth = TimeText.Width(TimeText.TypicalTime, Style);
       Vector2 hiddenAt = new(left.X + width - hiddenWidth, left.Y + TimeText.Height(Style) / 2f);
       TimeText.DrawHidden(hiddenAt, Style, Color.White * (BoardLayout.HiddenTimeAlpha * alpha));
       return;
@@ -379,7 +379,7 @@ public class BoardMenu : TextMenu
       this.subject = subject;
       this.mode = mode;
       this.pinned = pinned;
-      time = row.Ticks is long ticks ? TimeText.Format(ticks) : TimeText.HiddenSlots;
+      time = row.Ticks is long ticks ? TimeText.Format(ticks) : TimeText.TypicalTime;
       Selectable = true;
       bool interactive = row.Me || mode != BoardMode.RanksOnly;
       if (subject.Trial != null && interactive)

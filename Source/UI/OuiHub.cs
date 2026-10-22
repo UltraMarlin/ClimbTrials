@@ -11,7 +11,6 @@ namespace Celeste.Mod.ClimbTrials.UI;
 public class OuiHub : ListScreen
 {
   private const int NameMaxLength = 20;
-  private const float NoticeSeconds = 5f;
   private const float LoadErrorScale = 0.5f;
   private const float CampaignsIconScale = 1.1f;
   private const string EventsIcon = "collectables/goldberry";
@@ -94,7 +93,7 @@ public class OuiHub : ListScreen
     Color color = Colors.Warning * menu.Alpha;
     ActiveFont.DrawOutline(
       Campaigns.LoadError,
-      new Vector2(menu.X, NoticeY),
+      new Vector2(menu.X, ScreenLayout.NoticeY),
       new Vector2(0.5f, 0.5f),
       Vector2.One * LoadErrorScale,
       color,
@@ -217,7 +216,7 @@ public class OuiHub : ListScreen
   {
     if (!NameRule.IsMatch(name) || name.Trim() != name)
     {
-      notice.Show(Dialog.Clean("climbtrials_name_invalid"), NoticeSeconds);
+      notice.Show(Dialog.Clean("climbtrials_name_invalid"), ScreenLayout.NoticeSeconds);
       return;
     }
 
@@ -239,7 +238,7 @@ public class OuiHub : ListScreen
           _ => Dialog.Clean("climbtrials_name_offline"),
         };
         if (text != null)
-          notice.Show(text, NoticeSeconds);
+          notice.Show(text, ScreenLayout.NoticeSeconds);
       }
     );
   }

@@ -14,8 +14,7 @@ public static class RowLayout
   public const float MedalGap = 46f;
   public const float MedalIconHeight = 64f;
   public const float RankScale = 0.6f;
-  public const float RankLift = 3f;
-  public const string RankSlotTime = "0:00.000";
+  public const float RankDrop = 3f;
   public const float HoveredRowShift = 32f;
   public const float CountGap = 24f;
   public const float CountScale = 0.8f;
@@ -33,7 +32,7 @@ public static class RowLayout
     HoveredRowShift
     + MedalIconHeight
     + MedalGap
-    + TimeText.Width(RankSlotTime, TimeText.Hud.At(PbScale))
+    + TimeText.Width(TimeText.TypicalTime, TimeText.Hud.At(PbScale))
     + MarkGap
     + MarkWidth;
 }

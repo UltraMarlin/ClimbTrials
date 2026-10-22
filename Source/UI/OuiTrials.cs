@@ -24,12 +24,10 @@ public class OuiTrials : ListScreen
   private const float NameScale = 0.8f;
   private const float ArrowGap = 50f;
   private const float TimingY = TitleY - HeaderLift + 115f;
-  private const float TimingScale = 0.6f;
   private const float TotalScale = 0.6f;
   private const float TotalLabelGap = 16f;
   private const float TrialsListTop = 240f;
   private const float TrialsListBottom = 920f;
-  private const float NoticeSeconds = 5f;
 
   private List<Campaign> listed;
   private int campaignIndex;
@@ -355,7 +353,7 @@ public class OuiTrials : ListScreen
     if (!IsCurrentScreen)
       return;
     (string text, bool warning) = Uploader.Describe(upload);
-    notice.Show(text, NoticeSeconds, warning);
+    notice.Show(text, ScreenLayout.NoticeSeconds, warning);
   }
 
   private bool TryLoadPb(Trial trial, out Replay replay)
@@ -363,7 +361,7 @@ public class OuiTrials : ListScreen
     if (ReplayStore.TryLoadPb(trial, out replay, out string deleted))
       return true;
     if (deleted != null)
-      notice.Show(deleted, NoticeSeconds);
+      notice.Show(deleted, ScreenLayout.NoticeSeconds);
     return false;
   }
 
@@ -436,7 +434,7 @@ public class OuiTrials : ListScreen
         EventTiming.PhaseText(eventCampaign),
         new Vector2(atX, TimingY),
         new Vector2(0.5f, 0.5f),
-        TimingScale,
+        RowLayout.TimingScale,
         dim
       );
     if (!notice.Showing)
@@ -459,14 +457,14 @@ public class OuiTrials : ListScreen
     Color white = Color.White * alpha;
     ActiveFont.DrawOutline(
       label,
-      new Vector2(left, NoticeY),
+      new Vector2(left, ScreenLayout.NoticeY),
       new Vector2(0f, 0.5f),
       Vector2.One * TotalScale,
       white,
       2f,
       TextOutline.StrokeFor(white)
     );
-    float baseline = NoticeY + TimeText.Height(style) / 2f;
+    float baseline = ScreenLayout.NoticeY + TimeText.Height(style) / 2f;
     TimeText.Draw(
       new Vector2(left + labelWidth + TotalLabelGap, baseline),
       text,

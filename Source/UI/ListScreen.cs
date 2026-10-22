@@ -11,12 +11,8 @@ public abstract class ListScreen : Oui
 {
   public const float OnScreenX = 960f;
   public const float TitleY = 120f;
-  private const float StatusY = 1060f;
-  protected const float NoticeY = 975f;
   private const float OfflineX = 60f;
-  private const float OfflineLabelY = 1024f;
   private const float OfflineScale = 0.5f;
-  private const float NoticeScale = 0.6f;
   private const float PollSeconds = 180f;
 
   protected TrialsMenu menu;
@@ -71,7 +67,7 @@ public abstract class ListScreen : Oui
     if (key != null)
       TextOutline.DrawDim(
         Dialog.Clean(key),
-        new Vector2(OfflineX, OfflineLabelY),
+        new Vector2(OfflineX, ButtonRow.Y),
         new Vector2(0f, 0.5f),
         OfflineScale,
         alpha
@@ -186,19 +182,19 @@ public abstract class ListScreen : Oui
     RenderHeader();
     RenderPrompts(totalAlpha);
     DrawOfflineLabel();
-    notice.Render(new Vector2(x, NoticeY), NoticeScale, totalAlpha);
+    notice.Render(new Vector2(x, ScreenLayout.NoticeY), ScreenLayout.NoticeScale, totalAlpha);
     if (hintKey != null && !notice.Showing)
       TextOutline.DrawDim(
         $"{Dialog.Clean("climbtrials_hint_prefix")} {Dialog.Clean(hintKey)}",
-        new Vector2(x, NoticeY),
+        new Vector2(x, ScreenLayout.NoticeY),
         new Vector2(0.5f, 0.5f),
-        NoticeScale,
+        ScreenLayout.NoticeScale,
         totalAlpha
       );
     if (ModCheck.OthersLoaded)
       ActiveFont.DrawOutline(
         ModCheck.MenuWarning(),
-        new Vector2(x, StatusY),
+        new Vector2(x, ScreenLayout.StatusY),
         new Vector2(0.5f, 0.5f),
         Vector2.One * 0.45f,
         Color.White * 0.7f * totalAlpha,

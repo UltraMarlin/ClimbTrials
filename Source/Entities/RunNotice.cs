@@ -12,7 +12,6 @@ public class RunNotice : Entity
   private const float NoticeDuration = 3f;
   private const float NoticeY = 200f;
   private const float NoticeScale = 0.8f;
-  private const float StatusY = 1060f;
   private const int StatusHeight = 80;
   private const float StatusAlpha = 0.7f;
 
@@ -25,7 +24,7 @@ public class RunNotice : Entity
     Add(
       status = new FadeBuffer("climbtrials-run-status", 1920, StatusHeight, DrawStatus)
       {
-        Origin = new Vector2(0f, StatusY - StatusHeight / 2f),
+        Origin = new Vector2(0f, ScreenLayout.StatusY - StatusHeight / 2f),
         Alpha = StatusAlpha,
       }
     );
@@ -68,7 +67,7 @@ public class RunNotice : Entity
       return;
     ActiveFont.DrawOutline(
       text,
-      new Vector2(960f, StatusY),
+      new Vector2(960f, ScreenLayout.StatusY),
       new Vector2(0.5f, 0.5f),
       Vector2.One * 0.45f,
       Color.White,

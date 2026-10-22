@@ -11,10 +11,8 @@ public readonly record struct GhostOption(string Label, Func<string> Reason, Act
 
 public class GhostMenu : MenuOnTop
 {
-  private const float MenuLift = 80f;
   private const float HeaderScale = 1f;
   private const float HeaderHeight = 90f;
-  private const float OptionsGap = 40f;
   private const float LabelGap = 24f;
 
   private readonly MenuKeys keys;
