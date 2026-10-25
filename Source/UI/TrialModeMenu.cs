@@ -166,28 +166,35 @@ public class TrialModeMenu : MenuOnTop
 
   private class PbItem(TrialRecord record, ServerRecord serverRecord) : Item
   {
-    private readonly string label = serverRecord?.Rank is int rank
-      ? $"{Dialog.Clean("climbtrials_pb")} #{rank}:"
-      : Dialog.Clean("climbtrials_pb");
+    private readonly string label = $"{Dialog.Clean("climbtrials_pb")}:";
+    private readonly string rankText = serverRecord?.Rank is int rank
+      ? $"({RankText.Format(rank)})"
+      : "";
     private readonly string time = TimeText.Format(record.BestTicks);
     private static TimeStyle Style => TimeText.Hud.At(PbScale);
 
     private float LabelWidth => ActiveFont.Measure(label).X * PbScale;
 
+    private float RankWidth =>
+      rankText.Length == 0 ? 0f : LabelGap + ActiveFont.Measure(rankText).X * PbScale;
+
     public override float Height() => PbHeight;
 
-    public override float LeftWidth() => LabelWidth + LabelGap + TimeText.Width(time, Style);
+    public override float LeftWidth() =>
+      LabelWidth + LabelGap + TimeText.Width(time, Style) + RankWidth;
 
     public override void Render(Vector2 position, bool highlighted)
     {
       float alpha = Container.Alpha;
       float left = position.X + (Container.Width - LeftWidth()) / 2f;
       Outline(label, new Vector2(left, position.Y), PbScale, Color.White * alpha);
-      Vector2 baseline = new(
-        left + LabelWidth + LabelGap,
-        position.Y + TimeText.Height(Style) / 2f
-      );
+      float timeLeft = left + LabelWidth + LabelGap;
+      Vector2 baseline = new(timeLeft, position.Y + TimeText.Height(Style) / 2f);
       TimeText.Draw(baseline, time, Style, Color.White * alpha);
+      if (rankText.Length == 0)
+        return;
+      float rankLeft = timeLeft + TimeText.Width(time, Style) + LabelGap;
+      Outline(rankText, new Vector2(rankLeft, position.Y), PbScale, Color.White * alpha);
     }
   }
 

@@ -46,6 +46,12 @@
           "type": "string",
           "minLength": 1
         },
+        "shortName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "description": "Default: <name>"
+        },
         "difficulty": {
           "enum": ["Normal", "Hard", "Expert"]
         },
@@ -312,7 +318,15 @@
           "description": "Default: null"
         },
         "introType": {
-          "enum": ["Respawn", "WalkInRight", "WalkInLeft", "Jump", "WakeUp", "None", null],
+          "enum": [
+            "Respawn",
+            "WalkInRight",
+            "WalkInLeft",
+            "Jump",
+            "WakeUp",
+            "None",
+            null
+          ],
           "default": "Respawn",
           "description": "Default: \"Respawn\""
         },

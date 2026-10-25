@@ -35,7 +35,9 @@ public static class Replayer
   public static bool StoppedByReload { get; private set; }
   public static bool PauseQueued { get; private set; }
   public static int Frame { get; private set; }
-  public static bool Silenced => State is ReplayState.Playing or ReplayState.Paused;
+  public static bool PausedOnFinish { get; private set; }
+  public static bool Silenced =>
+    (State is ReplayState.Playing or ReplayState.Paused) && !PausedOnFinish;
   public static bool MenuOpen => menu != null;
 
   private static Replay current;
@@ -93,6 +95,7 @@ public static class Replayer
     Frame = 0;
     Desynced = false;
     StoppedByReload = false;
+    PausedOnFinish = false;
     stepping = false;
     stepHeldTicks = 0;
 
@@ -144,10 +147,9 @@ public static class Replayer
       return false;
 
     int missing = current.Frames.Count - Frame;
-    bool alreadyDesynced = Desynced;
     RestoreInputs();
     State = ReplayState.Finished;
-    if (alreadyDesynced)
+    if (Desynced)
       return false;
 
     if (missing != 0)
@@ -164,7 +166,18 @@ public static class Replayer
       );
       return false;
     }
+    if (stepping)
+    {
+      PausedOnFinish = true;
+      State = ReplayState.Paused;
+    }
     return true;
+  }
+
+  private static void ReleaseFinish()
+  {
+    PausedOnFinish = false;
+    State = ReplayState.Finished;
   }
 
   public static void Clear()
@@ -176,6 +189,7 @@ public static class Replayer
     Desynced = false;
     StoppedByReload = false;
     PauseQueued = false;
+    PausedOnFinish = false;
     stepping = false;
     ReleasePauseAudio();
     RestoreRecordedMenu();
@@ -198,7 +212,7 @@ public static class Replayer
   public static InputFrame? FedFrame(int framesBack = 0)
   {
     int index = Frame - 1 - framesBack;
-    if (!Silenced || index < 0 || index >= current.Frames.Count)
+    if ((!Silenced && !PausedOnFinish) || index < 0 || index >= current.Frames.Count)
       return null;
     return current.Frames[index];
   }
@@ -328,7 +342,10 @@ public static class Replayer
         HandleWatcherControls();
         if (menu == null && State == ReplayState.Paused && StepRequested())
         {
-          StepOnce(orig, self, gameTime);
+          if (!PausedOnFinish)
+            StepOnce(orig, self, gameTime);
+          else if (stepHeldTicks == 1)
+            ReleaseFinish();
           return;
         }
       }
@@ -368,7 +385,7 @@ public static class Replayer
     if (resumeOnClose)
       State = ReplayState.Paused;
     stepHeldTicks = 0;
-    if (State == ReplayState.Finished)
+    if (State == ReplayState.Finished || PausedOnFinish)
     {
       Input.Pause.ConsumePress();
       Input.ESC.ConsumePress();
@@ -626,7 +643,12 @@ public static class Replayer
 
     if (State != ReplayState.Finished && WatcherPressed(ClimbTrialsModule.Settings.ReplayPlayPause))
     {
-      if (State == ReplayState.Paused)
+      if (PausedOnFinish)
+      {
+        ReleaseFinish();
+        Audio.Play(ResumeSound);
+      }
+      else if (State == ReplayState.Paused)
       {
         State = ReplayState.Playing;
         Audio.Play(ResumeSound);
@@ -708,6 +730,7 @@ public static class Replayer
   private static void EndPlaybackEarly(Level level)
   {
     RestoreInputs();
+    PausedOnFinish = false;
     State = ReplayState.Finished;
     if (level != null)
       level.Frozen = true;
