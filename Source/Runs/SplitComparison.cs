@@ -25,6 +25,13 @@ public sealed class SplitComparison(GhostSplits ghost)
       DeltaChange = TotalDelta - before;
   }
 
+  public SplitComparison Copy()
+  {
+    SplitComparison copy = new(Ghost) { TotalDelta = TotalDelta, DeltaChange = DeltaChange };
+    copy.detector.CopyFrom(detector);
+    return copy;
+  }
+
   public void Finish(long ticks)
   {
     long before = TotalDelta;

@@ -158,11 +158,20 @@ public abstract class ListScreen : Oui
     notice.Update(Engine.RawDeltaTime);
     if (!Focused || menu?.Focused != true)
       return;
+    if (ClimbTrialsModule.Settings.ToggleSpeedrunTool.Pressed && SpeedrunToolBridge.Loaded)
+      ToggleSpeedrunTool();
     sinceFetch += Engine.RawDeltaTime;
     if (sinceFetch < PollSeconds)
       return;
     sinceFetch = 0f;
     FetchOnline();
+  }
+
+  private void ToggleSpeedrunTool()
+  {
+    ClimbTrialsModule.Settings.ToggleSpeedrunTool.ConsumePress();
+    SpeedrunToolBridge.Toggle(out string noticeKey);
+    notice.Show(Dialog.Clean(noticeKey), ScreenLayout.NoticeSeconds, warning: false);
   }
 
   public override void Render()
@@ -191,9 +200,13 @@ public abstract class ListScreen : Oui
         ScreenLayout.NoticeScale,
         totalAlpha
       );
-    if (ModCheck.OthersLoaded)
+    string status =
+      SpeedrunToolBridge.Enabled ? Dialog.Clean("climbtrials_practice_status")
+      : ModCheck.OthersLoaded ? ModCheck.MenuWarning()
+      : null;
+    if (status != null)
       ActiveFont.DrawOutline(
-        ModCheck.MenuWarning(),
+        status,
         new Vector2(x, ScreenLayout.StatusY),
         new Vector2(0.5f, 0.5f),
         Vector2.One * 0.45f,

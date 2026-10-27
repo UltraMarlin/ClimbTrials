@@ -135,7 +135,7 @@ public class ClimbTrialsModuleSettings : EverestModuleSettings
 
   public ButtonBinding ReplayFrameAdvance { get; set; }
 
-  [DefaultButtonBinding(0, Keys.F8)]
+  [DefaultButtonBinding(0, Keys.B)]
   public ButtonBinding ReplayShowHitboxes { get; set; }
 
   [DefaultButtonBinding(Buttons.Y, Keys.G)]
@@ -143,6 +143,9 @@ public class ClimbTrialsModuleSettings : EverestModuleSettings
 
   [DefaultButtonBinding(Buttons.Back, Keys.Delete)]
   public ButtonBinding ClearComparisons { get; set; }
+
+  [SettingSubHeader("climbtrials_debug_speedruntool")]
+  public ButtonBinding ToggleSpeedrunTool { get; set; }
 
   [SettingIgnore]
   public bool HasChangedOptions { get; set; }

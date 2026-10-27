@@ -31,6 +31,12 @@ public sealed class Attempt
     State = AttemptState.Finished;
   }
 
+  public void Restore(AttemptState state, long elapsedTicks)
+  {
+    State = state;
+    ElapsedTicks = elapsedTicks;
+  }
+
   public void Tick(float rawDeltaSeconds)
   {
     if (State == AttemptState.Running)

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Celeste.Mod.ClimbTrials.Runs;
 
 namespace Celeste.Mod.ClimbTrials.Replays;
 
@@ -12,12 +13,22 @@ public static class ModCheck
 {
   public const int NamesShown = 3;
 
-  public static readonly IReadOnlySet<string> Allowed = new HashSet<string>
+  private static readonly IReadOnlySet<string> AlwaysAllowed = new HashSet<string>
   {
     "Celeste",
     "Everest",
     "ClimbTrials",
   };
+
+  private static readonly IReadOnlySet<string> AlwaysAllowedAndSpeedrunTool = new HashSet<string>(
+    AlwaysAllowed
+  )
+  {
+    "SpeedrunTool",
+  };
+
+  public static IReadOnlySet<string> Allowed =>
+    SpeedrunToolBridge.Registered ? AlwaysAllowedAndSpeedrunTool : AlwaysAllowed;
 
   public static List<ModuleRef> Modules() =>
     Everest

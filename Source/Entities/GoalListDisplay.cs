@@ -39,6 +39,7 @@ public class GoalListDisplay : Entity
   public GoalListDisplay()
   {
     Tag = Tags.HUD | Tags.Persistent | Tags.TransitionUpdate | Tags.PauseUpdate;
+    Add(new BeforeRenderHook(PlaceLayers));
   }
 
   private static GoalTimesDisplayMode Mode => ClimbTrialsModule.Settings.HudSettings.GoalTimes;
@@ -96,7 +97,7 @@ public class GoalListDisplay : Entity
       return;
     long best = TrialRecords.Get(trial.Id)?.BestTicks ?? long.MaxValue;
     GoalTimesDisplayMode mode = Mode;
-    float shift = RunHudLayout.ColumnShift;
+    float shift = RunHudLayout.GhostBlockShift;
     if (trial == cachedTrial && best == cachedBest && mode == cachedMode && shift == cachedShift)
       return;
     cachedTrial = trial;
@@ -124,15 +125,21 @@ public class GoalListDisplay : Entity
         () => DrawRow(index)
       )
       {
-        Origin = new Vector2(
-          0f,
-          RunHudLayout.ListY + index * RunHudLayout.RowHeight - RunHudLayout.RowPad
-        ),
+        Origin = new Vector2(0f, RowTop(index)),
       };
       Add(layer);
       layers.Add(layer);
     }
   }
+
+  private void PlaceLayers()
+  {
+    for (int i = 0; i < layers.Count; i++)
+      layers[i].Origin = new Vector2(0f, RowTop(i));
+  }
+
+  private static float RowTop(int index) =>
+    RunHudLayout.ListY + index * RunHudLayout.RowHeight - RunHudLayout.RowPad;
 
   private void DrawRow(int index)
   {

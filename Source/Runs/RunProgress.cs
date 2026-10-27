@@ -39,6 +39,25 @@ public sealed class RunProgress
 
   public void DropUnkept() => touched.IntersectWith(kept);
 
+  public RunProgress Copy()
+  {
+    RunProgress copy = new();
+    copy.CopyFrom(this);
+    return copy;
+  }
+
+  public void CopyFrom(RunProgress other)
+  {
+    touched.Clear();
+    touched.UnionWith(other.touched);
+    kept.Clear();
+    kept.UnionWith(other.kept);
+    respawnSeen = other.respawnSeen;
+    RespawnMoved = other.RespawnMoved;
+    Strawberries = other.Strawberries;
+    SummitGems = other.SummitGems;
+  }
+
   public void Reset()
   {
     touched.Clear();

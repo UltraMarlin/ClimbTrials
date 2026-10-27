@@ -81,6 +81,9 @@ public class RunNotice : Entity
     if (RunManager.Replaying)
       return null;
 
+    if (RunManager.Practice)
+      return Dialog.Clean("climbtrials_practice_status");
+
     if (Recorder.Stopped == StopReason.Limit)
       return Dialog.Clean("climbtrials_replay_limit")
         + " "

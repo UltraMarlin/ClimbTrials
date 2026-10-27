@@ -54,7 +54,7 @@ public static class RunGuards
 
   private static void AfterSettingsSave()
   {
-    if (RunManager.AttemptInProgress && !RunManager.Replaying)
+    if (RunManager.AttemptInProgress && !RunManager.Replaying && !RunManager.Practice)
       RunManager.RestartAttemptAfterSave("climbtrials_notice_settings");
   }
 

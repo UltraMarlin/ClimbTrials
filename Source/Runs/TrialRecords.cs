@@ -31,10 +31,16 @@ public static class TrialRecords
     return new CampaignRecord(medal, total);
   }
 
+  public static bool IsRecordsData(EverestModuleSaveData saveData) => saveData?.Index == Slot;
+
   public static void EnsureLoaded()
   {
-    if (ClimbTrialsModule.SaveData?.Index == Slot)
-      return;
+    if (!IsRecordsData(ClimbTrialsModule.SaveData))
+      ReloadFromDisk();
+  }
+
+  public static void ReloadFromDisk()
+  {
     ClimbTrialsModule module = ClimbTrialsModule.Instance;
     module.DeserializeSaveData(Slot, module.ReadSaveData(Slot));
   }
@@ -63,6 +69,7 @@ public static class TrialRecords
 
   public static FinishResult Record(Trial trial, long ticks, bool submittable)
   {
+    EnsureLoaded();
     Dictionary<string, TrialRecord> bests = ClimbTrialsModule.SaveData.PersonalBests;
     TrialRecord previous = bests.GetValueOrDefault(trial.Id);
 
@@ -104,6 +111,7 @@ public static class TrialRecords
 
   public static int Adopt(IEnumerable<(string TrialId, long Ticks, DateTime AchievedAtUtc)> times)
   {
+    EnsureLoaded();
     Dictionary<string, TrialRecord> bests = ClimbTrialsModule.SaveData?.PersonalBests;
     if (bests == null)
       return 0;

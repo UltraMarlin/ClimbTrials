@@ -11,6 +11,8 @@ public enum DebugCause
 {
   None = 0,
   ConsoleUsed = 1,
+  SaveStateUsed = 2,
+  SpeedrunToolEnabled = 4,
 }
 
 public static class DebugUse
@@ -44,13 +46,22 @@ public static class DebugUse
 
   public static void Add(DebugCause cause)
   {
+    if (Record(cause))
+      Notify(cause);
+  }
+
+  public static bool Record(DebugCause cause)
+  {
     if (RunManager.Run == null || RunManager.Replaying || Causes.HasFlag(cause))
-      return;
+      return false;
     Causes |= cause;
     order.Add(cause);
-    RunManager.ShowNotice("climbtrials_notice_debug_" + Key(cause));
     Logger.Log(LogLevel.Info, LogTag, $"run '{RunManager.Trial?.Id}' debug use: {cause}");
+    return true;
   }
+
+  public static void Notify(DebugCause cause) =>
+    RunManager.ShowNotice("climbtrials_notice_debug_" + Key(cause));
 
   public static string RunWarning() =>
     Dialog.Clean("climbtrials_recording_debug")
@@ -62,6 +73,8 @@ public static class DebugUse
     cause switch
     {
       DebugCause.ConsoleUsed => "console",
+      DebugCause.SaveStateUsed => "savestate",
+      DebugCause.SpeedrunToolEnabled => "speedruntool",
       _ => throw new ArgumentOutOfRangeException(nameof(cause), cause, null),
     };
 

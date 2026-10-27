@@ -1,4 +1,5 @@
 using Celeste.Mod.ClimbTrials.Runs;
+using Celeste.Mod.ClimbTrials.UI;
 using Microsoft.Xna.Framework;
 using Monocle;
 
@@ -14,14 +15,30 @@ public static class RunHudLayout
   public const float HeadlineHeight = 25f;
   public const float DeltaHeight = 32f;
   public const float BackgroundOverlap = 1f;
-  public const float GhostBlockTop = TimerY + TimerBackgroundHeight + GhostBlockGap;
+  public static float GhostBlockTop =>
+    TimerY + TimerBackgroundHeight + GhostBlockGap + PracticeTimerExtra;
   public const float GhostBlockHeight =
     GhostBlockGap + HeadlineHeight + DeltaHeight - BackgroundOverlap;
 
   public static bool PauseScreenOpen =>
     Engine.Scene is Level { Paused: true, PauseMainMenuOpen: false };
 
-  public static float ColumnShift => RunManager.GhostBlockVisible ? GhostBlockHeight : 0f;
+  public static float GhostBlockShift => RunManager.GhostBlockVisible ? GhostBlockHeight : 0f;
+
+  public static float ColumnShift => GhostBlockShift + PracticeTimerExtra;
+
+  public static float PracticeTimerExtra { get; private set; }
+
+  public static void MeasureTimer(Level level)
+  {
+    PracticeTimerExtra = 0f;
+    if (level == null || !RunManager.Practice)
+      return;
+    if (!SpeedrunToolBridge.RoomTimerShown && Settings.Instance.SpeedrunClock != SpeedrunType.File)
+      return;
+    if (level.Entities.FindFirst<SpeedrunTimerDisplay>() is SpeedrunTimerDisplay timerDisplay)
+      PracticeTimerExtra = GFX.Gui[TimerBackground.Texture].Height * 0.6f * timerDisplay.DrawLerp;
+  }
 
   private const float ConditionsTop = 110f;
   private const float ListTop = 280f;

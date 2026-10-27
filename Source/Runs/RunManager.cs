@@ -31,6 +31,7 @@ public static class RunManager
   public static Replay RaceReplay { get; private set; }
   public static SplitComparison Comparison { get; private set; }
   public static bool GhostBlockVisible { get; private set; }
+  public static bool Practice { get; private set; }
   public static bool FinishedBefore { get; private set; }
   public static bool RetryPressed { get; private set; }
   public static bool AttemptInProgress =>
@@ -48,6 +49,7 @@ public static class RunManager
   private static EventInstance finishSnapshot;
   private static SaveData ownSaveData;
   private static GhostSplits raceSplits;
+  private static bool goalReached;
 
   public static void Load()
   {
@@ -131,7 +133,12 @@ public static class RunManager
     Replay = replay;
     if (replay == null)
       GameplayRenderer.RenderDebug = false;
-    countdownOnControl = countdown && replay == null;
+    if (replay == null)
+      SpeedrunToolBridge.ResumeAfterReplay();
+    else
+      SpeedrunToolBridge.SuspendForReplay();
+    Practice = replay == null && SpeedrunToolBridge.Enabled;
+    countdownOnControl = countdown && replay == null && !Practice;
 
     ownSaveData = new SaveData { Name = "ClimbTrials" };
     SaveData.Start(ownSaveData, -1);
@@ -183,9 +190,17 @@ public static class RunManager
 
     loadSeed = replay?.LoadSeed ?? Calc.Random.Next();
     introType = replay?.IntroType ?? (countdown ? run.IntroType : Player.IntroTypes.Respawn);
-    Logger.Log(LogLevel.Info, LogTag, $"StartRun: trial '{Trial?.Id}', replay {replay != null}");
+    Logger.Log(
+      LogLevel.Info,
+      LogTag,
+      $"StartRun: trial '{Trial?.Id}', replay {replay != null}, practice {Practice}"
+    );
     LevelLoader loader = Determinism.CreateSeededLoader(loadSeed, session, run.Spawn);
     loader.PlayerIntroTypeOverride = introType;
+    if (Practice)
+      Determinism.StopSeeding();
+    else
+      SpeedrunToolBridge.ClearCarriedState();
     return loader;
   }
 
@@ -290,10 +305,13 @@ public static class RunManager
     RunPendingRestart();
   }
 
+  private static string TrialIdOf(Session session) =>
+    session.Flags.FirstOrDefault(f => f.StartsWith(TrialFlagPrefix))?[TrialFlagPrefix.Length..];
+
   public static LevelLoader RestartFromSession(Session session)
   {
-    string flag = session.Flags.FirstOrDefault(f => f.StartsWith(TrialFlagPrefix));
-    Trial trial = flag == null ? null : Campaigns.FindTrial(flag[TrialFlagPrefix.Length..]);
+    string trialId = TrialIdOf(session);
+    Trial trial = trialId == null ? null : Campaigns.FindTrial(trialId);
     if (trial == null)
       return null;
     Trial = trial;
@@ -308,8 +326,10 @@ public static class RunManager
     GameplayRenderer.RenderDebug = false;
     if (Run != null && SaveData.Instance?.FileSlot == -1)
       SaveData.Instance.Assists.NoGrabbing = false;
+    SpeedrunToolBridge.ResumeAfterReplay();
     Trial = null;
     Run = null;
+    Practice = false;
     pendingNotice = null;
     StopRacing();
     GhostComparisons.Forget();
@@ -339,6 +359,8 @@ public static class RunManager
     GhostBlockVisible = false;
     HeartGoal.Reset();
     RoomGoal.Reset();
+    RunHudLayout.MeasureTimer(null);
+    goalReached = false;
     awaitingLoad = false;
     awaitingControl = false;
     countdownOnControl = true;
@@ -367,6 +389,8 @@ public static class RunManager
   {
     if (Run == null)
       return;
+    if (isFromLoader)
+      SpeedrunToolBridge.OnRunLevelLoaded(Practice);
     if (isFromLoader && awaitingLoad)
     {
       awaitingLoad = false;
@@ -386,7 +410,7 @@ public static class RunManager
     string room = level.Session.Level;
     ApplyCameraOffset(level, room, playerIntro);
 
-    if (level.Tracker.GetEntity<RunTimerDisplay>() == null)
+    if (!Practice && level.Tracker.GetEntity<RunTimerDisplay>() == null)
       level.Add(new RunTimerDisplay());
 
     if (Trial != null && level.Tracker.GetEntity<RunInfoDisplay>() == null)
@@ -395,7 +419,7 @@ public static class RunManager
     if (Trial != null && level.Tracker.GetEntity<GoalListDisplay>() == null)
       level.Add(new GoalListDisplay());
 
-    if (Trial != null && level.Tracker.GetEntity<LeaderboardDisplay>() == null)
+    if (Trial != null && !Practice && level.Tracker.GetEntity<LeaderboardDisplay>() == null)
       level.Add(new LeaderboardDisplay());
 
     if (!Replaying && level.Tracker.GetEntity<GoalIndicator>() == null)
@@ -525,9 +549,33 @@ public static class RunManager
     if (Replaying)
       CoreModule.Settings.DebugMap.ConsumePress();
     UpdateGhostBlockVisibility();
-    RetryPressed = Run != null && !Replaying && ClimbTrialsModule.Settings.Retry.Pressed;
+    RetryPressed =
+      Run != null && !Replaying && !Practice && ClimbTrialsModule.Settings.Retry.Pressed;
     if (RetryPressed)
       Input.QuickRestart.ConsumePress();
+    if (Run != null && ClimbTrialsModule.Settings.ToggleSpeedrunTool.Pressed)
+      ToggleSpeedrunTool();
+  }
+
+  private static void ToggleSpeedrunTool()
+  {
+    ClimbTrialsModule.Settings.ToggleSpeedrunTool.ConsumePress();
+    if (!SpeedrunToolBridge.Loaded)
+      return;
+    if (Replaying)
+    {
+      Audio.Play(SFX.ui_main_button_invalid);
+      return;
+    }
+    if (!SpeedrunToolBridge.Toggle(out string noticeKey))
+    {
+      ShowNotice(noticeKey);
+      return;
+    }
+    if (!Practice && SpeedrunToolBridge.Enabled)
+      DebugUse.Record(DebugCause.SpeedrunToolEnabled);
+    if (!RestartAttempt(noticeKey))
+      ShowNotice(noticeKey);
   }
 
   private static void OnAfterUpdate(Level level)
@@ -539,6 +587,9 @@ public static class RunManager
     if (pendingRestart != null && !level.Paused)
       RunPendingRestart();
     DebugUse.ObserveFrame();
+    if (!Practice && !Replaying && SpeedrunToolBridge.Enabled)
+      LeaveForPractice();
+    RunHudLayout.MeasureTimer(level);
     if (!awaitingLoad)
       Progress.ObserveRespawn(level.Session.RespawnPoint);
     if (
@@ -565,6 +616,61 @@ public static class RunManager
       && RetryPressed
     )
       StartRun(Run);
+  }
+
+  private static void LeaveForPractice()
+  {
+    DebugUse.Record(DebugCause.SpeedrunToolEnabled);
+    if (Attempt.State != AttemptState.Finished && pendingRestart == null)
+      RestartAttemptAfterSave("climbtrials_notice_speedruntool_on");
+  }
+
+  public static RunSnapshot TakeSnapshot() =>
+    new(
+      Practice,
+      Trial?.Id,
+      Attempt.State,
+      Attempt.ElapsedTicks,
+      awaitingControl,
+      goalReached,
+      RaceReplay,
+      Progress.Copy(),
+      Comparison?.Copy()
+    );
+
+  public static void AdoptSaveDataAfterLoad()
+  {
+    if (SaveData.Instance?.FileSlot == -1)
+      ownSaveData = SaveData.Instance;
+  }
+
+  public static void RestoreAfterLoad(Level level, RunSnapshot snapshot)
+  {
+    string loadedTrialId = TrialIdOf(level.Session);
+    if (loadedTrialId != Trial?.Id)
+    {
+      Logger.Log(
+        LogLevel.Info,
+        LogTag,
+        $"save state of trial '{loadedTrialId}' loaded in '{Trial?.Id}', restarting"
+      );
+      RestartAttemptAfterSave("climbtrials_notice_state_not_this_trial");
+      return;
+    }
+    pendingRestart = null;
+    if (snapshot == null || snapshot.TrialId != Trial?.Id)
+    {
+      Logger.Log(LogLevel.Info, LogTag, $"save state of '{Trial?.Id}' has no run snapshot");
+      return;
+    }
+    AttemptState restoredState =
+      snapshot.State == AttemptState.Finished ? AttemptState.Running : snapshot.State;
+    Attempt.Restore(restoredState, snapshot.ElapsedTicks);
+    awaitingControl = snapshot.AwaitingControl;
+    goalReached = snapshot.GoalReached;
+    Progress.CopyFrom(snapshot.Progress);
+    Comparison = snapshot.RaceReplay == RaceReplay ? snapshot.Comparison?.Copy() : null;
+    UpdateGhostBlockVisibility();
   }
 
   private static void StopRecording(StopReason reason)
@@ -621,6 +727,8 @@ public static class RunManager
       Replayer.Begin(Replay, level);
       return;
     }
+    if (Practice)
+      return;
     int runSeed = Calc.Random.Next();
     Determinism.Reseed(runSeed);
     Recorder.Begin(Trial, loadSeed, runSeed, introType, level);
@@ -632,7 +740,7 @@ public static class RunManager
     SpeedrunTimerDisplay self
   )
   {
-    if (Run != null)
+    if (Run != null && !Practice)
       return;
     orig(self);
   }
@@ -651,6 +759,11 @@ public static class RunManager
   {
     if (Attempt.State != AttemptState.Running || !Progress.Met(Run))
       return false;
+    if (Practice)
+    {
+      MarkPracticeGoal();
+      return false;
+    }
 
     Attempt.Finish();
     Comparison?.Finish(Attempt.ElapsedTicks);
@@ -704,6 +817,22 @@ public static class RunManager
       $"run '{Trial?.Id}' finished in {TimeText.Format(Attempt.ElapsedTicks)}"
     );
     return true;
+  }
+
+  private static void MarkPracticeGoal()
+  {
+    if (goalReached)
+      return;
+    goalReached = true;
+    if (Run.FinishKind != FinishKind.RoomEnter)
+      SpeedrunToolBridge.CountGoalAsRoom();
+    if (Engine.Scene is Level level && level.Tracker.GetEntity<Player>() is Player player)
+      FinishSequence.Confetti(level, player);
+    Logger.Log(
+      LogLevel.Info,
+      LogTag,
+      $"practice goal of '{Trial?.Id}' reached at {TimeText.Format(Attempt.ElapsedTicks)}"
+    );
   }
 
   private static void AutoSubmit(Replay recorded)
@@ -775,6 +904,7 @@ public static class RunManager
       body != null
       && Run != null
       && !Replaying
+      && !Practice
       && Attempt.State is AttemptState.Countdown or AttemptState.Running
       && (
         ClimbTrialsModule.Settings.ResetOnDeath

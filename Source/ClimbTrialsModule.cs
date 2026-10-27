@@ -56,6 +56,7 @@ public class ClimbTrialsModule : EverestModule
 
   public override void Initialize()
   {
+    SpeedrunToolBridge.Initialize();
     HotReload.Recover();
   }
 
@@ -114,6 +115,7 @@ public class ClimbTrialsModule : EverestModule
     HeartGoal.Unload();
     RoomGoal.Unload();
     DebugUse.Unload();
+    SpeedrunToolBridge.Unload();
     RunBinds.Unload();
     TrialDesigner.Unload();
   }

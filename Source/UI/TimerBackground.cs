@@ -5,7 +5,7 @@ namespace Celeste.Mod.ClimbTrials.UI;
 
 public static class TimerBackground
 {
-  private const string Texture = "strawberryCountBG";
+  public const string Texture = "strawberryCountBG";
 
   public static void Draw(float top, float height, float width)
   {

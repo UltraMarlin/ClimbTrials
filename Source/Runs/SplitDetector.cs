@@ -13,6 +13,19 @@ public sealed class SplitDetector(SplitMap course)
   private int previousState = -1;
   private int bossHitsInRoom;
 
+  public void CopyFrom(SplitDetector other)
+  {
+    taken.Clear();
+    taken.UnionWith(other.taken);
+    crossings.Clear();
+    foreach (KeyValuePair<(string From, string To), int> crossing in other.crossings)
+      crossings[crossing.Key] = crossing.Value;
+    room = other.room;
+    points = other.points;
+    previousState = other.previousState;
+    bossHitsInRoom = other.bossHitsInRoom;
+  }
+
   public List<SplitKey> FindReachedSplits(Vector2 position, int state)
   {
     reached.Clear();

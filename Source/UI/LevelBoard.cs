@@ -38,6 +38,7 @@ public static class LevelBoard
     if (
       RunManager.AttemptInProgress
       && !RunManager.Replaying
+      && !RunManager.Practice
       && RunManager.RestartAttempt("climbtrials_notice_leaderboard")
     )
       return;
