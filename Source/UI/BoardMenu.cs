@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Online;
 using Celeste.Mod.ClimbTrials.Runs;
@@ -16,6 +17,9 @@ public class BoardMenu : TextMenu
 
   private const float MarkerScale = 0.5f;
   private const float MarkerGap = 24f;
+  private const float TeamTagScaleOfName = 0.8f;
+  private const float TeamTagGap = 16f;
+  private const float TeamTagScale = BoardLayout.TextScale * TeamTagScaleOfName;
 
   public Action<int> OnPage;
   public Action<int> OnSwitch;
@@ -47,15 +51,16 @@ public class BoardMenu : TextMenu
     Add(header = new HeaderRow(subject, page, switchable));
     if (page == null)
       return;
+    float tagColumnWidth = MeasureTagColumnWidth(page);
     foreach (BoardRow row in page.Rows)
     {
-      EntryRow entry = new(row, subject, page.BoardMode, pinned: false);
+      EntryRow entry = new(row, subject, page.BoardMode, tagColumnWidth, pinned: false);
       entries.Add(entry);
       Add(entry);
     }
     if (page.BoardMode == BoardMode.OwnTimeOnly && page.Rows.Count == 0 && page.Me != null)
     {
-      EntryRow alone = new(page.Me, subject, page.BoardMode, pinned: false);
+      EntryRow alone = new(page.Me, subject, page.BoardMode, tagColumnWidth, pinned: false);
       entries.Add(alone);
       Add(alone);
       return;
@@ -64,7 +69,19 @@ public class BoardMenu : TextMenu
       return;
     int emptyRows = BoardLayout.PageRows - page.Rows.Count;
     Add(new Gap(emptyRows * BoardLayout.RowHeight + 2f * BoardLayout.RuleGap));
-    Add(own = new EntryRow(page.Me, subject, page.BoardMode, pinned: true));
+    Add(own = new EntryRow(page.Me, subject, page.BoardMode, tagColumnWidth, pinned: true));
+  }
+
+  private static float MeasureTagColumnWidth(BoardPage page)
+  {
+    List<BoardRow> rows = [.. page.Rows];
+    if (page.Me != null)
+      rows.Add(page.Me);
+    float widestTag = rows.Where(row => row.ShowsTeamTag)
+      .Select(row => ActiveFont.Measure(row.TeamTag).X * TeamTagScale)
+      .DefaultIfEmpty(0f)
+      .Max();
+    return widestTag > 0f ? widestTag + TeamTagGap : 0f;
   }
 
   public float TopLift => header.HasSecondLine ? BoardLayout.SecondLineLift : 0f;
@@ -206,6 +223,7 @@ public class BoardMenu : TextMenu
     BoardMode mode,
     Vector2 left,
     float width,
+    float tagColumnWidth,
     float alpha,
     bool highlighted
   )
@@ -219,7 +237,9 @@ public class BoardMenu : TextMenu
       Vector2 rankAt = left + new Vector2(BoardLayout.RankX, 0f);
       ActiveFont.DrawOutline(RankText.Format(rank), rankAt, justify, scale, color, 2f, stroke);
     }
-    Vector2 nameAt = left + new Vector2(BoardLayout.NameX, 0f);
+    if (row.ShowsTeamTag)
+      DrawTeamTag(row, left, alpha);
+    Vector2 nameAt = left + new Vector2(BoardLayout.NameX + tagColumnWidth, 0f);
     ActiveFont.DrawOutline(row.Name, nameAt, justify, scale, color, 2f, stroke);
     DrawMarker(row, left, alpha);
 
@@ -235,6 +255,21 @@ public class BoardMenu : TextMenu
     float timeWidth = TimeText.Width(time, Style);
     Vector2 baseline = new(left.X + width - timeWidth, left.Y + TimeText.Height(Style) / 2f);
     TimeText.Draw(baseline, time, Style, MedalIcon.TextColor(medal) * alpha);
+  }
+
+  private static void DrawTeamTag(BoardRow row, Vector2 left, float alpha)
+  {
+    Color color = row.TeamTagColor.Value * alpha;
+    float baselineShift = TimeText.LineBelowBaseline * (BoardLayout.TextScale - TeamTagScale);
+    ActiveFont.DrawOutline(
+      row.TeamTag,
+      left + new Vector2(BoardLayout.NameX, baselineShift),
+      new Vector2(0f, 0.5f),
+      Vector2.One * TeamTagScale,
+      color,
+      2f,
+      TextOutline.StrokeFor(color)
+    );
   }
 
   private static void DrawMarker(BoardRow row, Vector2 left, float alpha)
@@ -370,14 +405,22 @@ public class BoardMenu : TextMenu
     public readonly BoardRow Row;
     private readonly BoardSubject subject;
     private readonly BoardMode mode;
+    private readonly float tagColumnWidth;
     private readonly bool pinned;
     private readonly string time;
 
-    public EntryRow(BoardRow row, BoardSubject subject, BoardMode mode, bool pinned)
+    public EntryRow(
+      BoardRow row,
+      BoardSubject subject,
+      BoardMode mode,
+      float tagColumnWidth,
+      bool pinned
+    )
     {
       Row = row;
       this.subject = subject;
       this.mode = mode;
+      this.tagColumnWidth = tagColumnWidth;
       this.pinned = pinned;
       time = row.Ticks is long ticks ? TimeText.Format(ticks) : TimeText.TypicalTime;
       Selectable = true;
@@ -389,7 +432,7 @@ public class BoardMenu : TextMenu
     public override float Height() => BoardLayout.RowHeight;
 
     public override float LeftWidth() =>
-      BoardLayout.NameX + ActiveFont.Measure(Row.Name).X * BoardLayout.TextScale;
+      BoardLayout.NameX + tagColumnWidth + ActiveFont.Measure(Row.Name).X * BoardLayout.TextScale;
 
     public override float RightWidth() => TimeText.Width(time, Style);
 
@@ -408,12 +451,13 @@ public class BoardMenu : TextMenu
         float ruleY = position.Y - Height() / 2f - BoardLayout.RuleGap;
         Color rule = Color.White * (BoardLayout.RuleAlpha * Container.Alpha);
         Draw.Rect(position.X, ruleY, Container.Width, 1f, rule);
-        DrawRow(Row, subject, mode, position, Container.Width, Container.Alpha, highlighted);
+        float alpha = Container.Alpha;
+        DrawRow(Row, subject, mode, position, Container.Width, tagColumnWidth, alpha, highlighted);
         return;
       }
       Vector2 left = position + new Vector2(menu.EntryOffsetX, 0f);
       float rowAlpha = Container.Alpha * menu.EntryAlpha;
-      DrawRow(Row, subject, mode, left, Container.Width, rowAlpha, highlighted);
+      DrawRow(Row, subject, mode, left, Container.Width, tagColumnWidth, rowAlpha, highlighted);
     }
   }
 }

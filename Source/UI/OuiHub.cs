@@ -1,4 +1,6 @@
+using System;
 using System.Collections;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Online;
@@ -13,14 +15,24 @@ public class OuiHub : ListScreen
   private const int NameMaxLength = 20;
   private const float LoadErrorScale = 0.5f;
   private const float CampaignsIconScale = 1.1f;
+
+  // TODO: Replace Placeholders
   private const string EventsIcon = "collectables/goldberry";
+  private const string InviteCodeIcon = "menu/journal";
+  private const string NameIcon = "dotdotdot";
+  private const int InviteCodeEntryMaxLength = 24;
+  private const int InviteCodeMinLength = 6;
+  private const int InviteCodeMaxLength = 12;
+  private const string InviteCodeAlphabet = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
 
   private static readonly Regex NameRule = new($"^[A-Za-z0-9 _.-]{{1,{NameMaxLength}}}$");
 
   private HubRow campaignsRow;
   private HubRow eventsRow;
   private HubRow optionsRow;
+  private HubRow inviteCodeRow;
   private HubRow nameRow;
+  private int textEntryRowIndex;
 
   protected override int ScreenDepth => 1;
 
@@ -49,7 +61,7 @@ public class OuiHub : ListScreen
     built.Add(campaignsRow);
     eventsRow = new HubRow(
       () => Dialog.Clean("climbtrials_hub_events"),
-      () => Events.All.Count > 0,
+      AnyEventKnown,
       EventsIcon,
       outlineIcon: false
     );
@@ -62,7 +74,15 @@ public class OuiHub : ListScreen
     );
     optionsRow.Pressed(OpenOptions);
     built.Add(optionsRow);
-    nameRow = new HubRow(NameText, NameLive);
+    inviteCodeRow = new HubRow(
+      () => Dialog.Clean("climbtrials_hub_invite_code"),
+      InviteCodeLive,
+      InviteCodeIcon,
+      outlineIcon: false
+    );
+    inviteCodeRow.Pressed(OpenInviteCodeEntry);
+    built.Add(inviteCodeRow);
+    nameRow = new HubRow(NameText, NameLive, NameIcon);
     nameRow.Pressed(OnNameRow);
     built.Add(nameRow);
     built.OnCancel = () =>
@@ -104,9 +124,10 @@ public class OuiHub : ListScreen
 
   protected override int InitialSelection(Oui from)
   {
+    if (from is OuiModOptionString)
+      return textEntryRowIndex;
     HubRow row = from switch
     {
-      OuiModOptionString => nameRow,
       OuiClimbTrialsOptions => optionsRow,
       OuiEvents => eventsRow,
       _ when Campaigns.LoadError != null => optionsRow,
@@ -118,10 +139,14 @@ public class OuiHub : ListScreen
   public override void Update()
   {
     base.Update();
-    if (menu?.Focused == true && Events.HasPending)
+    bool focused = menu?.Focused == true;
+    if (focused && Events.HasPending)
       Events.ApplyPending();
+    if (focused && Standings.HubState == StandingsState.Ready && Events.CrossedSinceAnswer())
+      Standings.EnsureFreshHub();
     if (menu?.Current is not HubRow row || !row.Disabled)
       return;
+
     menu.Current.OnLeave?.Invoke();
     menu.Selection = menu.Items.IndexOf(optionsRow);
     menu.Current.OnEnter?.Invoke();
@@ -148,9 +173,11 @@ public class OuiHub : ListScreen
     Overworld.Goto<OuiCampaigns>();
   }
 
+  private static bool AnyEventKnown() => Events.All.Count > 0 || Events.Upcoming.Count > 0;
+
   private void OpenEvents()
   {
-    if (Events.All.Count == 0)
+    if (!AnyEventKnown())
     {
       Audio.Play(SFX.ui_main_button_invalid);
       return;
@@ -182,6 +209,8 @@ public class OuiHub : ListScreen
     !Settings.OfflineMode
     && Identity.Registration is RegistrationState.Registered or RegistrationState.Registering;
 
+  private static bool InviteCodeLive() => !Settings.OfflineMode && Identity.Registered;
+
   private void OnNameRow()
   {
     if (Settings.OfflineMode)
@@ -196,19 +225,33 @@ public class OuiHub : ListScreen
       return;
     }
 
+    string chosenName = Settings.PlayerNameChosen ? Settings.PlayerName : "";
+    OpenTextEntry("climbtrials_name_headline", chosenName, 1, NameMaxLength, Rename);
+  }
+
+  private void OpenTextEntry(
+    string headlineKey,
+    string text,
+    int minLength,
+    int maxLength,
+    Action<string> onConfirm
+  )
+  {
     Audio.Play(SFX.ui_main_savefile_rename_start);
     menu.Focused = false;
-    OuiModOptionString input = Overworld.Goto<OuiModOptionString>();
+    textEntryRowIndex = menu.Selection;
+    OuiHubTextEntry input = Overworld.Goto<OuiHubTextEntry>();
+    input.Headline = Dialog.Clean(headlineKey);
     input.Init<OuiHub>(
-      Settings.PlayerNameChosen ? Settings.PlayerName : "",
+      text,
       null,
       confirmed =>
       {
         if (confirmed)
-          Rename(input.Value);
+          onConfirm(input.Value);
       },
-      NameMaxLength,
-      1
+      maxLength,
+      minLength
     );
   }
 
@@ -241,5 +284,72 @@ public class OuiHub : ListScreen
           notice.Show(text, ScreenLayout.NoticeSeconds);
       }
     );
+  }
+
+  private void OpenInviteCodeEntry()
+  {
+    if (!InviteCodeLive())
+    {
+      Audio.Play(SFX.ui_main_button_invalid);
+      return;
+    }
+
+    OpenTextEntry(
+      "climbtrials_invite_code_headline",
+      "",
+      InviteCodeMinLength,
+      InviteCodeEntryMaxLength,
+      JoinWithCode
+    );
+  }
+
+  private void JoinWithCode(string typed)
+  {
+    string code = CleanInviteCode(typed);
+    if (code.Length < InviteCodeMinLength || code.Length > InviteCodeMaxLength)
+    {
+      notice.Show(Dialog.Clean("climbtrials_invite_code_invalid"), ScreenLayout.NoticeSeconds);
+      return;
+    }
+
+    ServerClient.JoinEvent(
+      code,
+      result =>
+      {
+        if (result.Ok)
+          Standings.RefetchHub();
+        if (!IsCurrentScreen)
+          return;
+
+        string text = result.Error switch
+        {
+          ServerError.None => JoinedNotice(result.Value),
+          ServerError.CodeInvalid => Dialog.Clean("climbtrials_invite_code_invalid"),
+          ServerError.CodeUsedUp => Dialog.Clean("climbtrials_invite_code_used_up"),
+          ServerError.RateLimited => Dialog.Clean("climbtrials_join_too_many_tries"),
+          ServerError.UpdateRequired => Dialog.Clean("climbtrials_join_needs_update"),
+          _ => Dialog.Clean("climbtrials_join_failed"),
+        };
+        notice.Show(text, ScreenLayout.NoticeSeconds, warning: !result.Ok);
+      }
+    );
+  }
+
+  private static string CleanInviteCode(string typed) =>
+    string.Concat(typed.ToUpperInvariant().Where(letter => InviteCodeAlphabet.Contains(letter)));
+
+  private static string JoinedNotice(JoinAnswer answer)
+  {
+    if (answer.Already)
+      return Dialog.Get("climbtrials_join_already_in").Replace("{0}", answer.Name);
+
+    DateTime now = Events.Now;
+    if (answer.OpensAt <= now)
+      return Dialog.Get("climbtrials_joined").Replace("{0}", answer.Name);
+
+    return Dialog
+      .Get("climbtrials_joined_opens_in")
+      .Replace("{1}", EventTiming.Duration(answer.OpensAt - now))
+      .Replace("{0}", answer.Name);
   }
 }

@@ -11,11 +11,19 @@ public static class EventTiming
     EventInfo info = campaign.Info;
     return campaign.Phase(now) switch
     {
-      EventPhase.Upcoming => Until("climbtrials_event_opens", info.OpensAt, now),
+      EventPhase.Upcoming => FormatOpensIn(info.OpensAt),
       EventPhase.Closed => Dialog.Clean("climbtrials_event_closed"),
       _ when info.ClosesAt.HasValue => Until("climbtrials_event_closes", info.ClosesAt.Value, now),
       _ => Dialog.Clean("climbtrials_event_open"),
     };
+  }
+
+  public static string FormatOpensIn(DateTime opensAt)
+  {
+    DateTime now = Events.Now;
+    return opensAt <= now
+      ? Dialog.Clean("climbtrials_event_opening")
+      : Until("climbtrials_event_opens", opensAt, now);
   }
 
   public static string BoardNote(EventCampaign campaign, BoardMode shown)

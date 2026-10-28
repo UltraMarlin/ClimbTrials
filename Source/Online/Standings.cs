@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Runs;
+using Microsoft.Xna.Framework;
+using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.Online;
 
@@ -17,8 +20,20 @@ public sealed class RenameAnswer
   public string Name { get; set; }
 }
 
+public sealed class JoinAnswer
+{
+  public string EventId { get; set; }
+  public string Name { get; set; }
+  public DateTime OpensAt { get; set; }
+  public bool Already { get; set; }
+}
+
 public sealed class BoardRow
 {
+  private static readonly Regex HexColor = new("^#[0-9a-fA-F]{6}$");
+
+  private string teamColor;
+
   public int? Rank { get; set; }
   public string Name { get; set; }
   public long? Ticks { get; set; }
@@ -27,6 +42,22 @@ public sealed class BoardRow
   public string ReplayId { get; set; }
   public int? ReplayFormat { get; set; }
   public Medal? Medal { get; set; }
+  public string TeamTag { get; set; }
+
+  public string TeamColor
+  {
+    get => teamColor;
+    set
+    {
+      teamColor = value;
+      TeamTagColor = value != null && HexColor.IsMatch(value) ? Calc.HexToColor(value) : null;
+    }
+  }
+
+  public Color? TeamTagColor { get; private set; }
+
+  public bool ShowsTeamTag => !string.IsNullOrEmpty(TeamTag) && TeamTagColor.HasValue;
+
   public int RankOrLast => Rank ?? int.MaxValue;
 }
 
@@ -80,6 +111,7 @@ public sealed class HubAnswer
   public bool SubmissionsPaused { get; set; }
   public List<CampaignStanding> Campaigns { get; set; } = [];
   public List<EventInfo> Events { get; set; } = [];
+  public List<UpcomingEvent> UpcomingEvents { get; set; } = [];
 }
 
 public sealed class SubmissionAnswer
@@ -131,12 +163,16 @@ public static class Standings
 
   private static int identityGeneration;
 
+  private static int hubGeneration;
+
   private static ClimbTrialsModuleSettings Settings => ClimbTrialsModule.Settings;
 
   public static StandingsState State(Campaign campaign) =>
     campaign == null ? StandingsState.Idle : RecordsOf(campaign).State;
 
   public static StandingsState HubState => hub.State;
+
+  public static bool HubFetching => hub.Fetching;
 
   public static StandingsState MiniBoardState(Trial trial) => StandingOf(trial.Id).State;
 
@@ -160,26 +196,38 @@ public static class Standings
     Identity.EnsureRegistered(() => FetchHub(retried: false));
   }
 
-  private static void FetchHub(bool retried) =>
+  private static void FetchHub(bool retried)
+  {
+    int asked = hubGeneration;
     AskCurrent<HubAnswer>(
       done => ServerClient.GetHub(Events.HeldDefinitions(), done),
-      result => ReceiveHub(result, retried),
+      result => ReceiveHub(result, retried, asked),
       passDeleted: !retried
     );
+  }
 
-  private static void ReceiveHub(ServerResult<HubAnswer> result, bool retried)
+  private static void ReceiveHub(ServerResult<HubAnswer> result, bool retried, int asked)
   {
     if (result.Error == ServerError.PlayerDeleted && !retried)
     {
       Identity.EnsureRegistered(() => FetchHub(retried: true));
       return;
     }
+
+    if (asked != hubGeneration && result.Ok)
+    {
+      FetchHub(retried);
+      return;
+    }
+
     if (!Accept(hub, result))
       return;
+
     HubAnswer answer = result.Value;
     AdoptName(answer.Name);
     SubmissionsPaused = answer.SubmissionsPaused;
     EventsReceived received = Events.Receive(answer.Events, answer.ServerTime);
+    Events.ReceiveUpcoming(answer.UpcomingEvents);
     Uploader.ForgetRefusals();
     if (received.Missing)
       MarkHubStale();
@@ -197,6 +245,15 @@ public static class Standings
   }
 
   public static void MarkHubStale() => hub.FetchedAt = DateTime.MinValue;
+
+  public static void RefetchHub()
+  {
+    hubGeneration++;
+    if (hub.Fetching)
+      return;
+    MarkHubStale();
+    EnsureFreshHub();
+  }
 
   private static void DropEventBoards(string eventId)
   {

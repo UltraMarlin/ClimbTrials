@@ -64,6 +64,22 @@ public sealed record EventInfo
   public int? Rank { get; init; }
 }
 
+public sealed record UpcomingEvent
+{
+  public string Id { get; init; }
+  public string Name { get; init; }
+  public DateTime OpensAt { get; init; }
+}
+
+public sealed record EventListEntry(EventCampaign Event, UpcomingEvent Upcoming)
+{
+  public string Id => Event != null ? Event.Id : Upcoming.Id;
+
+  public DateTime OpensAt => Event != null ? Event.Info.OpensAt : Upcoming.OpensAt;
+
+  public EventPhase Phase(DateTime now) => Event != null ? Event.Phase(now) : EventPhase.Upcoming;
+}
+
 public readonly record struct EventsReceived(IReadOnlyList<string> ModesChanged, bool Missing);
 
 public sealed class EventCampaign(Campaign campaign, string definitionHash)
@@ -130,6 +146,7 @@ public static class Events
   private static readonly Dictionary<string, string> unreadable = [];
   private static List<string> listed = [];
   private static List<EventCampaign> shown = [];
+  private static List<UpcomingEvent> upcoming = [];
   private static TimeSpan serverOffset;
   private static DateTime answeredAt = DateTime.MinValue;
   private static bool loaded;
@@ -154,6 +171,8 @@ public static class Events
       return shown;
     }
   }
+
+  public static IReadOnlyList<UpcomingEvent> Upcoming => upcoming;
 
   public static bool HasPending
   {
@@ -185,13 +204,24 @@ public static class Events
   public static Trial FindTrial(string id) =>
     All.SelectMany(e => e.Campaign.Trials).FirstOrDefault(t => t.Id == id);
 
-  public static List<Campaign> Ordered()
+  public static List<Campaign> Ordered() =>
+    OrderedEntries()
+      .Where(entry => entry.Event != null)
+      .Select(entry => entry.Event.Campaign)
+      .ToList();
+
+  public static List<EventListEntry> OrderedEntries()
   {
     DateTime now = Now;
-    return All.OrderBy(e => PhaseOrder(e.Phase(now)))
-      .ThenBy(e => e.Info.OpensAt)
-      .ThenBy(e => e.Id, StringComparer.Ordinal)
-      .Select(e => e.Campaign)
+    HashSet<string> listedIds = [.. All.Select(e => e.Id)];
+    IEnumerable<EventListEntry> upcomingEntries = upcoming
+      .Where(entry => !listedIds.Contains(entry.Id))
+      .Select(entry => new EventListEntry(null, entry));
+    return All.Select(e => new EventListEntry(e, null))
+      .Concat(upcomingEntries)
+      .OrderBy(entry => PhaseOrder(entry.Phase(now)))
+      .ThenBy(entry => entry.OpensAt)
+      .ThenBy(entry => entry.Id, StringComparer.Ordinal)
       .ToList();
   }
 
@@ -222,7 +252,7 @@ public static class Events
       if (Crossed(info.OpensAt, now) || Crossed(info.ClosesAt, now) || Crossed(info.RevealAt, now))
         return true;
     }
-    return false;
+    return upcoming.Any(entry => Crossed(entry.OpensAt, now));
   }
 
   private static bool Crossed(DateTime? moment, DateTime now) =>
@@ -267,6 +297,9 @@ public static class Events
     WriteCache();
     return new EventsReceived(modesChanged, missing);
   }
+
+  public static void ReceiveUpcoming(List<UpcomingEvent> answer) =>
+    upcoming = (answer ?? []).Where(entry => entry?.Id != null && entry.Name != null).ToList();
 
   private enum Acceptance
   {
@@ -367,6 +400,8 @@ public static class Events
       throw new InvalidOperationException("its id is taken");
     Campaigns.CheckTrials(campaign, taken);
   }
+
+  public static void LoadCopyFromDisk() => EnsureLoaded();
 
   private static void EnsureLoaded()
   {

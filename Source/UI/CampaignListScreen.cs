@@ -11,21 +11,25 @@ public abstract class CampaignListScreen : ListScreen
   private LeaderboardView view;
 
   protected override int ScreenDepth => 2;
-  protected abstract IReadOnlyList<Campaign> ListedCampaigns();
-  protected abstract CampaignRow RowFor(Campaign campaign);
+  protected abstract IEnumerable<SlidingRow> ListedRows();
 
   protected override TrialsMenu BuildMenu()
   {
     TrialsMenu built = [];
     rows.Clear();
-    foreach (Campaign campaign in ListedCampaigns())
+    foreach (SlidingRow row in ListedRows())
     {
-      CampaignRow row = RowFor(campaign);
-      row.Pressed(() => Open(campaign));
       built.Add(row);
-      if (row.ShowsDescription && !string.IsNullOrEmpty(campaign.Description))
-        RowDescription.Attach(built, row, campaign.Description);
-      rows.Add(row);
+      if (row is not CampaignRow campaignRow)
+      {
+        row.Pressed(() => Audio.Play(SFX.ui_main_button_invalid));
+        continue;
+      }
+      Campaign campaign = campaignRow.Campaign;
+      campaignRow.Pressed(() => Open(campaign));
+      if (campaignRow.ShowsDescription && !string.IsNullOrEmpty(campaign.Description))
+        RowDescription.Attach(built, campaignRow, campaign.Description);
+      rows.Add(campaignRow);
     }
     built.OnCancel = () =>
     {
@@ -43,6 +47,8 @@ public abstract class CampaignListScreen : ListScreen
   }
 
   protected override StandingsState ServerState => Standings.HubState;
+
+  protected bool BoardOpen => view != null;
 
   protected override void RenderPrompts(float alpha)
   {
@@ -63,17 +69,15 @@ public abstract class CampaignListScreen : ListScreen
   public override void Update()
   {
     base.Update();
-    if (
-      view == null
-      && menu != null
-      && menu.Focused
-      && Input.MenuJournal.Pressed
-      && menu.Current is CampaignRow row
-    )
+    if (view != null || menu == null || !menu.Focused || !Input.MenuJournal.Pressed)
+      return;
+    if (menu.Current is CampaignRow row)
     {
       Audio.Play(SFX.ui_main_button_select);
       OpenBoard(row.Campaign);
     }
+    else if (menu.Current != null)
+      Audio.Play(SFX.ui_main_button_invalid);
   }
 
   private void OpenBoard(Campaign campaign)
@@ -106,10 +110,10 @@ public abstract class CampaignListScreen : ListScreen
   protected override int InitialSelection(Oui from)
   {
     OuiTrials.ReturnBoard = null;
-    if (rows.Count == 0)
-      return 0;
-    int index = from is OuiTrials trials ? rows.FindIndex(r => r.Campaign == trials.Campaign) : 0;
-    return menu.Items.IndexOf(rows[index < 0 ? 0 : index]);
+    int index = -1;
+    if (from is OuiTrials trials)
+      index = rows.FindIndex(r => r.Campaign.Id == trials.Campaign.Id);
+    return index < 0 ? 0 : menu.Items.IndexOf(rows[index]);
   }
 
   private void Open(Campaign campaign)

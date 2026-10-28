@@ -9,6 +9,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Celeste.Mod.ClimbTrials.Replays;
+using Celeste.Mod.ClimbTrials.UI;
 using Celeste.Mod.Helpers;
 using Monocle;
 
@@ -30,6 +31,8 @@ public enum ServerError
   EventClosed,
   NotInvited,
   NotFound,
+  CodeInvalid,
+  CodeUsedUp,
 }
 
 public readonly record struct ServerResult<T>(T Value, ServerError Error, string Message)
@@ -57,7 +60,7 @@ public static class ServerClient
 
   private const int PassiveIconDelayMs = 300;
   private static int pending;
-  private static bool iconShown;
+  private static LoadingIcon icon;
   private static readonly JsonSerializerOptions json = new()
   {
     PropertyNameCaseInsensitive = true,
@@ -95,6 +98,9 @@ public static class ServerClient
 
   public static void Rename(string name, Action<ServerResult<RenameAnswer>> onDone) =>
     Send("/v1/me/name", HttpMethod.Put, Json(JsonSerializer.Serialize(new { name })), onDone);
+
+  public static void JoinEvent(string code, Action<ServerResult<JoinAnswer>> onDone) =>
+    Send("/v1/events/join", HttpMethod.Post, Json(JsonSerializer.Serialize(new { code })), onDone);
 
   public static void GetHub(
     IEnumerable<(string Id, string Hash)> heldEvents,
@@ -238,18 +244,17 @@ public static class ServerClient
 
   private static void ShowIconWhilePending()
   {
-    if (pending == 0 || iconShown)
+    if (pending == 0 || icon?.TryToKeep() == true)
       return;
-    iconShown = true;
-    SaveLoadIcon.Show(WatcherOverlay.Scene ?? Engine.Scene);
+    icon = new LoadingIcon();
+    (WatcherOverlay.Scene ?? Engine.Scene).Add(icon);
   }
 
   private static void EndRequest()
   {
-    if (--pending > 0 || !iconShown)
+    if (--pending > 0)
       return;
-    iconShown = false;
-    SaveLoadIcon.Hide();
+    icon?.Hide();
   }
 
   private static async Task<ServerResult<T>> Request<T>(
@@ -315,6 +320,8 @@ public static class ServerClient
       "event_closed" => ServerError.EventClosed,
       "not_invited" => ServerError.NotInvited,
       "not_found" => ServerError.NotFound,
+      "code_invalid" => ServerError.CodeInvalid,
+      "code_used_up" => ServerError.CodeUsedUp,
       _ => ServerError.Offline,
     };
     return new ServerResult<T>(default, code, error?.Message);

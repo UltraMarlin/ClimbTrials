@@ -20,6 +20,8 @@ public abstract class SlidingRow : TextMenu.Item
     ease = Calc.Approach(ease, selected ? 1f : 0f, 6f * Engine.DeltaTime);
   }
 
+  public void TakeSlideFrom(SlidingRow previous) => ease = previous.ease;
+
   protected Vector2 RowStart(Vector2 position) =>
     position + new Vector2(Ease.CubeInOut(ease) * RowLayout.HoveredRowShift, 0f);
 }

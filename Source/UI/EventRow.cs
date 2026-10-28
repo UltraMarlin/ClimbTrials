@@ -17,16 +17,18 @@ public class EventRow(Campaign campaign) : CampaignRow(campaign)
     base.Render(new Vector2(position.X, top + RowLayout.RowHeight / 2f), highlighted);
     if (Events.Of(Campaign) is not EventCampaign eventCampaign)
       return;
-    Vector2 lineAt = new(
-      RowStart(position).X + RowLayout.CampaignNameX,
-      top + RowLayout.TimingLineY
-    );
+    float nameX = RowStart(position).X + RowLayout.CampaignNameX;
+    DrawTimingLine(EventTiming.PhaseText(eventCampaign), nameX, top, Container.Alpha);
+  }
+
+  public static void DrawTimingLine(string text, float nameX, float top, float alpha)
+  {
     TextOutline.DrawDim(
-      EventTiming.PhaseText(eventCampaign),
-      lineAt,
+      text,
+      new Vector2(nameX, top + RowLayout.TimingLineY),
       new Vector2(0f, 0.5f),
       RowLayout.TimingScale,
-      RowLayout.Dim * Container.Alpha
+      RowLayout.Dim * alpha
     );
   }
 }

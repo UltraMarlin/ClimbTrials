@@ -11,6 +11,7 @@ public abstract class ListScreen : Oui
 {
   public const float OnScreenX = 960f;
   public const float TitleY = 120f;
+  public const float TitleScale = 1.6f;
   private const float OfflineX = 60f;
   private const float OfflineScale = 0.5f;
   private const float PollSeconds = 180f;
@@ -183,7 +184,7 @@ public abstract class ListScreen : Oui
       Dialog.Clean(TitleKey),
       new Vector2(x, TitleY - TitleLift),
       new Vector2(0.5f, 0.5f),
-      Vector2.One * 1.6f,
+      Vector2.One * TitleScale,
       Color.White * totalAlpha,
       2f,
       TextOutline.StrokeFor(Color.White * totalAlpha)

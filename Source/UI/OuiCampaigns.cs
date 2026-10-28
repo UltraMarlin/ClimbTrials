@@ -1,11 +1,11 @@
 using System.Collections.Generic;
+using System.Linq;
 using Celeste.Mod.ClimbTrials.Content;
 
 namespace Celeste.Mod.ClimbTrials.UI;
 
 public class OuiCampaigns : CampaignListScreen
 {
-  protected override IReadOnlyList<Campaign> ListedCampaigns() => Campaigns.All;
-
-  protected override CampaignRow RowFor(Campaign campaign) => new(campaign);
+  protected override IEnumerable<SlidingRow> ListedRows() =>
+    Campaigns.All.Select(campaign => new CampaignRow(campaign));
 }

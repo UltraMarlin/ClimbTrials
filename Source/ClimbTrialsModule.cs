@@ -56,6 +56,7 @@ public class ClimbTrialsModule : EverestModule
 
   public override void Initialize()
   {
+    Events.LoadCopyFromDisk();
     SpeedrunToolBridge.Initialize();
     HotReload.Recover();
   }
