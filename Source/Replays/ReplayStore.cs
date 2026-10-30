@@ -62,9 +62,9 @@ public static class ReplayStore
     Logger.Log(
       LogLevel.Info,
       LogTag,
-      $"saved replay {PathFor(replay.TrialId)}: {frames} frames, "
-        + $"{frames * FrameTable.FrameBytes} raw bytes, {bytes.Length} bytes on disk, "
-        + $"{clock.ElapsedMilliseconds} ms"
+      $"saved replay {Path.GetFileName(PathFor(replay.TrialId))}: {frames} frames, "
+        + $"{frames * FrameTable.FrameBytes} raw bytes, {bytes.Length} bytes compressed "
+        + $"in {clock.ElapsedMilliseconds} ms"
     );
   }
 
@@ -112,9 +112,9 @@ public static class ReplayStore
       Logger.Log(
         LogLevel.Info,
         LogTag,
-        $"loaded replay {PathFor(trialId)}: {replay.Frames.Count} frames, "
+        $"loaded replay {Path.GetFileName(PathFor(trialId))}: {replay.Frames.Count} frames, "
           + $"{replay.Frames.Count * FrameTable.FrameBytes} raw bytes, "
-          + $"{bytes.Length} bytes on disk, {clock.ElapsedMilliseconds} ms"
+          + $"{bytes.Length} bytes compressed in {clock.ElapsedMilliseconds} ms"
       );
       failureNotice = null;
       return true;

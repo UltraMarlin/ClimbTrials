@@ -1,11 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk" InitialTargets="CheckCelestePrefix">
 
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <AssemblyName>ClimbTrials</AssemblyName>
         <RootNamespace>Celeste.Mod.ClimbTrials</RootNamespace>
         <LangVersion>latest</LangVersion>
-        <CelestePrefix Condition="'$(CelestePrefix)' == '' And Exists('..\..\..\Celeste.dll')">..\..\..</CelestePrefix>
+        <CelestePrefix Condition="'$(CelestePrefix)' == '' And Exists('$(CELESTE_DIR)/Celeste.dll')">$(CELESTE_DIR)</CelestePrefix>
         <CelestePrefix Condition="'$(CelestePrefix)' == ''">lib-stripped</CelestePrefix>
         <ZipName Condition="'$(ZipName)' == ''">ClimbTrials.zip</ZipName>
         <ZippedFiles>..\everest.yaml;..\ClimbTrials\**\*.*;..\bin\**\*.*;..\Audio\**\*.*;..\Dialog\**\*.*;..\Graphics\**\*.*;..\Ahorn\**\*.*;..\Loenn\**\*.*</ZippedFiles>
@@ -33,10 +33,23 @@
         <Reference Include="$(CelestePrefix)\FNA.dll" Private="false" />
     </ItemGroup>
 
-    <Target Name="CopyFiles" AfterTargets="Build" Inputs="$(OutputPath)\$(AssemblyName).dll;$(OutputPath)\$(AssemblyName).pdb" Outputs="..\bin\$(AssemblyName).dll;..\bin\$(AssemblyName).pdb">
+    <Target Name="CheckCelestePrefix">
+        <Error Condition="!Exists('$(CelestePrefix)/Celeste.dll')" Text="Missing Celeste.dll in '$(CelestePrefix)'. Set CELESTE_DIR to the Celeste folder." />
+    </Target>
+
+    <Target Name="CopyFiles" AfterTargets="Build" Condition="'$(SkipDeploy)' != 'true'" Inputs="$(OutputPath)\$(AssemblyName).dll;$(OutputPath)\$(AssemblyName).pdb" Outputs="..\bin\$(AssemblyName).dll;..\bin\$(AssemblyName).pdb">
         <Copy SourceFiles="$(OutputPath)\$(AssemblyName).dll" DestinationFolder="..\bin" />
         <Copy SourceFiles="$(OutputPath)\$(AssemblyName).pdb" DestinationFolder="..\bin" />
     </Target>
+
+    <Target Name="DeployMod" AfterTargets="CopyFiles" Condition="'$(SkipDeploy)' != 'true' And '$(OS)' != 'Windows_NT'">
+        <Error Condition="'$(CELESTE_DIR)' == '' Or !Exists('$(CELESTE_DIR)/Mods')" Text="Deploy failed. Set CELESTE_DIR to the Celeste folder." />
+        <Exec Command="sh ./deploy.sh" WorkingDirectory=".." />
+    </Target>
+
+    <ItemGroup>
+        <Watch Include="..\everest.yaml;..\ClimbTrials\**\*;..\Audio\**\*;..\Dialog\**\*;..\Graphics\**\*;..\Ahorn\**\*;..\Loenn\**\*" />
+    </ItemGroup>
 
     <Target Name="PackageMod" AfterTargets="CopyFiles" Inputs="$(ZippedFiles)" Outputs="..\$(ZipName)" Condition="'$(Configuration)' == 'Release'">
         <ItemGroup>
