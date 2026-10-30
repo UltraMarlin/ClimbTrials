@@ -18,9 +18,14 @@ public static class ButtonRow
   public static float Width(string label, VirtualButton button) =>
     Scale * ButtonUI.Width(label, button);
 
-  public static void DrawCenter(string label, VirtualButton button, float alpha, float x = CenterX)
+  public static void DrawCenter(
+    string label,
+    VirtualButton button,
+    float alpha,
+    float centerX = CenterX
+  )
   {
-    ButtonUI.Render(new Vector2(x, Y), label, button, Scale, 0.5f, 0f, alpha);
+    ButtonUI.Render(new Vector2(centerX, Y), label, button, Scale, 0.5f, 0f, alpha);
   }
 
   public static void DrawRight(

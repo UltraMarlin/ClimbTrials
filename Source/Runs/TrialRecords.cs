@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Replays;
 
@@ -10,6 +11,8 @@ public readonly record struct CampaignRecord(Medal Medal, long? TotalTicks);
 public static class TrialRecords
 {
   private const int Slot = -1;
+  private const string LogTag = "ClimbTrials/Records";
+  private const int CurrentVersion = 2;
 
   public static TrialRecord Get(string trialId) =>
     ClimbTrialsModule.SaveData?.PersonalBests.GetValueOrDefault(trialId);
@@ -43,6 +46,30 @@ public static class TrialRecords
   {
     ClimbTrialsModule module = ClimbTrialsModule.Instance;
     module.DeserializeSaveData(Slot, module.ReadSaveData(Slot));
+  }
+
+  public static void DeleteOutdatedRecords()
+  {
+    EnsureLoaded();
+    int version = ClimbTrialsModule.SaveData.Version;
+    if (version >= CurrentVersion)
+      return;
+    int cleared;
+    try
+    {
+      ReplayStore.DeleteAll();
+      cleared = Clear();
+    }
+    catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+    {
+      Logger.Log(
+        LogLevel.Warn,
+        LogTag,
+        $"records of version {version} left for the next start: {e.Message}"
+      );
+      return;
+    }
+    Logger.Log(LogLevel.Info, LogTag, $"records of version {version}: cleared {cleared} PBs");
   }
 
   public static int Clear()
@@ -142,6 +169,7 @@ public static class TrialRecords
 
   private static void Write()
   {
+    ClimbTrialsModule.SaveData.Version = CurrentVersion;
     ClimbTrialsModule module = ClimbTrialsModule.Instance;
     module.WriteSaveData(Slot, module.SerializeSaveData(Slot));
   }

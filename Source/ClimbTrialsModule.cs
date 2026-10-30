@@ -56,6 +56,8 @@ public class ClimbTrialsModule : EverestModule
 
   public override void Initialize()
   {
+    ReplayStore.DeleteOutdatedReplays();
+    TrialRecords.DeleteOutdatedRecords();
     Events.LoadCopyFromDisk();
     SpeedrunToolBridge.Initialize();
     HotReload.Recover();

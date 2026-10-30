@@ -11,7 +11,6 @@ public sealed record TrialSpec(
   float SpawnX,
   float SpawnY,
   int ReplayLimitSeconds,
-  FinishKind FinishKind,
   byte[] DefinitionHash
 )
 {
@@ -23,7 +22,6 @@ public sealed record TrialSpec(
         trial.Run.Spawn.X,
         trial.Run.Spawn.Y,
         trial.ReplayLimitSeconds,
-        trial.Run.FinishKind,
         trial.DefinitionHash
       );
 
@@ -54,7 +52,9 @@ public static class ReplayValidator
   public const long FrameTicks = 17 * TimeSpan.TicksPerMillisecond;
   public const double WallRejectBelow = 0.9;
   public const double WallFlagAbove = 1.5;
-  public const double FrozenFlagAbove = 0.5;
+  public const double FrozenFlagAbove = 0.25;
+  public const double MaxFrameToTimerRatio = 1.5;
+  public const int FreezeBufferFrames = 60;
 
   public const string TrialHashMismatch = "trial definition differs from the server's";
 
@@ -70,7 +70,7 @@ public static class ReplayValidator
       result.Rejections.Add($"unknown trial '{replay.TrialId}'");
       return result;
     }
-    if (!replay.TrialHash.AsSpan().SequenceEqual(trial.DefinitionHash))
+    if (!replay.MatchesTrialHash(trial.DefinitionHash))
     {
       result.Rejections.Add(TrialHashMismatch);
       return result;
@@ -90,13 +90,19 @@ public static class ReplayValidator
       if (frame.LevelUpdated)
         counted++;
     int frozen = replay.Frames.Count - counted;
-    long expected = counted * FrameTicks + replay.ExtraHeaderTicks(trial.FinishKind);
+    long expected = counted * FrameTicks;
     if (replay.Ticks != expected)
       result.Rejections.Add(
         $"header time {TimeText.Format(replay.Ticks)}, "
           + $"but {counted} counted frames add up to {TimeText.Format(expected)}"
       );
-    if (frozen > counted * FrozenFlagAbove)
+    double timerFrames = (double)replay.Ticks / FrameTicks;
+    long frameLimit = (long)Math.Floor(MaxFrameToTimerRatio * timerFrames) + FreezeBufferFrames;
+    if (replay.Frames.Count > frameLimit)
+      result.Rejections.Add(
+        $"the replay has {replay.Frames.Count} frames, more than {frameLimit} for its time"
+      );
+    if (frozen > replay.Frames.Count * FrozenFlagAbove)
       result.Flags.Add($"{frozen} of {replay.Frames.Count} frames are frozen");
 
     for (int i = 0; i + 1 < replay.Frames.Count; i++)

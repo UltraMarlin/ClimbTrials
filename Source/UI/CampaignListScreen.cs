@@ -85,7 +85,7 @@ public abstract class CampaignListScreen : ListScreen
     menu.Focused = false;
     Focused = false;
     view = new LeaderboardView(
-      BoardSubject.Of(campaign),
+      BoardSubject.ForCampaign(campaign),
       opened => SetDim(Motion.DimUnder(opened, Motion.BoardUnderDim)),
       OnBoardClosed
     );
@@ -95,7 +95,7 @@ public abstract class CampaignListScreen : ListScreen
   private void OnBoardClosed(BoardSubject shown)
   {
     view = null;
-    int index = rows.FindIndex(r => r.Campaign.Id == shown.Id);
+    int index = rows.FindIndex(row => row.Campaign.Id == shown.Id);
     if (index >= 0 && menu.Current != rows[index])
     {
       menu.Current?.OnLeave?.Invoke();
@@ -112,7 +112,7 @@ public abstract class CampaignListScreen : ListScreen
     OuiTrials.ReturnBoard = null;
     int index = -1;
     if (from is OuiTrials trials)
-      index = rows.FindIndex(r => r.Campaign.Id == trials.Campaign.Id);
+      index = rows.FindIndex(row => row.Campaign.Id == trials.Campaign.Id);
     return index < 0 ? 0 : menu.Items.IndexOf(rows[index]);
   }
 

@@ -57,7 +57,7 @@ public class GhostLayer : Entity
     List<PlaybackGhost> kept = [];
     foreach (GhostSpec spec in specs)
     {
-      PlaybackGhost ghost = ghosts.Find(g => g.Replay == spec.Replay);
+      PlaybackGhost ghost = ghosts.Find(candidate => candidate.Replay == spec.Replay);
       if (ghost == null)
       {
         ghost = new PlaybackGhost(spec.Replay, spec.Color, spec.TagColor, spec.Comparison);

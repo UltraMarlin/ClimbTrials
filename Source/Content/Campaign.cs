@@ -59,14 +59,17 @@ public sealed class Trial
       $"{Int(run.Finish.X)},{Int(run.Finish.Y)},{Int(run.Finish.Width)},{Int(run.Finish.Height)}",
       string.Join(
         ";",
-        run.Waypoints.Select(w =>
-          $"{w.Room}|{Vec(w.Position)}|{(w.Spawn is Vector2 s ? Vec(s) : "")}|{Bool(w.SetsSpawn)}"
+        run.Waypoints.Select(waypoint =>
+          $"{waypoint.Room}|{Vec(waypoint.Position)}|{(waypoint.Spawn is Vector2 spawn ? Vec(spawn) : "")}|{Bool(waypoint.SetsSpawn)}"
         )
       ),
-      string.Join(";", run.CameraOffsets.Select(c => $"{c.Room}|{Vec(c.Offset)}")),
+      string.Join(";", run.CameraOffsets.Select(offset => $"{offset.Room}|{Vec(offset.Offset)}")),
       run.BloomBaseAdd is float bloom ? Float(bloom) : "",
       run.LightingAlphaAdd is float lighting ? Float(lighting) : "",
-      string.Join(";", run.IgnoredStrawberries.Select(b => $"{b.Level}|{Int(b.ID)}")),
+      string.Join(
+        ";",
+        run.IgnoredStrawberries.Select(strawberry => $"{strawberry.Level}|{Int(strawberry.ID)}")
+      ),
       Int(run.RequiredStrawberries),
       Int(run.RequiredSummitGems),
       run.Dashes is int dashes ? Int(dashes) : "",
@@ -82,7 +85,7 @@ public sealed class Trial
 
   private static string Int(int value) => value.ToString(CultureInfo.InvariantCulture);
 
-  private static string Vec(Vector2 v) => $"{Float(v.X)},{Float(v.Y)}";
+  private static string Vec(Vector2 vector) => $"{Float(vector.X)},{Float(vector.Y)}";
 
   private static string Bool(bool value) => value ? "true" : "false";
 
@@ -123,18 +126,19 @@ public static class Campaigns
   }
 
   public static Trial FindTrial(string id) =>
-    All.SelectMany(c => c.Trials).FirstOrDefault(t => t.Id == id) ?? Events.FindTrial(id);
+    All.SelectMany(campaign => campaign.Trials).FirstOrDefault(trial => trial.Id == id)
+    ?? Events.FindTrial(id);
 
   public static Campaign CampaignOf(Trial trial) =>
-    All.FirstOrDefault(c => c.Trials.Contains(trial)) ?? Events.Of(trial)?.Campaign;
+    All.FirstOrDefault(campaign => campaign.Trials.Contains(trial)) ?? Events.Of(trial)?.Campaign;
 
   public static bool IsEvent(Campaign campaign) => Events.Of(campaign) != null;
 
   public static string NextTrialId()
   {
     int highest = lastIssued;
-    IEnumerable<string> taken = All.SelectMany(c => c.Trials)
-      .Select(t => t.Id)
+    IEnumerable<string> taken = All.SelectMany(campaign => campaign.Trials)
+      .Select(trial => trial.Id)
       .Concat(RetiredTrialIds);
     foreach (string id in taken)
       if (TrialNumber(id) is int number && number > highest)

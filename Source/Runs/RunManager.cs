@@ -56,6 +56,7 @@ public static class RunManager
     Everest.Events.Level.OnLoadLevel += OnLoadLevel;
     Everest.Events.Level.OnBeforeUpdate += OnBeforeUpdate;
     Everest.Events.Level.OnAfterUpdate += OnAfterUpdate;
+    Everest.Events.Level.OnTransitionTo += OnTransitionTo;
     Everest.Events.Level.OnPause += OnPause;
     Everest.Events.Celeste.OnSceneTransition += OnSceneTransition;
     On.Celeste.Player.Added += OnPlayerAdded;
@@ -74,6 +75,7 @@ public static class RunManager
     Everest.Events.Level.OnLoadLevel -= OnLoadLevel;
     Everest.Events.Level.OnBeforeUpdate -= OnBeforeUpdate;
     Everest.Events.Level.OnAfterUpdate -= OnAfterUpdate;
+    Everest.Events.Level.OnTransitionTo -= OnTransitionTo;
     Everest.Events.Level.OnPause -= OnPause;
     Everest.Events.Celeste.OnSceneTransition -= OnSceneTransition;
     On.Celeste.Player.Added -= OnPlayerAdded;
@@ -193,7 +195,7 @@ public static class RunManager
     Logger.Log(
       LogLevel.Info,
       LogTag,
-      $"StartRun: trial '{Trial?.Id}', replay {replay != null}, practice {Practice}"
+      $"run started: trial '{Trial?.Id}', replay {replay != null}, practice {Practice}"
     );
     LevelLoader loader = Determinism.CreateSeededLoader(loadSeed, session, run.Spawn);
     loader.PlayerIntroTypeOverride = introType;
@@ -306,7 +308,9 @@ public static class RunManager
   }
 
   private static string TrialIdOf(Session session) =>
-    session.Flags.FirstOrDefault(f => f.StartsWith(TrialFlagPrefix))?[TrialFlagPrefix.Length..];
+    session
+      .Flags.FirstOrDefault(flag => flag.StartsWith(TrialFlagPrefix))
+      ?[TrialFlagPrefix.Length..];
 
   public static LevelLoader RestartFromSession(Session session)
   {
@@ -481,10 +485,10 @@ public static class RunManager
       return [];
     return
     [
-      .. GhostComparisons.Shown.Select(g => new GhostSpec(
-        g.Replay,
-        g.Color,
-        GhostComparisons.NameColor(g.Color),
+      .. GhostComparisons.Shown.Select(ghost => new GhostSpec(
+        ghost.Replay,
+        ghost.Color,
+        GhostComparisons.NameColor(ghost.Color),
         Comparison: true
       )),
     ];
@@ -527,7 +531,9 @@ public static class RunManager
         level.Add(new FinishZone(Run.Finish));
         break;
       case FinishKind.Heart
-        when !level.Session.LevelData.Entities.Exists(e => e.Name == "blackGem" && !e.Bool("fake")):
+        when !level.Session.LevelData.Entities.Exists(data =>
+          data.Name == "blackGem" && !data.Bool("fake")
+        ):
         break;
     }
   }
@@ -578,6 +584,13 @@ public static class RunManager
       ShowNotice(noticeKey);
   }
 
+  private static void OnTransitionTo(Level level, LevelData next, Vector2 direction)
+  {
+    if (Attempt.State != AttemptState.Running)
+      return;
+    Comparison?.StartTransition(Attempt.ElapsedTicks);
+  }
+
   private static void OnAfterUpdate(Level level)
   {
     if (Run == null)
@@ -600,7 +613,14 @@ public static class RunManager
     )
       StopRecording(StopReason.State);
     if (Attempt.State == AttemptState.Running && InputCapture.FindRecordedPlayer() is Player runner)
-      Comparison?.CompareAt(runner.Position, runner.StateMachine.State, Attempt.ElapsedTicks);
+    {
+      Comparison?.CompareAt(
+        runner.Position,
+        runner.StateMachine.State,
+        Attempt.ElapsedTicks,
+        level.Transitioning
+      );
+    }
     HeartGoal.AfterUpdate(level);
     RoomGoal.AfterUpdate(level);
     if (level.Tracker.GetEntity<GhostLayer>() is GhostLayer ghosts)
@@ -801,13 +821,16 @@ public static class RunManager
       if (LastFinish.IsPersonalBest)
       {
         if (recorded != null)
+        {
+          recorded.IsPersonalBest = true;
           ReplayStore.Save(recorded);
+        }
         else
           ReplayStore.Delete(Trial.Id);
         ClimbTrialsModuleSettings settings = ClimbTrialsModule.Settings;
         if (settings.PbAutoSubmit && submittable && !settings.OfflineMode)
           AutoSubmit(recorded);
-        if (RaceReplay?.IsOwn == true)
+        if (RaceReplay?.IsPersonalBest == true)
           RaceReplay = recorded;
       }
     }

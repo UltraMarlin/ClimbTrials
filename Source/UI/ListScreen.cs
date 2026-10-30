@@ -19,7 +19,7 @@ public abstract class ListScreen : Oui
   protected TrialsMenu menu;
   protected readonly TransientText notice = new();
   protected string hintKey;
-  protected float x = OnScreenX;
+  protected float screenX = OnScreenX;
   protected float alpha;
   private float dim = 1f;
   private float sinceFetch;
@@ -105,9 +105,9 @@ public abstract class ListScreen : Oui
       yield return Motion.EnterScreen(side, PlaceSlide);
     }
 
-    x = OnScreenX;
+    screenX = OnScreenX;
     alpha = 1f;
-    menu.X = x;
+    menu.X = screenX;
     menu.Alpha = alpha * dim;
     if (handedOver)
       yield break;
@@ -147,9 +147,9 @@ public abstract class ListScreen : Oui
 
   private void PlaceSlide(float offset, float shown)
   {
-    x = OnScreenX + offset;
+    screenX = OnScreenX + offset;
     alpha = shown;
-    menu.X = x;
+    menu.X = screenX;
     menu.Alpha = alpha * dim;
   }
 
@@ -182,7 +182,7 @@ public abstract class ListScreen : Oui
     float totalAlpha = alpha * dim;
     ActiveFont.DrawOutline(
       Dialog.Clean(TitleKey),
-      new Vector2(x, TitleY - TitleLift),
+      new Vector2(screenX, TitleY - TitleLift),
       new Vector2(0.5f, 0.5f),
       Vector2.One * TitleScale,
       Color.White * totalAlpha,
@@ -192,11 +192,11 @@ public abstract class ListScreen : Oui
     RenderHeader();
     RenderPrompts(totalAlpha);
     DrawOfflineLabel();
-    notice.Render(new Vector2(x, ScreenLayout.NoticeY), ScreenLayout.NoticeScale, totalAlpha);
+    notice.Render(new Vector2(screenX, ScreenLayout.NoticeY), ScreenLayout.NoticeScale, totalAlpha);
     if (hintKey != null && !notice.Showing)
       TextOutline.DrawDim(
         $"{Dialog.Clean("climbtrials_hint_prefix")} {Dialog.Clean(hintKey)}",
-        new Vector2(x, ScreenLayout.NoticeY),
+        new Vector2(screenX, ScreenLayout.NoticeY),
         new Vector2(0.5f, 0.5f),
         ScreenLayout.NoticeScale,
         totalAlpha
@@ -208,7 +208,7 @@ public abstract class ListScreen : Oui
     if (status != null)
       ActiveFont.DrawOutline(
         status,
-        new Vector2(x, ScreenLayout.StatusY),
+        new Vector2(screenX, ScreenLayout.StatusY),
         new Vector2(0.5f, 0.5f),
         Vector2.One * 0.45f,
         Color.White * 0.7f * totalAlpha,

@@ -231,12 +231,12 @@ public class LeaderboardDisplay : Entity
   private void DrawRow(int index)
   {
     Row row = rows[index];
-    float y = rowsTop + index * rowHeight + rowHeight / 2f;
+    float centerY = rowsTop + index * rowHeight + rowHeight / 2f;
     Vector2 justify = new(0f, 0.5f);
     Vector2 scale = Vector2.One * textScale;
     ActiveFont.DrawOutline(
       row.Rank,
-      new Vector2(RankX, y),
+      new Vector2(RankX, centerY),
       justify,
       scale,
       row.Color,
@@ -246,7 +246,7 @@ public class LeaderboardDisplay : Entity
     if (row.Name.Length > 0)
       ActiveFont.DrawOutline(
         row.Name,
-        new Vector2(nameX, y),
+        new Vector2(nameX, centerY),
         justify,
         scale * row.NameFit,
         row.Color,
@@ -256,13 +256,13 @@ public class LeaderboardDisplay : Entity
     if (row.HiddenTime)
     {
       float right = widest - TimeText.Width(TimeText.TypicalTime, timeStyle);
-      Vector2 baseline = new(right, y + TimeText.Height(timeStyle) / 2f);
+      Vector2 baseline = new(right, centerY + TimeText.Height(timeStyle) / 2f);
       TimeText.DrawHidden(baseline, timeStyle, Color.White * BoardLayout.HiddenTimeAlpha);
     }
     else if (row.Time.Length > 0)
     {
       float right = widest - TimeText.Width(row.Time, timeStyle);
-      Vector2 baseline = new(right, y + TimeText.Height(timeStyle) / 2f);
+      Vector2 baseline = new(right, centerY + TimeText.Height(timeStyle) / 2f);
       TimeText.Draw(baseline, row.Time, timeStyle, row.Color);
     }
   }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Online;
+using Celeste.Mod.ClimbTrials.Replays.Codec;
 using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -44,6 +45,7 @@ public class OuiHub : ListScreen
   {
     hintKey = Campaigns.LoadError == null ? Hints.Pick() : null;
     Events.ApplyPending();
+    ReplayCodec.PreloadStartingValues();
     return base.Enter(from);
   }
 

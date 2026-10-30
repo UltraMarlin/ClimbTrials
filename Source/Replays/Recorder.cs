@@ -46,17 +46,15 @@ public static class Recorder
     current = new Replay
     {
       TrialId = trial?.Id,
-      TrialHash = trial?.DefinitionHash ?? new byte[Trial.DefinitionHashBytes],
+      TrialHash = Replay.ShortTrialHash(
+        trial?.DefinitionHash ?? new byte[Trial.DefinitionHashBytes]
+      ),
       CelesteVersion = Celeste.Instance.Version.ToString(),
-      EverestVersion = Everest.VersionString,
       Modules = ModCheck.Modules(),
       Language = Settings.Instance.Language,
       GrabMode = Settings.Instance.GrabMode,
       CrouchDashMode = Settings.Instance.CrouchDashMode,
       ScreenShake = Settings.Instance.ScreenShake,
-      ModOptionsInPauseMenu = CoreModule.Settings.ShowModOptionsInGame,
-      DebugMode = Celeste.PlayMode == Celeste.PlayModes.Debug,
-      LastAim = Input.LastAim,
       IntroType = introType,
       TimeActive = level.TimeActive,
       RawTimeActive = level.RawTimeActive,
@@ -64,7 +62,6 @@ public static class Recorder
       LoadSeed = loadSeed,
       RunSeed = runSeed,
       Buttons = InputCapture.ButtonStates(),
-      RunStartedUtc = DateTime.UtcNow,
       IsOwn = true,
     };
     wall.Restart();
@@ -82,6 +79,11 @@ public static class Recorder
     Last = current;
     current = null;
     return Last;
+  }
+
+  public static void RecordPauseMenu(TextMenu menu)
+  {
+    current?.PauseMenus.Add(PauseRows.Describe(menu));
   }
 
   public static void Stop(StopReason reason)

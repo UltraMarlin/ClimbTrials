@@ -219,8 +219,11 @@ public static class TrialFile
           run,
           "cameraOffsets",
           at,
-          (e, w) =>
-            new CameraOffsetDef(String(e, "room", w), Vector(Field(e, "offset", w), $"{w}.offset"))
+          (element, path) =>
+            new CameraOffsetDef(
+              String(element, "room", path),
+              Vector(Field(element, "offset", path), $"{path}.offset")
+            )
         ),
         BloomBaseAdd = OptionalFloat(run, "bloomBaseAdd", at),
         LightingAlphaAdd = OptionalFloat(run, "lightingAlphaAdd", at),
@@ -228,7 +231,7 @@ public static class TrialFile
           run,
           "ignoredStrawberries",
           at,
-          (e, w) => new EntityID(String(e, "room", w), Int(e, "id", w))
+          (element, path) => new EntityID(String(element, "room", path), Int(element, "id", path))
         ),
         RequiredStrawberries = OptionalInt(run, "requiredStrawberries", at) ?? 0,
         RequiredSummitGems = gems,
@@ -297,7 +300,7 @@ public static class TrialFile
     );
   }
 
-  private static IReadOnlyList<T> List<T>(
+  private static List<T> List<T>(
     JsonElement parent,
     string key,
     string at,

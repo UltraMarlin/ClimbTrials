@@ -46,28 +46,23 @@ public static class GhostCache
           onDone(null);
           return;
         }
-        onDone(Read(replayId, ticks, own, trial, result.Value));
+        onDone(Read(replayId, own, trial, result.Value));
       }
     );
   }
 
-  private static Replay Read(
-    string replayId,
-    long ticks,
-    bool own,
-    Trial trial,
-    DownloadedReplay downloaded
-  )
+  private static Replay Read(string replayId, bool own, Trial trial, DownloadedReplay downloaded)
   {
     try
     {
       Replay replay = Replay.FromBytes(downloaded.Bytes);
-      if (!replay.TrialHash.AsSpan().SequenceEqual(trial.DefinitionHash))
+      if (!replay.MatchesTrialHash(trial.DefinitionHash))
       {
         olderTrial[replayId] = replay.Ticks;
         return null;
       }
       replay.IsOwn = own;
+      replay.IsPersonalBest = own;
       replay.OwnerName = downloaded.OwnerName;
       replay.ServerReplayId = replayId;
       Store(replayId, replay);

@@ -60,19 +60,19 @@ public static class TimeText
     PixelFontSize size = Dialog
       .Languages["english"]
       .Font.Get(Dialog.Languages["english"].FontFaceSize);
-    numberWidth = "0123456789".Max(c => size.Measure(c.ToString()).X);
+    numberWidth = "0123456789".Max(character => size.Measure(character.ToString()).X);
     spacerWidth = size.Measure(":").X;
     signWidth = Math.Max(size.Measure("+").X, size.Measure("-").X);
     numberHeight = size.Measure("0").Y;
   }
 
-  private static bool IsSign(char c) => c is '-' or '+';
+  private static bool IsSign(char character) => character is '-' or '+';
 
-  private static float Advance(char c, TimeStyle style)
+  private static float Advance(char character, TimeStyle style)
   {
-    if (IsSign(c))
+    if (IsSign(character))
       return signWidth + style.DigitGap + SignGap;
-    return (char.IsDigit(c) ? numberWidth : spacerWidth) + style.DigitGap;
+    return (char.IsDigit(character) ? numberWidth : spacerWidth) + style.DigitGap;
   }
 
   public static float Width(string text, TimeStyle style)
@@ -80,11 +80,11 @@ public static class TimeText
     MeasureFontWidth();
     float width = 0f;
     float charScale = 1f;
-    foreach (char c in text)
+    foreach (char character in text)
     {
-      if (c == '.')
+      if (character == '.')
         charScale = style.FractionScale;
-      width += Advance(c, style) * charScale;
+      width += Advance(character, style) * charScale;
     }
     return width * style.Scale;
   }
@@ -109,25 +109,25 @@ public static class TimeText
     MeasureFontWidth();
     PixelFont font = Dialog.Languages["english"].Font;
     float faceSize = Dialog.Languages["english"].FontFaceSize;
-    float x = baseline.X;
-    float y = baseline.Y;
+    float cursorX = baseline.X;
+    float cursorY = baseline.Y;
     float charScale = 1f;
-    foreach (char c in text)
+    foreach (char character in text)
     {
-      if (c == '.')
+      if (character == '.')
       {
         charScale = style.FractionScale;
-        y -= 5f * style.Scale;
+        cursorY -= 5f * style.Scale;
       }
-      float w = Advance(c, style) * charScale * style.Scale;
-      bool sign = IsSign(c);
+      float glyphWidth = Advance(character, style) * charScale * style.Scale;
+      bool sign = IsSign(character);
       Vector2 position = sign
-        ? new(x + w - SignGap * charScale * style.Scale, y)
-        : new(x + w / 2f, y);
+        ? new(cursorX + glyphWidth - SignGap * charScale * style.Scale, cursorY)
+        : new(cursorX + glyphWidth / 2f, cursorY);
       Vector2 justify = sign ? new(1f, 1f) : new(0.5f, 1f);
       Vector2 scale = Vector2.One * charScale * style.Scale;
       Color stroke = TextOutline.StrokeFor(color);
-      string glyph = digitsAsDashes && char.IsDigit(c) ? "-" : c.ToString();
+      string glyph = digitsAsDashes && char.IsDigit(character) ? "-" : character.ToString();
       if (style.RoundStroke)
         TextOutline.DrawRoundOutline(
           font,
@@ -142,7 +142,7 @@ public static class TimeText
         );
       else
         font.DrawOutline(faceSize, glyph, position, justify, scale, color, style.Stroke, stroke);
-      x += w;
+      cursorX += glyphWidth;
     }
   }
 }

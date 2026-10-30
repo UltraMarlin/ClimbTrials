@@ -64,12 +64,12 @@ public static class TrialText
     return string.Join(". ", parts) + ".";
   }
 
-  public static string Pluralize(int n, string zeroKey, string oneKey, string manyKey)
+  public static string Pluralize(int count, string zeroKey, string oneKey, string manyKey)
   {
-    if (n == 0 && zeroKey != null)
+    if (count == 0 && zeroKey != null)
       return Dialog.Clean(zeroKey);
-    if (n == 1)
+    if (count == 1)
       return Dialog.Clean(oneKey);
-    return Dialog.Get(manyKey).Replace("{0}", n.ToString());
+    return Dialog.Get(manyKey).Replace("{0}", count.ToString());
   }
 }

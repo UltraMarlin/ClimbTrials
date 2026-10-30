@@ -27,14 +27,30 @@ public sealed class GhostSplits
     GhostSplits splits = new(replay, course);
     SplitDetector detector = new(course);
     int[] shown = replay.ShownFrames;
+    long? transitionStartTicks = null;
     for (int k = 0; k < shown.Length; k++)
     {
       InputFrame frame = replay.Frames[shown[k]];
+      long ticks = replay.TicksOfShownFrame(k);
+
+      if (!frame.Transitioning)
+        transitionStartTicks = null;
+      else if (!transitionStartTicks.HasValue)
+        transitionStartTicks = ticks;
+
       if (!frame.HasPlayer)
         continue;
-      foreach (SplitKey key in detector.FindReachedSplits(frame.Position, frame.State))
-        if (splits.ticksByKey.TryAdd(key, replay.TicksOfShownFrame(k)))
-          splits.reachOrder.Add(key);
+
+      foreach (
+        ReachedSplit split in detector.FindReachedSplits(
+          frame.Position,
+          frame.State,
+          ticks,
+          transitionStartTicks
+        )
+      )
+        if (splits.ticksByKey.TryAdd(split.Key, split.Ticks))
+          splits.reachOrder.Add(split.Key);
     }
     return splits;
   }

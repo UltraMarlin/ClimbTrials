@@ -110,9 +110,9 @@ public class TrialsMenu : TextMenu
     Alpha = menuAlpha;
   }
 
-  private float EdgeFade(float y, float height)
+  private float EdgeFade(float rowY, float height)
   {
-    float inside = Math.Min(y - ListTop, ListBottom - y);
+    float inside = Math.Min(rowY - ListTop, ListBottom - rowY);
     return Calc.Clamp(inside / (height * 0.5f), 0f, 1f);
   }
 }

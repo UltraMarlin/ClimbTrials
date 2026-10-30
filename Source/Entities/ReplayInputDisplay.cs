@@ -194,41 +194,42 @@ public class ReplayInputDisplay : Entity
     float normalTop = detailed ? TopRowTop : BottomRowTop;
     for (int i = 0; i < Directions.Length; i++)
       DrawArrowSquare(i, idle);
-    float x = DrawRow(normalRow, normalTop, idle);
+    float left = DrawRow(normalRow, normalTop, idle);
     if (featherShown)
-      DrawFeatherRing(RingCenter(x, normalTop), idle);
+      DrawFeatherRing(RingCenter(left, normalTop), idle);
     if (detailed)
       DrawRow(detailedRow, BottomRowTop, idle);
   }
 
-  private static Vector2 RingCenter(float x, float top) => new(x + Square / 2f, top + Square / 2f);
+  private static Vector2 RingCenter(float left, float top) =>
+    new(left + Square / 2f, top + Square / 2f);
 
   private float DrawRow(List<Button> buttons, float top, bool idle)
   {
-    float x = RowsLeft;
+    float left = RowsLeft;
     foreach (Button button in buttons)
-      x = DrawButton(button, x, top, idle);
-    return x;
+      left = DrawButton(button, left, top, idle);
+    return left;
   }
 
-  private float DrawButton(Button button, float x, float top, bool idle)
+  private float DrawButton(Button button, float left, float top, bool idle)
   {
     string label = Dialog.Clean(button.Key);
-    Vector2 center = new(x + Square / 2f, top + Square / 2f);
+    Vector2 center = new(left + Square / 2f, top + Square / 2f);
     bool held = fed.HasValue && IsHeldIn(fed.Value, button);
     if (idle)
     {
-      Draw.HollowRect(x, top, Square, Square, Color.White);
+      Draw.HollowRect(left, top, Square, Square, Color.White);
       DrawLabel(label, center);
     }
     else if (held)
     {
-      Draw.Rect(x, top, Square, Square, Color.White);
+      Draw.Rect(left, top, Square, Square, Color.White);
       DrawLabel(label, center);
       if (PressedWhileHeld(button.Flags))
-        Draw.Rect(x, top - BarGap - BarHeight, Square, BarHeight, Color.White);
+        Draw.Rect(left, top - BarGap - BarHeight, Square, BarHeight, Color.White);
     }
-    return x + Square + Gap;
+    return left + Square + Gap;
   }
 
   private bool PressedWhileHeld(Actions flags)
@@ -259,9 +260,9 @@ public class ReplayInputDisplay : Entity
     return fit >= 1f ? LabelScale : LabelScale * fit;
   }
 
-  private void DrawArrowSquare(int i, bool idle)
+  private void DrawArrowSquare(int directionIndex, bool idle)
   {
-    Vector2 direction = Directions[i];
+    Vector2 direction = Directions[directionIndex];
     Vector2 topLeft = new(
       PlusLeft + (direction.X + 1f) * (PlusSquare + PlusGap),
       PlusTop + (direction.Y + 1f) * (PlusSquare + PlusGap)
@@ -277,8 +278,8 @@ public class ReplayInputDisplay : Entity
       return;
 
     InputFrame frame = fed.Value;
-    DirectionBinds moveOnly = (DirectionBinds)(1 << i);
-    DirectionBinds dashOnly = (DirectionBinds)(1 << (i + 4));
+    DirectionBinds moveOnly = (DirectionBinds)(1 << directionIndex);
+    DirectionBinds dashOnly = (DirectionBinds)(1 << (directionIndex + 4));
     if ((frame.Binds & moveOnly) != 0)
       Draw.Rect(topLeft.X, topLeft.Y + PlusSquare + BarGap, PlusSquare, BarHeight, Color.White);
     if ((frame.Binds & dashOnly) != 0)

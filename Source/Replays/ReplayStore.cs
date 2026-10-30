@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using Celeste.Mod.ClimbTrials.Content;
+using Celeste.Mod.ClimbTrials.Replays.Codec;
 
 namespace Celeste.Mod.ClimbTrials.Replays;
 
@@ -40,8 +41,21 @@ public static class ReplayStore
   public static void Save(Replay replay)
   {
     Stopwatch clock = Stopwatch.StartNew();
+    byte[] bytes;
+    try
+    {
+      bytes = replay.ToBytes();
+    }
+    catch (StartingValuesException e)
+    {
+      Logger.Log(
+        LogLevel.Error,
+        LogTag,
+        $"did not save the replay for '{replay.TrialId}', the old file stays: " + e.Message
+      );
+      return;
+    }
     Directory.CreateDirectory(Folder);
-    byte[] bytes = replay.ToBytes();
     File.WriteAllBytes(PathFor(replay.TrialId), bytes);
     Present.Add(replay.TrialId);
     int frames = replay.Frames.Count;
@@ -49,58 +63,79 @@ public static class ReplayStore
       LogLevel.Info,
       LogTag,
       $"saved replay {PathFor(replay.TrialId)}: {frames} frames, "
-        + $"{frames * Replay.FrameBytes} raw bytes, {bytes.Length} bytes on disk, "
+        + $"{frames * FrameTable.FrameBytes} raw bytes, {bytes.Length} bytes on disk, "
         + $"{clock.ElapsedMilliseconds} ms"
     );
   }
 
-  public static bool TryLoadPb(Trial trial, out Replay replay, out string deletedNotice)
+  public static bool TryLoadPb(Trial trial, out Replay replay, out string failureNotice)
   {
     replay = null;
-    deletedNotice = null;
+    failureNotice = null;
     if (!Exists(trial.Id))
     {
       Audio.Play(SFX.ui_main_button_invalid);
       return false;
     }
-    if (TryLoad(trial, out replay, out string failure))
-      return true;
-    deletedNotice = Dialog.Get("climbtrials_replay_deleted").Replace("{0}", failure);
-    return false;
+    return TryLoad(trial, out replay, out failureNotice);
   }
 
-  public static bool TryLoad(Trial trial, out Replay replay, out string failure)
+  public static bool TryLoad(Trial trial, out Replay replay, out string failureNotice)
   {
     replay = null;
     string trialId = trial.Id;
     if (!File.Exists(PathFor(trialId)))
     {
-      failure = "replay file is missing";
+      failureNotice = Dialog.Clean("climbtrials_replay_deleted");
       Delete(trialId);
       return false;
     }
     try
     {
       Stopwatch clock = Stopwatch.StartNew();
-      replay = Replay.FromBytes(File.ReadAllBytes(PathFor(trialId)));
-      if (!replay.TrialHash.AsSpan().SequenceEqual(trial.DefinitionHash))
-        throw new InvalidDataException("the trial has changed since this replay");
+      byte[] bytes = File.ReadAllBytes(PathFor(trialId));
+      replay = Replay.FromBytes(bytes);
+      if (!replay.MatchesTrialHash(trial.DefinitionHash))
+      {
+        replay = null;
+        failureNotice = Dialog.Clean("climbtrials_replay_deleted_trial_changed");
+        Logger.Log(
+          LogLevel.Info,
+          LogTag,
+          $"deleting replay for '{trialId}', the trial has changed"
+        );
+        Delete(trialId);
+        return false;
+      }
       replay.IsOwn = true;
+      replay.IsPersonalBest = true;
       Logger.Log(
         LogLevel.Info,
         LogTag,
-        $"loaded replay for '{trialId}': {replay.Frames.Count} frames, "
-          + $"{clock.ElapsedMilliseconds} ms"
+        $"loaded replay {PathFor(trialId)}: {replay.Frames.Count} frames, "
+          + $"{replay.Frames.Count * FrameTable.FrameBytes} raw bytes, "
+          + $"{bytes.Length} bytes on disk, {clock.ElapsedMilliseconds} ms"
       );
-      failure = null;
+      failureNotice = null;
       return true;
+    }
+    catch (InvalidDataException e)
+    {
+      replay = null;
+      failureNotice = Dialog.Clean("climbtrials_replay_deleted");
+      Logger.Log(LogLevel.Warn, LogTag, $"deleting unreadable replay for '{trialId}': {e.Message}");
+      Delete(trialId);
+      return false;
     }
     catch (Exception e)
     {
       replay = null;
-      failure = e.Message;
-      Logger.Log(LogLevel.Warn, LogTag, $"deleting unreadable replay for '{trialId}': {failure}");
-      Delete(trialId);
+      failureNotice = Dialog.Clean("climbtrials_replay_kept_unreadable");
+      Logger.Log(
+        LogLevel.Error,
+        LogTag,
+        $"kept replay for '{trialId}' that could not be read: {e.GetType().Name}: {e.Message}"
+      );
       return false;
     }
   }
@@ -117,6 +152,37 @@ public static class ReplayStore
       return false;
     Logger.Log(LogLevel.Info, LogTag, $"deleted replay for '{trialId}'");
     return true;
+  }
+
+  public static void DeleteOutdatedReplays()
+  {
+    if (!Directory.Exists(Folder))
+      return;
+    int deletedCount = 0;
+    try
+    {
+      foreach (string path in Directory.GetFiles(Folder, "*.ctreplay"))
+      {
+        if (!IsOlderFormat(path))
+          continue;
+        File.Delete(path);
+        deletedCount++;
+      }
+    }
+    catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+    {
+      Logger.Log(LogLevel.Warn, LogTag, $"older replay files left for the next start: {e.Message}");
+    }
+    if (deletedCount == 0)
+      return;
+    Refresh();
+    Logger.Log(LogLevel.Info, LogTag, $"deleted {deletedCount} replay files of an older format");
+  }
+
+  private static bool IsOlderFormat(string path)
+  {
+    using FileStream stream = File.OpenRead(path);
+    return stream.ReadByte() < Replay.FormatVersion;
   }
 
   public static int DeleteAll()

@@ -32,13 +32,16 @@ public static class ModCheck
 
   public static List<ModuleRef> Modules() =>
     Everest
-      .Modules.Select(m => new ModuleRef(m.Metadata.Name, m.Metadata.Version.ToString()))
+      .Modules.Select(module => new ModuleRef(
+        module.Metadata.Name,
+        module.Metadata.Version.ToString()
+      ))
       .ToList();
 
   public static List<string> Others() =>
     Everest
-      .Modules.Where(m => !Allowed.Contains(m.Metadata.Name))
-      .Select(m => m.Metadata.Name)
+      .Modules.Where(module => !Allowed.Contains(module.Metadata.Name))
+      .Select(module => module.Metadata.Name)
       .ToList();
 
   public static bool OthersLoaded => Others().Count > 0;

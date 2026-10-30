@@ -28,12 +28,12 @@ public static class LookCommands
         + $"level camera offset {Xy(level.CameraOffset / Cell)}"
     );
     Log(
-      $"bloom base {F(level.Bloom.Base)}, strength {F(level.Bloom.Strength)}, "
-        + $"session add {F(session.BloomBaseAdd)}"
+      $"bloom base {FormatFloat(level.Bloom.Base)}, strength {FormatFloat(level.Bloom.Strength)}, "
+        + $"session add {FormatFloat(session.BloomBaseAdd)}"
     );
     Log(
-      $"lighting base {F(level.BaseLightingAlpha)}, session add {F(session.LightingAlphaAdd)}, "
-        + $"current {F(level.Lighting.Alpha)}, dark room {level.DarkRoom}"
+      $"lighting base {FormatFloat(level.BaseLightingAlpha)}, session add {FormatFloat(session.LightingAlphaAdd)}, "
+        + $"current {FormatFloat(level.Lighting.Alpha)}, dark room {level.DarkRoom}"
     );
     Log($"color grade '{session.ColorGrade}'");
     Log("camera triggers: " + CameraTriggers(level));
@@ -51,7 +51,7 @@ public static class LookCommands
         CameraAdvanceTargetTrigger advance => $"camera target {Xy(advance.Target)}, "
           + $"strength {Xy(advance.LerpStrength)}{Axes(advance.XOnly, advance.YOnly)}",
         CameraTargetTrigger target => $"camera target {Xy(target.Target)}, "
-          + $"strength {F(target.LerpStrength)}{Axes(target.XOnly, target.YOnly)}",
+          + $"strength {FormatFloat(target.LerpStrength)}{Axes(target.XOnly, target.YOnly)}",
         SmoothCameraOffsetTrigger => "Everest smooth offset",
         _ => null,
       };
@@ -71,9 +71,9 @@ public static class LookCommands
     : yOnly ? ", yOnly"
     : "";
 
-  private static string F(float value) => value.ToString("0.###");
+  private static string FormatFloat(float value) => value.ToString("0.###");
 
-  private static string Xy(Vector2 v) => $"({F(v.X)}, {F(v.Y)})";
+  private static string Xy(Vector2 vector) => $"({FormatFloat(vector.X)}, {FormatFloat(vector.Y)})";
 
   private static void Log(string line) => ConsoleOutput.Log(LogTag, line);
 }

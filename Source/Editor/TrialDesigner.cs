@@ -169,7 +169,7 @@ public class TrialDesigner : Entity
   private void DrawIgnoredBerry(EntityID id)
   {
     LevelData data = SceneAs<Level>().Session.LevelData;
-    EntityData entity = data.Entities.Find(e => e.ID == id.ID);
+    EntityData entity = data.Entities.Find(entity => entity.ID == id.ID);
     if (entity == null)
       return;
     Vector2 world = entity.Position + data.Position;

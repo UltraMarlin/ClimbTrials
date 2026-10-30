@@ -22,7 +22,7 @@ public sealed class Submission
     check = ReplayValidator.Check(replay, TrialSpec.From(trial), ModCheck.Allowed);
     if (!check.Passes)
       return false;
-    submission = new Submission { ReplayBytes = replay.ToBytes() };
+    submission = new Submission { ReplayBytes = replay.SourceBytes ?? replay.ToBytes() };
     return true;
   }
 

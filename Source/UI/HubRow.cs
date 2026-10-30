@@ -63,10 +63,10 @@ public class HubRow(
     Vector2 justify = new(0.5f, 0.5f);
     Color outline = TextOutline.StrokeFor(color);
     if (outlined)
-      for (int x = -1; x <= 1; x++)
-      for (int y = -1; y <= 1; y++)
-        if (x != 0 || y != 0)
-          texture.DrawJustified(at + new Vector2(x, y), justify, outline, scale);
+      for (int offsetX = -1; offsetX <= 1; offsetX++)
+      for (int offsetY = -1; offsetY <= 1; offsetY++)
+        if (offsetX != 0 || offsetY != 0)
+          texture.DrawJustified(at + new Vector2(offsetX, offsetY), justify, outline, scale);
     texture.DrawJustified(at, justify, color, scale);
   }
 }

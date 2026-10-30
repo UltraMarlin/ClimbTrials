@@ -55,6 +55,12 @@ public static class ServerClient
   private const string PlayerNameHeader = "X-Player-Name";
   private const string UrlRefused = "server URL refused";
   private const string OfflineModeMessage = "offline mode";
+  private const string BuiltInServerUrl = "https://climb-trials-server.mabidev.de";
+
+  private static string ResolvedServerUrl =>
+    string.IsNullOrEmpty(Settings.ServerUrl) || Settings.ServerUrl == BuiltInServerUrl
+      ? BuiltInServerUrl
+      : Settings.ServerUrl;
 
   private static readonly HttpClient http = Build();
 
@@ -85,11 +91,17 @@ public static class ServerClient
 
   public static void Load()
   {
-    if (!TryBaseUri(out _))
+    if (TryBaseUri(out _))
+      Logger.Log(
+        LogLevel.Info,
+        LogTag,
+        $"server {ResolvedServerUrl}, offline mode {Settings.OfflineMode}"
+      );
+    else
       Logger.Log(
         LogLevel.Warn,
         LogTag,
-        $"ServerUrl '{Settings.ServerUrl}' refused: https, or http on localhost only"
+        $"ServerUrl '{ResolvedServerUrl}' refused: https, or http on localhost only"
       );
   }
 
@@ -181,7 +193,7 @@ public static class ServerClient
   private static StringContent Json(string text) => new(text, Encoding.UTF8, "application/json");
 
   private static bool TryBaseUri(out Uri uri) =>
-    Uri.TryCreate(Settings.ServerUrl, UriKind.Absolute, out uri)
+    Uri.TryCreate(ResolvedServerUrl, UriKind.Absolute, out uri)
     && (uri.Scheme == Uri.UriSchemeHttps || (uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback));
 
   private static void Send<T>(

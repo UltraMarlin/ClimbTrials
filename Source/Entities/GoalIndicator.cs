@@ -128,8 +128,8 @@ public class GoalIndicator : Entity
       FillTargets(run, player);
 
     bool paused = SceneAs<Level>().Paused;
-    Arrow shown = Array.Find(arrows, a => a.Visible);
-    int shownCount = Array.FindAll(targets, t => t != null).Length;
+    Arrow shown = Array.Find(arrows, arrow => arrow.Visible);
+    int shownCount = Array.FindAll(targets, target => target != null).Length;
     int shownIndex = 0;
     Visible = false;
     for (int ring = 0; ring < arrows.Length; ring++)
@@ -183,12 +183,12 @@ public class GoalIndicator : Entity
     };
     Vector2 center = player.Center - Vector2.UnitY * CenterLift;
     Vector2 toTarget = target.Position - center;
-    float t = Calc.ClampedMap(toTarget.Length(), FadeNear, FadeFar);
-    arrow.Alpha = t * BaseAlpha();
+    float fade = Calc.ClampedMap(toTarget.Length(), FadeNear, FadeFar);
+    arrow.Alpha = fade * BaseAlpha();
     if (paused && !appearing)
       return;
 
-    float radius = MathHelper.Lerp(RadiusNear, RadiusFar(), t) + offset;
+    float radius = MathHelper.Lerp(RadiusNear, RadiusFar(), fade) + offset;
     if (appearing)
     {
       arrow.Angle = toTarget.Angle();
@@ -258,10 +258,10 @@ public class GoalIndicator : Entity
 
     void Consider(Vector2 point, TargetKind kind)
     {
-      float d = Vector2.DistanceSquared(from, point);
-      if (d < bestDistance)
+      float distance = Vector2.DistanceSquared(from, point);
+      if (distance < bestDistance)
       {
-        bestDistance = d;
+        bestDistance = distance;
         best = new Target(point, kind);
       }
     }

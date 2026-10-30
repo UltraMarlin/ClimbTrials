@@ -101,9 +101,15 @@ public class ReplayBanner : Entity
     ButtonRow.DrawRight(alpha, prompts);
   }
 
-  private static void Outline(string text, float y, float scale, Color color, float stroke = 2f)
+  private static void Outline(
+    string text,
+    float centerY,
+    float scale,
+    Color color,
+    float stroke = 2f
+  )
   {
-    Vector2 position = new(960f, y);
+    Vector2 position = new(960f, centerY);
     Vector2 justify = new(0.5f, 0.5f);
     Vector2 size = Vector2.One * scale;
     Color strokeColor = TextOutline.StrokeFor(color);

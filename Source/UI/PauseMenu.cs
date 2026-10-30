@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Replays;
@@ -8,6 +9,9 @@ namespace Celeste.Mod.ClimbTrials.UI;
 
 public static class PauseMenu
 {
+  private static readonly Dictionary<TextMenu.Item, PauseRowKind> ownRows = [];
+  private static TextMenu builtMenu;
+
   public static void Load()
   {
     Everest.Events.Level.OnCreatePauseMenuButtons += OnCreatePauseMenuButtons;
@@ -24,6 +28,8 @@ public static class PauseMenu
   {
     if (RunManager.Run == null)
       return;
+    ownRows.Clear();
+    builtMenu = menu;
 
     TextMenu.Item restart = new TextMenu.Button(Dialog.Clean("climbtrials_pause_restart")).Pressed(
       RestartTrial
@@ -35,24 +41,25 @@ public static class PauseMenu
     int restartIndex = Replace(menu, "menu_pause_restartarea", restart);
     if (Replace(menu, "menu_pause_return", back) < 0)
       menu.Insert(restartIndex + 1, back);
+    ownRows[restart] = PauseRowKind.RestartTrial;
+    ownRows[back] = PauseRowKind.ReturnToTrials;
 
-    menu.Insert(menu.Items.IndexOf(back), BuildRaceRow());
+    TextMenu.Item race = BuildRaceRow();
+    menu.Insert(menu.Items.IndexOf(back), race);
+    ownRows[race] = PauseRowKind.Race;
 
-    if (
-      !RunManager.Replaying
-      || RunManager.Replay.RecorderVersion >= Compatibility.LeaderboardRowSince
-    )
-      AddLeaderboardRow(level, menu, menu.Items.IndexOf(back));
+    DimButton leaderboard = AddLeaderboardRow(level, menu, menu.Items.IndexOf(back));
+    ownRows[leaderboard] = PauseRowKind.Leaderboard;
 
     if (Replayer.Silenced)
-      LockRows(
+      LockRowsExcept(
         menu,
         Dialog.Clean("menu_pause_resume"),
         Dialog.Clean("menu_pause_retry"),
         Dialog.Clean("menu_pause_skip_cutscene")
       );
     else if (RunManager.Replaying)
-      LockRows(
+      LockRowsExcept(
         menu,
         Dialog.Clean("menu_pause_resume"),
         Dialog.Clean("climbtrials_return_to_trials")
@@ -61,17 +68,41 @@ public static class PauseMenu
       RunManager.Attempt.State == AttemptState.Finished
       && Find(menu, "menu_pause_retry") is TextMenu.Button retry
     )
-      Lock(retry);
+      LockRow(retry);
   }
 
-  private static void LockRows(TextMenu menu, params string[] exemptLabels)
+  public static PauseRowKind? FindOwnRowKind(TextMenu.Item item) =>
+    ownRows.TryGetValue(item, out PauseRowKind kind) ? kind : null;
+
+  public static string LabelOf(PauseRowKind kind) =>
+    kind switch
+    {
+      PauseRowKind.RestartTrial => Dialog.Clean("climbtrials_pause_restart"),
+      PauseRowKind.ReturnToTrials => Dialog.Clean("climbtrials_return_to_trials"),
+      PauseRowKind.Race => Dialog.Clean(
+        RunManager.Racing ? "climbtrials_pause_race_off" : "climbtrials_race_pb_ghost"
+      ),
+      PauseRowKind.Leaderboard => Dialog.Clean("climbtrials_trials_leaderboard"),
+      _ => "",
+    };
+
+  public static void ResetBuiltMenu() => builtMenu = null;
+
+  public static TextMenu GetAndResetBuiltMenu()
+  {
+    TextMenu menu = builtMenu;
+    builtMenu = null;
+    return menu;
+  }
+
+  private static void LockRowsExcept(TextMenu menu, params string[] exemptLabels)
   {
     foreach (TextMenu.Button button in menu.Items.OfType<TextMenu.Button>())
       if (!exemptLabels.Contains(button.Label))
-        Lock(button);
+        LockRow(button);
   }
 
-  private static void Lock(TextMenu.Button button)
+  private static void LockRow(TextMenu.Button button)
   {
     button.OnPressed = null;
     if (!Replayer.Silenced)
@@ -81,7 +112,7 @@ public static class PauseMenu
   private static TextMenu.Button Find(TextMenu menu, string vanillaKey)
   {
     string label = Dialog.Clean(vanillaKey);
-    return menu.Items.OfType<TextMenu.Button>().FirstOrDefault(b => b.Label == label);
+    return menu.Items.OfType<TextMenu.Button>().FirstOrDefault(button => button.Label == label);
   }
 
   private static int Replace(TextMenu menu, string vanillaKey, TextMenu.Item replacement)
@@ -100,7 +131,7 @@ public static class PauseMenu
     RunManager.StartRun(RunManager.Run);
   }
 
-  private static void AddLeaderboardRow(Level level, TextMenu menu, int index)
+  private static DimButton AddLeaderboardRow(Level level, TextMenu menu, int index)
   {
     bool online = !ClimbTrialsModule.Settings.OfflineMode;
     DimButton row = new(
@@ -111,6 +142,7 @@ public static class PauseMenu
     menu.Insert(index, row);
     if (!online)
       row.AddDescription(menu, Dialog.Clean("climbtrials_offline_mode"));
+    return row;
   }
 
   private static TextMenu.Button BuildRaceRow()
@@ -131,13 +163,13 @@ public static class PauseMenu
   private static void RaceAgainstPb()
   {
     Trial trial = RunManager.Trial;
-    if (ReplayStore.TryLoadPb(trial, out Replay replay, out string deleted))
+    if (ReplayStore.TryLoadPb(trial, out Replay replay, out string failureNotice))
     {
       RunManager.StartRace(trial, replay);
       return;
     }
-    if (deleted != null)
-      RunManager.ShowText(deleted, warning: true);
+    if (failureNotice != null)
+      RunManager.ShowText(failureNotice, warning: true);
   }
 
   private static void RaceWithoutGhost()
@@ -160,7 +192,7 @@ public static class PauseMenu
 
       TextMenu.Button yes = menu
         .Items.OfType<TextMenu.Button>()
-        .FirstOrDefault(b => b.Label == Dialog.Clean("menu_restart_continue"));
+        .FirstOrDefault(button => button.Label == Dialog.Clean("menu_restart_continue"));
       if (yes == null)
         return;
 
@@ -169,7 +201,7 @@ public static class PauseMenu
       TextMenu.Button restart = new(yes.Label);
       restart.Pressed(RestartTrial);
       if (Replayer.Silenced)
-        Lock(restart);
+        LockRow(restart);
       menu.Insert(index, restart);
     };
   }

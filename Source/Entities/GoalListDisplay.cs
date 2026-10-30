@@ -64,7 +64,7 @@ public class GoalListDisplay : Entity
         rows.Add(Goal(Medal.Diamond, goals.DiamondTicks, best));
       rows.Add(Pb(best, goals.MedalReached(best)));
     }
-    return rows.OrderBy(r => r.Ticks).ThenBy(r => r.IsPb).ToList();
+    return rows.OrderBy(row => row.Ticks).ThenBy(row => row.IsPb).ToList();
   }
 
   private static Row Goal(Medal medal, long ticks, long best) =>
@@ -144,8 +144,8 @@ public class GoalListDisplay : Entity
   private void DrawRow(int index)
   {
     Row row = rows[index];
-    float y = RunHudLayout.ListY + index * RunHudLayout.RowHeight;
-    Vector2 iconCenter = new(RunHudLayout.IconX, y + RunHudLayout.RowHeight / 2f);
+    float rowY = RunHudLayout.ListY + index * RunHudLayout.RowHeight;
+    Vector2 iconCenter = new(RunHudLayout.IconX, rowY + RunHudLayout.RowHeight / 2f);
     Color textColor = MedalIcon.TextColor(row.TextMedal);
     if (row.IsPb)
       ActiveFont.DrawOutline(
@@ -160,7 +160,7 @@ public class GoalListDisplay : Entity
     else
       MedalIcon.Draw(iconCenter, row.Medal, RunHudLayout.IconHeight);
     TimeText.Draw(
-      new Vector2(RunHudLayout.TimeX, y + RunHudLayout.RowHeight),
+      new Vector2(RunHudLayout.TimeX, rowY + RunHudLayout.RowHeight),
       row.Text,
       TimeStyle,
       textColor

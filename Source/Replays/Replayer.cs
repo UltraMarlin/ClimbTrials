@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using Celeste.Mod.ClimbTrials.Content;
+using Celeste.Mod.ClimbTrials.Replays.Codec;
 using Celeste.Mod.ClimbTrials.Runs;
 using Celeste.Mod.ClimbTrials.UI;
-using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
@@ -42,6 +42,7 @@ public static class Replayer
 
   private static Replay current;
   private static bool timePending;
+  private static int pauseMenusShown;
   private static bool stepping;
   private static int stepHeldTicks;
   private static WatcherMenu menu;
@@ -53,7 +54,7 @@ public static class Replayer
   private static bool menuStarted;
   private static Level watchedLevel;
 
-  private static readonly ButtonNode[] buttonNodes = new ButtonNode[Replay.ButtonCount];
+  private static readonly ButtonNode[] buttonNodes = new ButtonNode[HeaderCoding.ButtonCount];
   private static readonly AxisNode moveX = new();
   private static readonly AxisNode moveY = new();
   private static readonly AxisNode gliderMoveY = new();
@@ -92,6 +93,7 @@ public static class Replayer
   {
     RestoreInputs();
     current = replay;
+    pauseMenusShown = 0;
     Frame = 0;
     Desynced = false;
     StoppedByReload = false;
@@ -113,7 +115,6 @@ public static class Replayer
 
     watchedLevel = level;
     WatcherOverlay.Begin();
-    Input.LastAim = replay.LastAim;
     timePending = true;
     level.AllowHudHide = false;
 
@@ -157,12 +158,11 @@ public static class Replayer
       Desync($"finished {missing} frames early");
       return false;
     }
-    long expected = current.Ticks - current.ExtraHeaderTicks(RunManager.Run.FinishKind);
-    if (elapsedTicks != expected)
+    if (elapsedTicks != current.Ticks)
     {
       Desync(
         $"finished at {TimeText.Format(elapsedTicks)}, "
-          + $"the recording is {TimeText.Format(expected)}"
+          + $"the recording is {TimeText.Format(current.Ticks)}"
       );
       return false;
     }
@@ -241,6 +241,7 @@ public static class Replayer
     bool quickReset
   )
   {
+    PauseMenu.ResetBuiltMenu();
     if (quickReset && RunManager.Replaying && !Silenced)
       return;
     if (current == null && RunManager.Replaying)
@@ -251,18 +252,22 @@ public static class Replayer
     if (current == null)
     {
       orig(self, startIndex, minimal, quickReset);
+      TextMenu pauseMenu = PauseMenu.GetAndResetBuiltMenu();
+      if (pauseMenu != null)
+        Recorder.RecordPauseMenu(pauseMenu);
       return;
     }
-    bool watcherValue = CoreModule.Settings.ShowModOptionsInGame;
-    CoreModule.Settings.ShowModOptionsInGame = current.ModOptionsInPauseMenu;
-    try
-    {
-      orig(self, startIndex, minimal, quickReset);
-    }
-    finally
-    {
-      CoreModule.Settings.ShowModOptionsInGame = watcherValue;
-    }
+    orig(self, startIndex, minimal, quickReset);
+    RebuildRecordedPauseMenu(PauseMenu.GetAndResetBuiltMenu());
+  }
+
+  private static void RebuildRecordedPauseMenu(TextMenu built)
+  {
+    if (built == null || !Silenced)
+      return;
+    if (pauseMenusShown < current.PauseMenus.Count)
+      PauseRows.Rebuild(built, current.PauseMenus[pauseMenusShown]);
+    pauseMenusShown++;
   }
 
   private static void RestoreInputs()
@@ -273,29 +278,29 @@ public static class Replayer
     foreach ((VirtualButton button, Binding binding) in savedButtons)
     {
       button.Binding = binding;
-      button.Nodes.RemoveAll(n => n is ButtonNode);
+      button.Nodes.RemoveAll(node => node is ButtonNode);
     }
     savedButtons.Clear();
-    foreach ((VirtualIntegerAxis axis, Binding[] b) in savedAxes)
+    foreach ((VirtualIntegerAxis axis, Binding[] bindings) in savedAxes)
     {
-      axis.Negative = b[0];
-      axis.NegativeAlt = b[1];
-      axis.Positive = b[2];
-      axis.PositiveAlt = b[3];
-      axis.Nodes.RemoveAll(n => n is AxisNode);
+      axis.Negative = bindings[0];
+      axis.NegativeAlt = bindings[1];
+      axis.Positive = bindings[2];
+      axis.PositiveAlt = bindings[3];
+      axis.Nodes.RemoveAll(node => node is AxisNode);
     }
     savedAxes.Clear();
-    foreach ((VirtualJoystick stick, Binding[] b) in savedSticks)
+    foreach ((VirtualJoystick stick, Binding[] bindings) in savedSticks)
     {
-      stick.Up = b[0];
-      stick.UpAlt = b[1];
-      stick.Down = b[2];
-      stick.DownAlt = b[3];
-      stick.Left = b[4];
-      stick.LeftAlt = b[5];
-      stick.Right = b[6];
-      stick.RightAlt = b[7];
-      stick.Nodes.RemoveAll(n => n is StickNode);
+      stick.Up = bindings[0];
+      stick.UpAlt = bindings[1];
+      stick.Down = bindings[2];
+      stick.DownAlt = bindings[3];
+      stick.Left = bindings[4];
+      stick.LeftAlt = bindings[5];
+      stick.Right = bindings[6];
+      stick.RightAlt = bindings[7];
+      stick.Nodes.RemoveAll(node => node is StickNode);
     }
     savedSticks.Clear();
 
@@ -403,7 +408,7 @@ public static class Replayer
     menu.RowsAlpha = 0f;
     WatcherOverlay.Add(
       board = new LeaderboardView(
-        BoardSubject.Alone(RunManager.Trial),
+        BoardSubject.ForTrialAlone(RunManager.Trial),
         _ => { },
         _ => CloseBoard(),
         LeaveForGhost,

@@ -497,8 +497,8 @@ public class LeaderboardView : Entity
     string clear = Dialog.Clean("climbtrials_clear_comparisons");
     float toggleHalf = ButtonRow.Width(longest, binds.ToggleComparison.Button) / 2f;
     float clearHalf = ButtonRow.Width(clear, binds.ClearComparisons.Button) / 2f;
-    float x = ButtonRow.CenterX + toggleHalf + PromptGap + clearHalf;
-    ButtonRow.DrawCenter(clear, binds.ClearComparisons.Button, dim, x);
+    float centerX = ButtonRow.CenterX + toggleHalf + PromptGap + clearHalf;
+    ButtonRow.DrawCenter(clear, binds.ClearComparisons.Button, dim, centerX);
   }
 
   private bool Comparing => options.Comparing || (options.Plans && GhostComparisons.Planning);
@@ -576,12 +576,9 @@ public class LeaderboardView : Entity
     Trial trial = current.Subject.Trial;
     if (!row.Me || !ReplayStore.Exists(trial.Id))
       return null;
-    if (!ReplayStore.TryLoad(trial, out Replay replay, out string failure))
+    if (!ReplayStore.TryLoad(trial, out Replay replay, out string failureNotice))
     {
-      notice.Show(
-        Dialog.Get("climbtrials_replay_deleted").Replace("{0}", failure),
-        ScreenLayout.NoticeSeconds
-      );
+      notice.Show(failureNotice, ScreenLayout.NoticeSeconds);
       return null;
     }
     return replay.Ticks == row.Ticks ? replay : null;

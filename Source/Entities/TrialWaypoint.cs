@@ -43,7 +43,9 @@ public class TrialWaypoint : Entity
     icon.CenterOrigin();
     Add(bloom = new BloomPoint(0f, 16f));
     Add(new VertexLight(Color.White, 0.8f, 16, 32));
-    Add(wiggler = Wiggler.Create(0.5f, 4f, v => pulse = Vector2.One * (1f + v * 0.25f)));
+    Add(
+      wiggler = Wiggler.Create(0.5f, 4f, progress => pulse = Vector2.One * (1f + progress * 0.25f))
+    );
     Add(
       layer = new FadeBuffer("climbtrials-waypoint", BufferSize, BufferSize, DrawOpaque)
       {

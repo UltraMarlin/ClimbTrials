@@ -101,6 +101,7 @@ public class PlaybackGhost : Entity
   {
     if (shownFrames.Length == 0)
       return;
+
     int last = shownFrames.Length - 1;
     int index = (int)Math.Clamp(Replay.ShownFrameAt(ticks), 0, last);
     for (int i = shownIndex + 1; i <= index; i++)
@@ -117,25 +118,29 @@ public class PlaybackGhost : Entity
       slashStart = -1;
       return;
     }
+
     Position = frame.Position;
     layer.Origin = Position - BufferAnchor;
     float facing = frame.FacingLeft ? -1f : 1f;
     sprite.Scale = new Vector2(
-      frame.ScaleX / ReplayColumns.ScaleUnit * facing,
-      frame.ScaleY / ReplayColumns.ScaleUnit
+      frame.ScaleX / InputFrame.ScaleUnit * facing,
+      frame.ScaleY / InputFrame.ScaleUnit
     );
     string animation = Replay.AnimationAt(frame.AnimId);
     if (animation != null && animation != sprite.CurrentAnimationID && sprite.Has(animation))
       sprite.Play(animation, restart: true);
     sprite.SetAnimationFrame(frame.AnimFrame);
     hair.Facing = (Facings)(int)facing;
+
     if (frame.State == Player.StRedDash)
       sprite.HairCount = 1;
     else if (frame.State != Player.StStarFly)
       sprite.HairCount = frame.Dashes > 1 ? 5 : 4;
+
     hair.AfterUpdate();
     if (hairSettled)
       return;
+
     hairSettled = true;
     for (int i = 0; i < HairSettleSteps; i++)
       hair.AfterUpdate();
@@ -146,16 +151,19 @@ public class PlaybackGhost : Entity
     Vector2 SlashOffset = new(0f, -6f);
     if (shown < 1 || shown + 1 >= shownFrames.Length)
       return;
+
     InputFrame current = Replay.Frames[shownFrames[shown]];
     InputFrame before = Replay.Frames[shownFrames[shown - 1]];
     if (current.State != Player.StDash || before.State == Player.StDash)
       return;
+
     byte direction = Replay.Frames[shownFrames[shown + 1]].DashDir;
     if (direction == 0)
       return;
+
     slashStart = shown;
     slashOrigin = current.Position + SlashOffset;
-    slashDirection = ReplayColumns.DashDirFromByte(direction);
+    slashDirection = InputFrame.DashDirFromByte(direction);
   }
 
   private static bool Subtle =>
@@ -194,6 +202,7 @@ public class PlaybackGhost : Entity
     const int SlashFrameTicks = 6;
     if (slashStart < 0)
       return;
+
     List<MTexture> frames = GFX.Game.GetAtlasSubtextures("effects/slash/");
     int elapsed = shownIndex - slashStart;
     if (elapsed < 0 || elapsed >= 4 * SlashFrameTicks)
@@ -201,6 +210,7 @@ public class PlaybackGhost : Entity
       slashStart = -1;
       return;
     }
+
     Vector2 at = slashOrigin + slashDirection * (8f * elapsed * Replay.RawDeltaTime);
     float angle = slashDirection.Angle();
     float rotation = Math.Abs(angle - MathF.PI) > 0.01f ? angle : 0f;

@@ -106,7 +106,7 @@ public class ClimbTrialsModuleSettings : EverestModuleSettings
   public string ClientId { get; set; } = "";
 
   [SettingIgnore]
-  public string ServerUrl { get; set; } = "https://climb-trials-server.mabidev.de";
+  public string ServerUrl { get; set; } = "";
 
   [SettingRange(min: 1, max: 5)]
   public int CountdownLength { get; set; } = 3;

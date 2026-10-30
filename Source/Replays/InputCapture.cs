@@ -55,12 +55,12 @@ public static class InputCapture
     VirtualButton[] buttons = Buttons();
     for (int i = 0; i < buttons.Length; i++)
     {
-      VirtualButton b = buttons[i];
-      if (b.Binding.Check(b.GamepadIndex, b.Threshold))
+      VirtualButton button = buttons[i];
+      if (button.Binding.Check(button.GamepadIndex, button.Threshold))
         held |= Flags[i];
-      if (b.Binding.Pressed(b.GamepadIndex, b.Threshold))
+      if (button.Binding.Pressed(button.GamepadIndex, button.Threshold))
         pressed |= Flags[i];
-      if (b.Binding.Released(b.GamepadIndex, b.Threshold))
+      if (button.Binding.Released(button.GamepadIndex, button.Threshold))
         released |= Flags[i];
     }
   }
@@ -91,24 +91,24 @@ public static class InputCapture
 
   private static DirectionBinds ReadDirectionBinds()
   {
-    Settings s = Settings.Instance;
+    Settings settings = Settings.Instance;
     int pad = Input.Gamepad;
     DirectionBinds binds = DirectionBinds.None;
-    if (s.LeftMoveOnly.Check(pad, 0.3f))
+    if (settings.LeftMoveOnly.Check(pad, 0.3f))
       binds |= DirectionBinds.MoveOnlyLeft;
-    if (s.RightMoveOnly.Check(pad, 0.3f))
+    if (settings.RightMoveOnly.Check(pad, 0.3f))
       binds |= DirectionBinds.MoveOnlyRight;
-    if (s.UpMoveOnly.Check(pad, 0.7f))
+    if (settings.UpMoveOnly.Check(pad, 0.7f))
       binds |= DirectionBinds.MoveOnlyUp;
-    if (s.DownMoveOnly.Check(pad, 0.7f))
+    if (settings.DownMoveOnly.Check(pad, 0.7f))
       binds |= DirectionBinds.MoveOnlyDown;
-    if (s.LeftDashOnly.Check(pad, 0.25f))
+    if (settings.LeftDashOnly.Check(pad, 0.25f))
       binds |= DirectionBinds.DashOnlyLeft;
-    if (s.RightDashOnly.Check(pad, 0.25f))
+    if (settings.RightDashOnly.Check(pad, 0.25f))
       binds |= DirectionBinds.DashOnlyRight;
-    if (s.UpDashOnly.Check(pad, 0.25f))
+    if (settings.UpDashOnly.Check(pad, 0.25f))
       binds |= DirectionBinds.DashOnlyUp;
-    if (s.DownDashOnly.Check(pad, 0.25f))
+    if (settings.DownDashOnly.Check(pad, 0.25f))
       binds |= DirectionBinds.DashOnlyDown;
     return binds;
   }
@@ -133,6 +133,8 @@ public static class InputCapture
       frame.Flags |= FrameFlags.LevelUpdated;
     if (Engine.Scene is Level { Paused: true })
       frame.Flags |= FrameFlags.Paused;
+    if (Engine.Scene is Level { Transitioning: true })
+      frame.Flags |= FrameFlags.Transitioning;
     Player player = FindRecordedPlayer();
     if (player == null)
       return frame;
@@ -141,12 +143,12 @@ public static class InputCapture
     frame.Position = player.Position;
     frame.State = player.StateMachine.State;
     frame.Dashes = player.Dashes;
-    frame.DashDir = ReplayColumns.DashDirToByte(player.DashDir);
+    frame.DashDir = InputFrame.DashDirToByte(player.DashDir);
     frame.Stamina = player.Stamina;
     frame.AnimId = replay.AddAnimation(player.Sprite.CurrentAnimationID);
     frame.AnimFrame = (byte)Math.Min(player.Sprite.CurrentAnimationFrame, byte.MaxValue);
-    frame.ScaleX = ReplayColumns.ScaleToSByte(Math.Abs(player.Sprite.Scale.X));
-    frame.ScaleY = ReplayColumns.ScaleToSByte(player.Sprite.Scale.Y);
+    frame.ScaleX = InputFrame.ScaleToSByte(Math.Abs(player.Sprite.Scale.X));
+    frame.ScaleY = InputFrame.ScaleToSByte(player.Sprite.Scale.Y);
     if (player.Facing == Facings.Left)
       frame.Flags |= FrameFlags.FacingLeft;
     return frame;

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Replays;
+using Celeste.Mod.ClimbTrials.Replays.Codec;
 using Celeste.Mod.ClimbTrials.Runs;
 
 namespace Celeste.Mod.ClimbTrials.Online;
@@ -28,6 +29,7 @@ public static class Uploader
   private const int Tries = 3;
   private const int RetryDelayMs = 1000;
 
+  private const string LogTag = "ClimbTrials/Upload";
   private static readonly Dictionary<string, Upload> uploads = [];
   private static readonly Dictionary<string, int> versions = [];
 
@@ -47,7 +49,23 @@ public static class Uploader
     Submission submission;
     if (replay != null)
     {
-      bool built = Submission.TryBuild(replay, trial, out submission, out ValidationResult check);
+      bool built;
+      ValidationResult check;
+      try
+      {
+        built = Submission.TryBuild(replay, trial, out submission, out check);
+      }
+      catch (StartingValuesException e)
+      {
+        Logger.Log(
+          LogLevel.Error,
+          LogTag,
+          $"could not encode the replay of '{trial.Id}' to submit: {e.Message}"
+        );
+        string text = Dialog.Clean("climbtrials_submit_failed");
+        StoreAndReport(trial.Id, new Upload(UploadState.Failed, null, text), report);
+        return;
+      }
       if (!built)
       {
         StoreAndReport(trial.Id, new Upload(UploadState.Failed, null, check.Describe()), report);

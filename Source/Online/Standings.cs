@@ -313,8 +313,10 @@ public static class Standings
     SubmissionsPaused = result.Value.SubmissionsPaused;
     TrialRecords.Adopt(
       result
-        .Value.Trials.Where(r => r.Ticks != null)
-        .Select(r => (r.TrialId, r.Ticks.Value, r.AchievedAt ?? DateTime.UtcNow))
+        .Value.Trials.Where(record => record.Ticks != null)
+        .Select(record =>
+          (record.TrialId, record.Ticks.Value, record.AchievedAt ?? DateTime.UtcNow)
+        )
     );
   }
 
@@ -476,11 +478,13 @@ public static class Standings
     Campaign campaign = Campaigns.CampaignOf(trial);
     if (campaign == null)
       return null;
-    return RecordsOf(campaign).Value?.Trials.Find(r => r.TrialId == trial.Id);
+    return RecordsOf(campaign).Value?.Trials.Find(record => record.TrialId == trial.Id);
   }
 
   public static CampaignStanding CampaignStandingFor(Campaign campaign) =>
-    campaign == null ? null : hub.Value?.Campaigns.Find(c => c.CampaignId == campaign.Id);
+    campaign == null
+      ? null
+      : hub.Value?.Campaigns.Find(hubCampaign => hubCampaign.CampaignId == campaign.Id);
 
   public static void Replace(SubmissionAnswer answer)
   {
@@ -516,7 +520,7 @@ public static class Standings
       Ticks = standing.Ticks,
       AchievedAt = standing.AchievedAt,
     };
-    int index = rows.FindIndex(r => r.TrialId == standing.TrialId);
+    int index = rows.FindIndex(row => row.TrialId == standing.TrialId);
     if (index < 0)
       rows.Add(record);
     else
@@ -528,7 +532,7 @@ public static class Standings
     List<CampaignStanding> campaigns = hub.Value?.Campaigns;
     if (campaigns == null)
       return;
-    int index = campaigns.FindIndex(c => c.CampaignId == standing.CampaignId);
+    int index = campaigns.FindIndex(row => row.CampaignId == standing.CampaignId);
     if (index < 0)
       campaigns.Add(standing);
     else

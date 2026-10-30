@@ -92,7 +92,7 @@ public class OuiTrials : ListScreen
     ReturnTrial = null;
     resumeBoard = ReturnBoard;
     ReturnBoard = null;
-    int index = rows.FindIndex(r => r.Trial == trial);
+    int index = rows.FindIndex(row => row.Trial == trial);
     return menu.Items.IndexOf(rows[index < 0 ? 0 : index]);
   }
 
@@ -264,7 +264,7 @@ public class OuiTrials : ListScreen
     menu.Focused = false;
     Focused = false;
     view = new LeaderboardView(
-      BoardSubject.Of(trial),
+      BoardSubject.ForTrial(trial),
       SetBoardDim,
       OnBoardClosed,
       StartGhost,
@@ -308,7 +308,7 @@ public class OuiTrials : ListScreen
   private void OnBoardClosed(BoardSubject shown)
   {
     view = null;
-    int index = rows.FindIndex(r => r.Trial.Id == shown.Id);
+    int index = rows.FindIndex(row => row.Trial.Id == shown.Id);
     if (index >= 0 && menu.Current != rows[index])
     {
       menu.Current?.OnLeave?.Invoke();
@@ -358,10 +358,10 @@ public class OuiTrials : ListScreen
 
   private bool TryLoadPb(Trial trial, out Replay replay)
   {
-    if (ReplayStore.TryLoadPb(trial, out replay, out string deleted))
+    if (ReplayStore.TryLoadPb(trial, out replay, out string failureNotice))
       return true;
-    if (deleted != null)
-      notice.Show(deleted, ScreenLayout.NoticeSeconds);
+    if (failureNotice != null)
+      notice.Show(failureNotice, ScreenLayout.NoticeSeconds);
     return false;
   }
 

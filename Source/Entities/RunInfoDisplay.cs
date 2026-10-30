@@ -39,61 +39,61 @@ public class RunInfoDisplay : Entity
       return;
     RunDefinition run = trial.Run;
     RunProgress progress = RunManager.Progress;
-    float y = RunHudLayout.ConditionsY;
+    float top = RunHudLayout.ConditionsY;
 
     if (run.HasModifiers)
     {
-      float x = ModifierListX;
+      float left = ModifierListX;
       if (run.Grabless)
-        x = DrawModifierIcon(GFX.Gui[GrablessIcon], x, y);
+        left = DrawModifierIcon(GFX.Gui[GrablessIcon], left, top);
       if (run.NoRefills)
-        x = DrawModifierIcon(GFX.Gui[NoRefillsIcon], x, y);
+        left = DrawModifierIcon(GFX.Gui[NoRefillsIcon], left, top);
       if (run.Dashes is int dashes)
-        DrawModifierIcon(GFX.Gui[DashIcons[dashes]], x, y);
-      y += ModifierListHeight;
+        DrawModifierIcon(GFX.Gui[DashIcons[dashes]], left, top);
+      top += ModifierListHeight;
     }
     if (run.Waypoints.Count > 0)
     {
-      DrawIcon(GFX.Gui[WaypointIcon], y);
-      DrawText($"{progress.WaypointsTaken}/{run.Waypoints.Count}", y);
-      y += RunHudLayout.RowHeight;
+      DrawIcon(GFX.Gui[WaypointIcon], top);
+      DrawText($"{progress.WaypointsTaken}/{run.Waypoints.Count}", top);
+      top += RunHudLayout.RowHeight;
     }
     if (run.RequiredStrawberries > 0)
     {
-      DrawIcon(GFX.Gui[StrawberryIcon], y);
-      DrawText($"{progress.Strawberries}/{run.RequiredStrawberries}", y);
-      y += RunHudLayout.RowHeight;
+      DrawIcon(GFX.Gui[StrawberryIcon], top);
+      DrawText($"{progress.Strawberries}/{run.RequiredStrawberries}", top);
+      top += RunHudLayout.RowHeight;
     }
     if (run.RequiredSummitGems > 0)
     {
       List<MTexture> frames = GFX.Game.GetAtlasSubtextures(SummitGemSprite);
       if (frames.Count > 0)
-        DrawIcon(frames[0], y);
-      DrawText($"{progress.SummitGems}/{run.RequiredSummitGems}", y);
+        DrawIcon(frames[0], top);
+      DrawText($"{progress.SummitGems}/{run.RequiredSummitGems}", top);
     }
   }
 
-  private static float DrawModifierIcon(MTexture texture, float x, float y)
+  private static float DrawModifierIcon(MTexture texture, float left, float top)
   {
     float scale = RunHudLayout.IconHeight / texture.Height;
     float width = texture.Width * scale;
-    Vector2 center = new(x + width / 2f, y + RunHudLayout.RowHeight / 2f);
+    Vector2 center = new(left + width / 2f, top + RunHudLayout.RowHeight / 2f);
     texture.DrawCentered(center, Color.White, scale);
-    return x + width + ModifierListGap;
+    return left + width + ModifierListGap;
   }
 
-  private static void DrawIcon(MTexture texture, float y)
+  private static void DrawIcon(MTexture texture, float top)
   {
     float scale = RunHudLayout.IconHeight / texture.Height;
-    Vector2 center = new(RunHudLayout.IconX, y + RunHudLayout.RowHeight / 2f);
+    Vector2 center = new(RunHudLayout.IconX, top + RunHudLayout.RowHeight / 2f);
     texture.DrawCentered(center, Color.White, scale);
   }
 
-  private static void DrawText(string text, float y)
+  private static void DrawText(string text, float top)
   {
     ActiveFont.DrawOutline(
       text,
-      new Vector2(RunHudLayout.TimeX, y + RunHudLayout.RowHeight / 2f),
+      new Vector2(RunHudLayout.TimeX, top + RunHudLayout.RowHeight / 2f),
       new Vector2(0f, 0.5f),
       Vector2.One * RunHudLayout.TimeScale,
       Color.White,

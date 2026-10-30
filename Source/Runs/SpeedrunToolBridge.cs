@@ -119,7 +119,9 @@ public static class SpeedrunToolBridge
   }
 
   private static EverestModule FindModule() =>
-    module ??= Everest.Modules.FirstOrDefault(m => m.Metadata?.Name == ModuleName);
+    module ??= Everest.Modules.FirstOrDefault(everestModule =>
+      everestModule.Metadata?.Name == ModuleName
+    );
 
   private static void LoadMembers()
   {

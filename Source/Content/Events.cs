@@ -189,20 +189,20 @@ public static class Events
 
   public static IEnumerable<string> TrialIdsOf(string id) =>
     definitions.TryGetValue(id, out Definition definition)
-      ? definition.Campaign.Trials.Select(t => t.Id)
+      ? definition.Campaign.Trials.Select(trial => trial.Id)
       : [];
 
   public static EventCampaign Of(Campaign campaign) =>
-    campaign == null ? null : All.FirstOrDefault(e => e.Campaign == campaign);
+    campaign == null ? null : All.FirstOrDefault(entry => entry.Campaign == campaign);
 
   public static EventCampaign Of(Trial trial) =>
-    trial == null ? null : All.FirstOrDefault(e => e.Campaign.Trials.Contains(trial));
+    trial == null ? null : All.FirstOrDefault(entry => entry.Campaign.Trials.Contains(trial));
 
   public static SubmitRefusal RefusalFor(Trial trial) =>
     Of(trial)?.Refusal(Now) ?? SubmitRefusal.None;
 
   public static Trial FindTrial(string id) =>
-    All.SelectMany(e => e.Campaign.Trials).FirstOrDefault(t => t.Id == id);
+    All.SelectMany(entry => entry.Campaign.Trials).FirstOrDefault(trial => trial.Id == id);
 
   public static List<Campaign> Ordered() =>
     OrderedEntries()
@@ -213,11 +213,11 @@ public static class Events
   public static List<EventListEntry> OrderedEntries()
   {
     DateTime now = Now;
-    HashSet<string> listedIds = [.. All.Select(e => e.Id)];
+    HashSet<string> listedIds = [.. All.Select(entry => entry.Id)];
     IEnumerable<EventListEntry> upcomingEntries = upcoming
       .Where(entry => !listedIds.Contains(entry.Id))
       .Select(entry => new EventListEntry(null, entry));
-    return All.Select(e => new EventListEntry(e, null))
+    return All.Select(entry => new EventListEntry(entry, null))
       .Concat(upcomingEntries)
       .OrderBy(entry => PhaseOrder(entry.Phase(now)))
       .ThenBy(entry => entry.OpensAt)
@@ -289,8 +289,8 @@ public static class Events
     }
     listed = ids;
     HashSet<string> answered = (answer ?? [])
-      .Where(i => i?.Id != null)
-      .Select(i => i.Id)
+      .Where(item => item?.Id != null)
+      .Select(item => item.Id)
       .ToHashSet();
     foreach (string id in unreadable.Keys.Where(id => !answered.Contains(id)).ToList())
       unreadable.Remove(id);
@@ -341,7 +341,9 @@ public static class Events
     foreach (string id in listed)
     {
       Definition definition = definitions[id];
-      EventCampaign kept = shown.Find(e => e.Id == id && e.DefinitionHash == definition.Hash);
+      EventCampaign kept = shown.Find(entry =>
+        entry.Id == id && entry.DefinitionHash == definition.Hash
+      );
       next.Add(kept ?? new EventCampaign(definition.Campaign, definition.Hash));
     }
     shown = next;
@@ -354,7 +356,9 @@ public static class Events
 
   private static bool SameAsShown() =>
     listed.Count == shown.Count
-    && shown.All(e => listed.Contains(e.Id) && definitions[e.Id].Hash == e.DefinitionHash);
+    && shown.All(entry =>
+      listed.Contains(entry.Id) && definitions[entry.Id].Hash == entry.DefinitionHash
+    );
 
   private static Definition Parse(string id, string hash, string text)
   {
@@ -387,14 +391,14 @@ public static class Events
     foreach (Campaign official in Campaigns.All)
     {
       taken.Add(official.Id);
-      taken.UnionWith(official.Trials.Select(t => t.Id));
+      taken.UnionWith(official.Trials.Select(trial => trial.Id));
     }
     foreach ((string otherId, Definition other) in definitions)
     {
       if (otherId == id)
         continue;
       taken.Add(otherId);
-      taken.UnionWith(other.Campaign.Trials.Select(t => t.Id));
+      taken.UnionWith(other.Campaign.Trials.Select(trial => trial.Id));
     }
     if (taken.Contains(campaign.Id))
       throw new InvalidOperationException("its id is taken");

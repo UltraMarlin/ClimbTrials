@@ -26,11 +26,11 @@ public abstract class BoardSubject
 
   protected abstract Medal MedalOf(BoardRow row);
 
-  public static BoardSubject Of(Trial trial) => new TrialSubject(trial, alone: false);
+  public static BoardSubject ForTrial(Trial trial) => new TrialSubject(trial, alone: false);
 
-  public static BoardSubject Alone(Trial trial) => new TrialSubject(trial, alone: true);
+  public static BoardSubject ForTrialAlone(Trial trial) => new TrialSubject(trial, alone: true);
 
-  public static BoardSubject Of(Campaign campaign) => new CampaignSubject(campaign);
+  public static BoardSubject ForCampaign(Campaign campaign) => new CampaignSubject(campaign);
 
   private sealed class TrialSubject(Trial trial, bool alone) : BoardSubject
   {
@@ -42,9 +42,7 @@ public abstract class BoardSubject
     public override Campaign Campaign => Campaigns.CampaignOf(trial);
 
     public override IReadOnlyList<BoardSubject> Siblings =>
-      !alone && Campaign is Campaign campaign
-        ? campaign.Trials.Select(t => Of(t)).ToList()
-        : [this];
+      !alone && Campaign is Campaign campaign ? campaign.Trials.Select(ForTrial).ToList() : [this];
 
     public override void Fetch(
       int chunk,
@@ -69,7 +67,7 @@ public abstract class BoardSubject
     public override string CountKey => "climbtrials_board_runners";
     public override Campaign Campaign => campaign;
     public override IReadOnlyList<BoardSubject> Siblings =>
-      (Campaigns.IsEvent(campaign) ? Events.Ordered() : Campaigns.All).Select(c => Of(c)).ToList();
+      (Campaigns.IsEvent(campaign) ? Events.Ordered() : Campaigns.All).Select(ForCampaign).ToList();
 
     public override void Fetch(
       int chunk,

@@ -22,7 +22,7 @@ public class LoadingIcon : Entity
     Position = ScreenPosition;
     Add(icon = GFX.GuiSpriteBank.Create("save"));
     icon.UseRawDeltaTime = true;
-    Add(wiggler = Wiggler.Create(0.4f, 4f, f => icon.Rotation = f * 0.1f));
+    Add(wiggler = Wiggler.Create(0.4f, 4f, angle => icon.Rotation = angle * 0.1f));
     wiggler.UseRawDeltaTime = true;
     Add(new Coroutine(Animate()) { UseRawDeltaTime = true });
     icon.Visible = false;

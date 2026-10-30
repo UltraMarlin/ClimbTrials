@@ -390,10 +390,10 @@ public class BoardMenu : TextMenu
         DrawHeaderLine(note, centerX, lineY, alpha);
     }
 
-    private static void DrawHeaderLine(string text, float centerX, float y, float alpha) =>
+    private static void DrawHeaderLine(string text, float centerX, float centerY, float alpha) =>
       ActiveFont.Draw(
         text,
-        new Vector2(centerX, y),
+        new Vector2(centerX, centerY),
         new Vector2(0.5f, 0.5f),
         Vector2.One * BoardLayout.RunnersScale,
         Colors.DimText * alpha

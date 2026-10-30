@@ -24,6 +24,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <EmbeddedResource Include="Replays\Codec\StartingValues.bin" LogicalName="ClimbTrials.StartingValues.bin" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="CelesteMod.Publicizer" Version="*" CelesteAssembly="$(CelestePrefix)\Celeste.dll" />
         <Reference Include="$(CelestePrefix)\MMHOOK_Celeste.dll" Private="false" />
         <Reference Include="$(CelestePrefix)\FNA.dll" Private="false" />

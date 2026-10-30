@@ -19,6 +19,7 @@ public sealed record ComparedGhost(
 public static class GhostComparisons
 {
   private const string OwnKey = "own";
+  private const string LastAttemptKey = "last attempt";
   private const float NameLighten = 0.5f;
 
   private static readonly Color[] Palette =
@@ -49,7 +50,7 @@ public static class GhostComparisons
   public static IReadOnlyList<ComparedGhost> All => ghosts;
 
   public static IEnumerable<ComparedGhost> Shown =>
-    ghosts.Where(g => g.Replay != RunManager.Replay);
+    ghosts.Where(ghost => ghost.Replay != RunManager.Replay);
 
   public static bool Showing
   {
@@ -72,12 +73,15 @@ public static class GhostComparisons
 
   public static string KeyOf(BoardRow row) => row.Me ? OwnKey : row.ReplayId;
 
-  private static string KeyOf(Replay replay) => replay.IsOwn ? OwnKey : replay.ServerReplayId;
+  private static string KeyOf(Replay replay) =>
+    !replay.IsOwn ? replay.ServerReplayId
+    : replay.IsPersonalBest ? OwnKey
+    : LastAttemptKey;
 
   public static ComparedGhost Find(BoardRow row)
   {
     string key = KeyOf(row);
-    return key == null ? null : ghosts.Find(g => g.Key == key);
+    return key == null ? null : ghosts.Find(ghost => ghost.Key == key);
   }
 
   public static bool IsWatched(BoardRow row)
@@ -158,7 +162,7 @@ public static class GhostComparisons
     if (switchingTo == null)
       return;
     ghosts.Remove(playingAsGhost);
-    if (chosenWas != null && !ghosts.Exists(g => g.Key == chosenWas.Key))
+    if (chosenWas != null && !ghosts.Exists(ghost => ghost.Key == chosenWas.Key))
       ghosts.Add(chosenWas);
     ForgetSwitch();
   }
@@ -219,7 +223,7 @@ public static class GhostComparisons
       return;
     }
     string key = KeyOf(watched);
-    ghosts.RemoveAll(g => g.Key == key);
+    ghosts.RemoveAll(ghost => ghost.Key == key);
   }
 
   public static GhostSplits WatchedSplits()
@@ -241,7 +245,7 @@ public static class GhostComparisons
   private static Color NextColor()
   {
     foreach (Color color in Palette)
-      if (!ghosts.Exists(g => g.Color == color))
+      if (!ghosts.Exists(ghost => ghost.Color == color))
         return color;
     return Palette[ghosts.Count % Palette.Length];
   }

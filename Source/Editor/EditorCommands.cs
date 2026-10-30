@@ -182,8 +182,8 @@ public static class EditorCommands
     if (!ConsoleOutput.TryGetLevel(out Level level))
       return;
     string room = level.Session.Level;
-    List<EntityData> hearts = level.Session.LevelData.Entities.FindAll(e =>
-      e.Name == "blackGem" && !e.Bool("fake")
+    List<EntityData> hearts = level.Session.LevelData.Entities.FindAll(entity =>
+      entity.Name == "blackGem" && !entity.Bool("fake")
     );
     if (hearts.Count != 1)
     {

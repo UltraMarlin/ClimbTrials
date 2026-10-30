@@ -22,14 +22,14 @@ public static class RecordCommands
       Engine.Commands.Log($"deleted {pbs} PBs and {replays} replays");
       return;
     }
-    Campaign campaign = Campaigns.All.FirstOrDefault(c => c.Id == campaignId);
+    Campaign campaign = Campaigns.All.FirstOrDefault(campaign => campaign.Id == campaignId);
     if (campaign == null)
     {
-      string known = string.Join(", ", Campaigns.All.Select(c => c.Id));
+      string known = string.Join(", ", Campaigns.All.Select(campaign => campaign.Id));
       Engine.Commands.Log($"unknown campaign '{campaignId}'. Known: {known}");
       return;
     }
-    List<string> ids = campaign.Trials.Select(t => t.Id).ToList();
+    List<string> ids = campaign.Trials.Select(trial => trial.Id).ToList();
     int removed = TrialRecords.Remove(ids);
     int deleted = 0;
     foreach (string id in ids)

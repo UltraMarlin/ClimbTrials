@@ -85,7 +85,7 @@ public class GhostDeltaDisplay : Entity
   private void BuildHeadline(Replay ghost)
   {
     headlineGhost = ghost;
-    string name = ghost.IsOwn ? Dialog.Clean("climbtrials_pb") : Identity.NameOf(ghost);
+    string name = ghost.IsPersonalBest ? Dialog.Clean("climbtrials_pb") : Identity.NameOf(ghost);
     if (string.IsNullOrEmpty(name))
       name = Dialog.Clean("climbtrials_unnamed_ghost");
     string line = Dialog.Get("climbtrials_ghost_versus");

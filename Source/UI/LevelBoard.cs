@@ -18,7 +18,7 @@ public static class LevelBoard
     level.PauseMainMenuOpen = false;
     level.Add(
       new LeaderboardView(
-        BoardSubject.Alone(RunManager.Trial),
+        BoardSubject.ForTrialAlone(RunManager.Trial),
         _ => { },
         _ => ClosedOverPause(level, pauseMenu),
         StartGhost,

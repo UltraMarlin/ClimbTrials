@@ -96,11 +96,11 @@ public class TrialRow : SlidingRow
     );
   }
 
-  private static void DrawWord(string word, float rightEdge, float y, float alpha)
+  private static void DrawWord(string word, float rightEdge, float centerY, float alpha)
   {
     ActiveFont.Draw(
       word,
-      new Vector2(rightEdge, y),
+      new Vector2(rightEdge, centerY),
       new Vector2(1f, 0.5f),
       Vector2.One * RowLayout.WordScale,
       RowLayout.Dim * alpha

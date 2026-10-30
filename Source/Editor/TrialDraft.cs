@@ -153,37 +153,43 @@ public static class TrialDraft
         sid = Sid,
         mode = Mode.ToString(),
         startRoom = StartRoom,
-        spawn = Vec(Spawn ?? Vector2.Zero),
+        spawn = ToPair(Spawn ?? Vector2.Zero),
         spawnFacing = SpawnFacing?.ToString(),
         finishRoom = finish?.Room,
         finishKind = char.ToLowerInvariant(kind.ToString()[0]) + kind.ToString()[1..],
         finish = kind == FinishKind.Heart || (kind == FinishKind.RoomEnter && drawn == null)
           ? null
           : new[] { rect.X, rect.Y, rect.Width, rect.Height },
-        splitCategories = SplitCategories.ConvertAll(c => c.ToString()),
-        splitRects = SplitRects.ConvertAll(r => new
+        splitCategories = SplitCategories.ConvertAll(category => category.ToString()),
+        splitRects = SplitRects.ConvertAll(splitRect => new
         {
-          room = r.Room,
-          rect = new[] { r.Rect.X, r.Rect.Y, r.Rect.Width, r.Rect.Height },
+          room = splitRect.Room,
+          rect = new[]
+          {
+            splitRect.Rect.X,
+            splitRect.Rect.Y,
+            splitRect.Rect.Width,
+            splitRect.Rect.Height,
+          },
         }),
-        waypoints = Waypoints.ConvertAll(w => new
+        waypoints = Waypoints.ConvertAll(waypoint => new
         {
-          room = w.Room,
-          position = Vec(w.Position),
-          spawn = w.Spawn is Vector2 s ? Vec(s) : null,
-          setsSpawn = w.SetsSpawn,
+          room = waypoint.Room,
+          position = ToPair(waypoint.Position),
+          spawn = waypoint.Spawn is Vector2 spawn ? ToPair(spawn) : null,
+          setsSpawn = waypoint.SetsSpawn,
         }),
-        cameraOffsets = CameraOffsets.ConvertAll(c => new
+        cameraOffsets = CameraOffsets.ConvertAll(offset => new
         {
-          room = c.Room,
-          offset = Vec(c.Offset),
+          room = offset.Room,
+          offset = ToPair(offset.Offset),
         }),
         bloomBaseAdd = BloomBaseAdd,
         lightingAlphaAdd = LightingAlphaAdd,
-        ignoredStrawberries = IgnoredStrawberries.ConvertAll(b => new
+        ignoredStrawberries = IgnoredStrawberries.ConvertAll(strawberry => new
         {
-          room = b.Level,
-          id = b.ID,
+          room = strawberry.Level,
+          id = strawberry.ID,
         }),
         requiredStrawberries = RequiredStrawberries,
         requiredSummitGems = RequiredSummitGems,
@@ -206,11 +212,11 @@ public static class TrialDraft
     return JsonSerializer.Serialize(trial, JsonOptions) + ",";
   }
 
-  private static float[] Vec(Vector2 v) => [v.X, v.Y];
+  private static float[] ToPair(Vector2 vector) => [vector.X, vector.Y];
 
   public static string WaypointText(PlacedWaypoint waypoint) =>
     $"{waypoint.Room} [{waypoint.Position.X}, {waypoint.Position.Y}]"
-    + (waypoint.Spawn is Vector2 s ? $" spawn [{s.X}, {s.Y}]" : "")
+    + (waypoint.Spawn is Vector2 spawn ? $" spawn [{spawn.X}, {spawn.Y}]" : "")
     + (waypoint.SetsSpawn ? "" : " setsSpawn false");
 
   public static string BerryText(EntityID id) => $"{id.Level} #{id.ID}";

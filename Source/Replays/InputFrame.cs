@@ -3,50 +3,6 @@ using Microsoft.Xna.Framework;
 
 namespace Celeste.Mod.ClimbTrials.Replays;
 
-[Flags]
-public enum Actions : ushort
-{
-  None = 0,
-  Jump = 1 << 0,
-  Dash = 1 << 1,
-  Grab = 1 << 2,
-  CrouchDash = 1 << 3,
-  Talk = 1 << 4,
-  Pause = 1 << 5,
-  QuickRestart = 1 << 6,
-  Esc = 1 << 7,
-  MenuUp = 1 << 8,
-  MenuDown = 1 << 9,
-  MenuLeft = 1 << 10,
-  MenuRight = 1 << 11,
-  MenuConfirm = 1 << 12,
-  MenuCancel = 1 << 13,
-  MenuJournal = 1 << 14,
-}
-
-[Flags]
-public enum FrameFlags : byte
-{
-  None = 0,
-  FacingLeft = 1 << 0,
-  LevelUpdated = 1 << 1,
-  Paused = 1 << 2,
-}
-
-[Flags]
-public enum DirectionBinds : byte
-{
-  None = 0,
-  MoveOnlyLeft = 1 << 0,
-  MoveOnlyRight = 1 << 1,
-  MoveOnlyUp = 1 << 2,
-  MoveOnlyDown = 1 << 3,
-  DashOnlyLeft = 1 << 4,
-  DashOnlyRight = 1 << 5,
-  DashOnlyUp = 1 << 6,
-  DashOnlyDown = 1 << 7,
-}
-
 public struct ButtonState
 {
   public float Buffer;
@@ -81,4 +37,32 @@ public struct InputFrame
   public bool LevelUpdated => (Flags & FrameFlags.LevelUpdated) != 0;
   public bool FacingLeft => (Flags & FrameFlags.FacingLeft) != 0;
   public bool Paused => (Flags & FrameFlags.Paused) != 0;
+  public bool Transitioning => (Flags & FrameFlags.Transitioning) != 0;
+
+  public const float ScaleUnit = 16f;
+
+  private static readonly Vector2[] DashDirections =
+  [
+    new(-1f, -1f),
+    new(0f, -1f),
+    new(1f, -1f),
+    new(-1f, 0f),
+    new(1f, 0f),
+    new(-1f, 1f),
+    new(0f, 1f),
+    new(1f, 1f),
+  ];
+
+  public static sbyte ScaleToSByte(float scale) =>
+    (sbyte)Math.Clamp(Math.Round(scale * ScaleUnit), sbyte.MinValue, sbyte.MaxValue);
+
+  public static byte DashDirToByte(Vector2 direction)
+  {
+    Vector2 signs = new(Math.Sign(direction.X), Math.Sign(direction.Y));
+    int index = Array.IndexOf(DashDirections, signs);
+    return index < 0 ? (byte)0 : (byte)(index + 1);
+  }
+
+  public static Vector2 DashDirFromByte(byte value) =>
+    value == 0 ? Vector2.Zero : Vector2.Normalize(DashDirections[value - 1]);
 }

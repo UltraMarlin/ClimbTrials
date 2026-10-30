@@ -3,11 +3,13 @@ using Microsoft.Xna.Framework;
 
 namespace Celeste.Mod.ClimbTrials.Runs;
 
+public readonly record struct ReachedSplit(SplitKey Key, long Ticks);
+
 public sealed class SplitDetector(SplitMap course)
 {
   private readonly HashSet<SplitKey> taken = [];
   private readonly Dictionary<(string From, string To), int> crossings = [];
-  private readonly List<SplitKey> reached = [];
+  private readonly List<ReachedSplit> reached = [];
   private LevelData room;
   private SplitPoint[] points = [];
   private int previousState = -1;
@@ -26,20 +28,25 @@ public sealed class SplitDetector(SplitMap course)
     bossHitsInRoom = other.bossHitsInRoom;
   }
 
-  public List<SplitKey> FindReachedSplits(Vector2 position, int state)
+  public List<ReachedSplit> FindReachedSplits(
+    Vector2 position,
+    int state,
+    long ticks,
+    long? transitionStartTicks
+  )
   {
     reached.Clear();
-    UpdateRoom(position);
+    UpdateRoom(position, transitionStartTicks ?? ticks);
     if (room != null)
     {
-      AddTouchedPoints(position);
-      AddBossHit(state);
+      AddTouchedPoints(position, ticks);
+      AddBossHit(state, ticks);
     }
     previousState = state;
     return reached;
   }
 
-  private void UpdateRoom(Vector2 position)
+  private void UpdateRoom(Vector2 position, long ticks)
   {
     if (room != null && room.Check(position))
       return;
@@ -59,18 +66,23 @@ public sealed class SplitDetector(SplitMap course)
     (string, string) pair = (previous.Name, next.Name);
     int count = crossings.GetValueOrDefault(pair) + 1;
     crossings[pair] = count;
-    reached.Add(new SplitKey(SplitKind.RoomTransition, previous.Name, next.Name, count));
+    reached.Add(
+      new ReachedSplit(
+        new SplitKey(SplitKind.RoomTransition, previous.Name, next.Name, count),
+        ticks
+      )
+    );
   }
 
-  private void AddTouchedPoints(Vector2 position)
+  private void AddTouchedPoints(Vector2 position, long ticks)
   {
     SplitBox body = new(position.X - 4f, position.Y - 11f, position.X + 4f, position.Y - 2f);
     foreach (SplitPoint point in points)
       if (point.Box.Overlaps(body) && taken.Add(point.Key))
-        reached.Add(point.Key);
+        reached.Add(new ReachedSplit(point.Key, ticks));
   }
 
-  private void AddBossHit(int state)
+  private void AddBossHit(int state, long ticks)
   {
     if (state == Player.StIntroRespawn)
       bossHitsInRoom = 0;
@@ -79,6 +91,6 @@ public sealed class SplitDetector(SplitMap course)
     bossHitsInRoom++;
     SplitKey key = new(SplitKind.Boss, room.Name, null, bossHitsInRoom);
     if (taken.Add(key))
-      reached.Add(key);
+      reached.Add(new ReachedSplit(key, ticks));
   }
 }

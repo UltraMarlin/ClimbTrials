@@ -83,7 +83,7 @@ public class ComparisonDisplay : Entity
     List<Line> lines = Lines();
     if (lines.Count == 0)
       return;
-    int watchedSplit = lines.Find(l => l.Watched).Split;
+    int watchedSplit = lines.Find(line => line.Watched).Split;
     float nameWidth = 0f;
     float timeWidth = 0f;
     float deltaWidth = 0f;
@@ -205,7 +205,7 @@ public class ComparisonDisplay : Entity
   {
     if (lines.Count <= MaxRows)
       return lines;
-    int watched = lines.FindIndex(l => l.Watched);
+    int watched = lines.FindIndex(line => line.Watched);
     int from = Math.Clamp(watched - (MaxRows - 1) / 2, 0, lines.Count - MaxRows);
     return lines.GetRange(from, MaxRows);
   }

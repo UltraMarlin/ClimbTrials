@@ -31,14 +31,14 @@ public class FinishZoneDisplay : Entity
       (finished ? Color.Lerp(tint.Light, Color.Gold, FinishedGold) : tint.Light) * BoardAlpha;
     Color dark =
       (finished ? Color.Lerp(tint.Dark, Color.Gold, FinishedGold) : tint.Dark) * BoardAlpha;
-    for (int y = 0; y < height; y += Cell)
-    for (int x = 0; x < width; x += Cell)
+    for (int offsetY = 0; offsetY < height; offsetY += Cell)
+    for (int offsetX = 0; offsetX < width; offsetX += Cell)
       Draw.Rect(
-        X + x,
-        Y + y,
-        Math.Min(Cell, width - x),
-        Math.Min(Cell, height - y),
-        ((x / Cell + y / Cell) % 2 == 0) ? light : dark
+        X + offsetX,
+        Y + offsetY,
+        Math.Min(Cell, width - offsetX),
+        Math.Min(Cell, height - offsetY),
+        ((offsetX / Cell + offsetY / Cell) % 2 == 0) ? light : dark
       );
   }
 }
