@@ -8,7 +8,7 @@
       "id": "t06",
       "name": "Berry City",
       "difficulty": "Normal",
-      "replayLimitSeconds": 60,
+      "replayLimitSeconds": 90,
       "run": {
         "sid": "Celeste/1-ForsakenCity",
         "mode": "Normal",
@@ -34,18 +34,18 @@
         "splitCategories": ["RoomTransition", "Strawberry"]
       },
       "goals": {
-        "bronze": 21,
+        "bronze": 22,
         "silver": 19,
-        "gold": 17.5,
-        "diamond": 16.8,
-        "grandmaster": 16.5
+        "gold": 17,
+        "diamond": 16.5,
+        "grandmaster": 16
       }
     },
     {
       "id": "t07",
       "name": "City Crossing",
       "difficulty": "Normal",
-      "replayLimitSeconds": 30,
+      "replayLimitSeconds": 60,
       "run": {
         "sid": "Celeste/1-ForsakenCity",
         "mode": "Normal",
@@ -79,14 +79,14 @@
         "silver": 6,
         "gold": 5.4,
         "diamond": 5,
-        "grandmaster": 4.8
+        "grandmaster": 4.6
       }
     },
     {
       "id": "t20",
       "name": "Asleep",
       "difficulty": "Normal",
-      "replayLimitSeconds": 90,
+      "replayLimitSeconds": 120,
       "run": {
         "sid": "Celeste/2-OldSite",
         "mode": "Normal",
@@ -109,7 +109,7 @@
         "bronze": 36,
         "silver": 35,
         "gold": 34,
-        "diamond": 33.5,
+        "diamond": 33.4,
         "grandmaster": 33.1
       }
     },
@@ -117,7 +117,7 @@
       "id": "t09",
       "name": "Wake Up",
       "difficulty": "Normal",
-      "replayLimitSeconds": 60,
+      "replayLimitSeconds": 90,
       "run": {
         "sid": "Celeste/2-OldSite",
         "mode": "Normal",
@@ -137,8 +137,8 @@
         "splitCategories": ["RoomTransition"]
       },
       "goals": {
-        "bronze": 11,
-        "silver": 10.5,
+        "bronze": 12,
+        "silver": 11,
         "gold": 10,
         "diamond": 9.7,
         "grandmaster": 9.5
@@ -178,14 +178,14 @@
         "silver": 19,
         "gold": 17.5,
         "diamond": 16.6,
-        "grandmaster": 16.3
+        "grandmaster": 16.2
       }
     },
     {
       "id": "t12",
       "name": "Morning Exercise",
       "difficulty": "Normal",
-      "replayLimitSeconds": 60,
+      "replayLimitSeconds": 90,
       "run": {
         "sid": "Celeste/2-OldSite",
         "mode": "Normal",
@@ -258,15 +258,15 @@
         "bronze": 15,
         "silver": 13,
         "gold": 11,
-        "diamond": 10,
-        "grandmaster": 9.5
+        "diamond": 9.8,
+        "grandmaster": 9.2
       }
     },
     {
       "id": "t19",
-      "name": "Depths Hub 1",
+      "name": "Depths Hub",
       "difficulty": "Normal",
-      "replayLimitSeconds": 60,
+      "replayLimitSeconds": 90,
       "run": {
         "sid": "Celeste/5-MirrorTemple",
         "mode": "Normal",
@@ -278,49 +278,49 @@
         "waypoints": [
           {
             "room": "b-01",
-            "position": [2976, -96],
+            "position": [2976, -92],
             "spawn": [2976, -80],
             "setsSpawn": true
           },
           {
             "room": "b-01",
-            "position": [3056, -176],
+            "position": [3056, -172],
             "spawn": [3056, -160],
             "setsSpawn": true
           },
           {
             "room": "b-01",
-            "position": [3120, -96],
+            "position": [3120, -92],
             "spawn": [3120, -80],
             "setsSpawn": true
           },
           {
             "room": "b-01",
-            "position": [3192, -144],
+            "position": [3192, -140],
             "spawn": [3192, -128],
             "setsSpawn": true
           },
           {
             "room": "b-01",
-            "position": [3384, -64],
+            "position": [3384, -60],
             "spawn": [3384, -48],
             "setsSpawn": true
           },
           {
             "room": "b-01",
-            "position": [3216, -40],
+            "position": [3216, -36],
             "spawn": [3216, -24],
             "setsSpawn": true
           },
           {
             "room": "b-01",
-            "position": [3048, -8],
+            "position": [3048, -4],
             "spawn": [3048, 8],
             "setsSpawn": true
           },
           {
             "room": "b-01",
-            "position": [3208, -248],
+            "position": [3208, -244],
             "spawn": [3208, -232],
             "setsSpawn": true
           }
@@ -339,14 +339,14 @@
         "silver": 10,
         "gold": 8,
         "diamond": 7.5,
-        "grandmaster": 7.1
+        "grandmaster": 6.8
       }
     },
     {
       "id": "t22",
       "name": "1000M Gem",
       "difficulty": "Normal",
-      "replayLimitSeconds": 60,
+      "replayLimitSeconds": 120,
       "run": {
         "sid": "Celeste/7-Summit",
         "mode": "Normal",
@@ -383,7 +383,7 @@
       "id": "t16",
       "name": "Why do I hear 5B music?",
       "difficulty": "Hard",
-      "replayLimitSeconds": 30,
+      "replayLimitSeconds": 60,
       "run": {
         "sid": "Celeste/5-MirrorTemple",
         "mode": "BSide",
@@ -429,10 +429,10 @@
         "splitCategories": ["Waypoint"]
       },
       "goals": {
-        "bronze": 7,
+        "bronze": 8,
         "silver": 6,
         "gold": 5,
-        "diamond": 4.5,
+        "diamond": 4.4,
         "grandmaster": 4.2
       }
     },
@@ -440,7 +440,7 @@
       "id": "t14",
       "name": "Who are all these people?",
       "difficulty": "Hard",
-      "replayLimitSeconds": 60,
+      "replayLimitSeconds": 90,
       "run": {
         "sid": "Celeste/6-Reflection",
         "mode": "Normal",
@@ -460,18 +460,18 @@
         "splitCategories": ["RoomTransition"]
       },
       "goals": {
-        "bronze": 12,
+        "bronze": 13,
         "silver": 11,
         "gold": 10,
         "diamond": 8.5,
-        "grandmaster": 8
+        "grandmaster": 7.8
       }
     },
     {
       "id": "t17",
       "name": "1 Dash, 2 Berries, 1 Hotel",
       "difficulty": "Hard",
-      "replayLimitSeconds": 120,
+      "replayLimitSeconds": 180,
       "run": {
         "sid": "Celeste/7-Summit",
         "mode": "Normal",
@@ -502,7 +502,7 @@
       "id": "t15",
       "name": "That\u0027s not how you play 1B",
       "difficulty": "Expert",
-      "replayLimitSeconds": 120,
+      "replayLimitSeconds": 180,
       "run": {
         "sid": "Celeste/1-ForsakenCity",
         "mode": "BSide",

@@ -8,7 +8,7 @@
       "id": "t01",
       "name": "Resort Start Coins Room",
       "difficulty": "Normal",
-      "replayLimitSeconds": 30,
+      "replayLimitSeconds": 60,
       "run": {
         "sid": "Celeste/3-CelestialResort",
         "mode": "Normal",
@@ -34,8 +34,8 @@
         "splitCategories": ["RoomTransition"]
       },
       "goals": {
-        "bronze": 7.5,
-        "silver": 6.5,
+        "bronze": 8,
+        "silver": 7,
         "gold": 6,
         "diamond": 5.8,
         "grandmaster": 5.6
@@ -45,7 +45,7 @@
       "id": "t02",
       "name": "Big Chaos",
       "difficulty": "Normal",
-      "replayLimitSeconds": 60,
+      "replayLimitSeconds": 90,
       "run": {
         "sid": "Celeste/3-CelestialResort",
         "mode": "Normal",
@@ -103,16 +103,16 @@
       "goals": {
         "bronze": 20,
         "silver": 18,
-        "gold": 16.4,
-        "diamond": 15.5,
-        "grandmaster": 15
+        "gold": 16.2,
+        "diamond": 15.4,
+        "grandmaster": 14.6
       }
     },
     {
       "id": "t04",
       "name": "The fun part of 2000M",
       "difficulty": "Normal",
-      "replayLimitSeconds": 60,
+      "replayLimitSeconds": 90,
       "run": {
         "sid": "Celeste/7-Summit",
         "mode": "Normal",
@@ -132,18 +132,18 @@
         "splitCategories": ["RoomTransition"]
       },
       "goals": {
-        "bronze": 16,
+        "bronze": 17,
         "silver": 14,
         "gold": 12,
-        "diamond": 11.5,
-        "grandmaster": 11
+        "diamond": 11.4,
+        "grandmaster": 10.9
       }
     },
     {
       "id": "t18",
       "name": "No throwing allowed",
       "difficulty": "Normal",
-      "replayLimitSeconds": 60,
+      "replayLimitSeconds": 90,
       "run": {
         "sid": "Celeste/7-Summit",
         "mode": "Normal",
@@ -199,18 +199,18 @@
         "introType": "Respawn"
       },
       "goals": {
-        "bronze": 12,
-        "silver": 10.5,
-        "gold": 9.1,
-        "diamond": 8.7,
-        "grandmaster": 8.5
+        "bronze": 13,
+        "silver": 11,
+        "gold": 9,
+        "diamond": 8.6,
+        "grandmaster": 8.3
       }
     },
     {
       "id": "t03",
       "name": "Depths Cornerboost",
       "difficulty": "Hard",
-      "replayLimitSeconds": 60,
+      "replayLimitSeconds": 90,
       "run": {
         "sid": "Celeste/5-MirrorTemple",
         "mode": "Normal",
@@ -236,18 +236,18 @@
         "splitCategories": ["RoomTransition"]
       },
       "goals": {
-        "bronze": 13,
+        "bronze": 14,
         "silver": 12,
         "gold": 11,
         "diamond": 10,
-        "grandmaster": 9.6
+        "grandmaster": 9.4
       }
     },
     {
       "id": "t05",
       "name": "It's just 7B flag 10",
       "difficulty": "Hard",
-      "replayLimitSeconds": 60,
+      "replayLimitSeconds": 90,
       "run": {
         "sid": "Celeste/7-Summit",
         "mode": "BSide",
@@ -269,15 +269,15 @@
         "bronze": 14,
         "silver": 12,
         "gold": 10,
-        "diamond": 9,
-        "grandmaster": 8.5
+        "diamond": 9.3,
+        "grandmaster": 8.6
       }
     },
     {
       "id": "t23",
       "name": "The heart part of 7C",
       "difficulty": "Normal",
-      "replayLimitSeconds": 30,
+      "replayLimitSeconds": 60,
       "run": {
         "sid": "Celeste/7-Summit",
         "mode": "CSide",
@@ -325,7 +325,7 @@
         "silver": 5.5,
         "gold": 5.2,
         "diamond": 5,
-        "grandmaster": 4.95
+        "grandmaster": 4.9
       }
     }
   ]

@@ -72,18 +72,18 @@
         "introType": "Respawn"
       },
       "goals": {
-        "bronze": 14,
+        "bronze": 13,
         "silver": 11,
         "gold": 9,
         "diamond": 8,
-        "grandmaster": 7.5
+        "grandmaster": 7.4
       }
     },
     {
       "id": "t32",
       "name": "Who put this room here?",
       "difficulty": "Normal",
-      "replayLimitSeconds": 60,
+      "replayLimitSeconds": 90,
       "run": {
         "sid": "Celeste/6-Reflection",
         "mode": "Normal",
@@ -124,10 +124,10 @@
       },
       "goals": {
         "bronze": 10,
-        "silver": 8.5,
-        "gold": 7.5,
-        "diamond": 6.5,
-        "grandmaster": 5.8
+        "silver": 8,
+        "gold": 7,
+        "diamond": 6,
+        "grandmaster": 5.4
       }
     },
     {
@@ -183,11 +183,11 @@
         "introType": "Respawn"
       },
       "goals": {
-        "bronze": 25,
-        "silver": 22,
-        "gold": 20,
-        "diamond": 18,
-        "grandmaster": 17
+        "bronze": 22,
+        "silver": 20,
+        "gold": 18,
+        "diamond": 16.6,
+        "grandmaster": 15.8
       }
     },
     {
@@ -222,8 +222,8 @@
       },
       "goals": {
         "bronze": 30,
-        "silver": 28,
-        "gold": 26,
+        "silver": 27,
+        "gold": 25,
         "diamond": 24,
         "grandmaster": 23.6
       }
@@ -263,7 +263,7 @@
         "silver": 14,
         "gold": 12,
         "diamond": 11,
-        "grandmaster": 10.8
+        "grandmaster": 10.6
       }
     },
     {
@@ -299,9 +299,9 @@
       "goals": {
         "bronze": 34,
         "silver": 30,
-        "gold": 28,
-        "diamond": 26,
-        "grandmaster": 25.5
+        "gold": 27,
+        "diamond": 25.8,
+        "grandmaster": 25.2
       }
     },
     {
@@ -357,10 +357,10 @@
       },
       "goals": {
         "bronze": 14,
-        "silver": 12.5,
-        "gold": 11.5,
-        "diamond": 10.8,
-        "grandmaster": 10.4
+        "silver": 12.6,
+        "gold": 11.4,
+        "diamond": 10.6,
+        "grandmaster": 10.2
       }
     },
     {
@@ -403,11 +403,11 @@
         "introType": "Respawn"
       },
       "goals": {
-        "bronze": 42,
-        "silver": 36,
+        "bronze": 40,
+        "silver": 34,
         "gold": 30,
-        "diamond": 28,
-        "grandmaster": 26
+        "diamond": 27,
+        "grandmaster": 25.6
       }
     },
     {
@@ -473,11 +473,11 @@
         "introType": "Respawn"
       },
       "goals": {
-        "bronze": 60,
-        "silver": 40,
-        "gold": 30,
-        "diamond": 22,
-        "grandmaster": 18
+        "bronze": 40,
+        "silver": 30,
+        "gold": 26,
+        "diamond": 20,
+        "grandmaster": 14
       }
     }
   ]

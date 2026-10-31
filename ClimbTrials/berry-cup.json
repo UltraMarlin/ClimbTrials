@@ -58,8 +58,8 @@
         "bronze": 30,
         "silver": 24,
         "gold": 22,
-        "diamond": 21,
-        "grandmaster": 19
+        "diamond": 20,
+        "grandmaster": 18.5
       }
     },
     {
@@ -147,9 +147,9 @@
       "goals": {
         "bronze": 16,
         "silver": 14,
-        "gold": 12.5,
+        "gold": 12.4,
         "diamond": 11.8,
-        "grandmaster": 11
+        "grandmaster": 11.2
       }
     },
     {
@@ -223,18 +223,18 @@
         "introType": "Respawn"
       },
       "goals": {
-        "bronze": 19,
-        "silver": 17,
+        "bronze": 20,
+        "silver": 18,
         "gold": 16,
-        "diamond": 14.6,
-        "grandmaster": 13.9
+        "diamond": 14.4,
+        "grandmaster": 13.6
       }
     },
     {
       "id": "t27",
       "name": "Shrine Exploration",
       "difficulty": "Normal",
-      "replayLimitSeconds": 120,
+      "replayLimitSeconds": 180,
       "run": {
         "sid": "Celeste/4-GoldenRidge",
         "mode": "Normal",
@@ -303,11 +303,11 @@
         "introType": "Respawn"
       },
       "goals": {
-        "bronze": 44,
+        "bronze": 45,
         "silver": 38,
-        "gold": 35,
+        "gold": 34,
         "diamond": 32,
-        "grandmaster": 30
+        "grandmaster": 30.5
       }
     }
   ]
