@@ -56,7 +56,7 @@ public static class GhostCache
     try
     {
       Replay replay = Replay.FromBytes(downloaded.Bytes);
-      if (!replay.MatchesTrialHash(trial.DefinitionHash))
+      if (!replay.MatchesTrialHash(trial.AcceptedTrialHashes))
       {
         olderTrial[replayId] = replay.Ticks;
         return null;

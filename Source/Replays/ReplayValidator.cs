@@ -11,7 +11,7 @@ public sealed record TrialSpec(
   float SpawnX,
   float SpawnY,
   int ReplayLimitSeconds,
-  byte[] DefinitionHash
+  IReadOnlyList<byte[]> AcceptedTrialHashes
 )
 {
   public static TrialSpec From(Trial trial) =>
@@ -22,7 +22,7 @@ public sealed record TrialSpec(
         trial.Run.Spawn.X,
         trial.Run.Spawn.Y,
         trial.ReplayLimitSeconds,
-        trial.DefinitionHash
+        trial.AcceptedTrialHashes
       );
 
   public static bool FitsReplayLimit(int limitSeconds, long ticks) =>
@@ -70,7 +70,7 @@ public static class ReplayValidator
       result.Rejections.Add($"unknown trial '{replay.TrialId}'");
       return result;
     }
-    if (!replay.MatchesTrialHash(trial.DefinitionHash))
+    if (!replay.MatchesTrialHash(trial.AcceptedTrialHashes))
     {
       result.Rejections.Add(TrialHashMismatch);
       return result;

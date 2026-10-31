@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using Celeste.Mod.ClimbTrials.Replays.Codec;
 using Celeste.Mod.ClimbTrials.Runs;
 using Microsoft.Xna.Framework;
 
@@ -139,6 +140,7 @@ public static class TrialFile
       Difficulty = difficulty,
       ReplayLimitSeconds =
         OptionalInt(element, "replayLimitSeconds", at) ?? Trial.DefaultReplayLimitSeconds,
+      PreviousTrialHashes = ReadPreviousTrialHashes(element, at),
       Run = ReadRun(Field(element, "run", at), at),
       Goals = GoalTimes.FromSeconds(
         bronze: Seconds(goals, "bronze", at),
@@ -148,6 +150,30 @@ public static class TrialFile
         grandmaster: Seconds(goals, "grandmaster", at)
       ),
     };
+  }
+
+  private static List<byte[]> ReadPreviousTrialHashes(JsonElement trial, string at)
+  {
+    const string key = "previousTrialHashes";
+    if (!trial.TryGetProperty(key, out JsonElement array) || array.ValueKind == JsonValueKind.Null)
+      return [];
+
+    if (array.ValueKind != JsonValueKind.Array)
+      throw new TrialFileException($"{at}, field '{key}': expected an array");
+      
+    List<byte[]> hashes = [];
+    foreach (JsonElement element in array.EnumerateArray())
+    {
+      string text = element.ValueKind == JsonValueKind.String ? element.GetString() : "";
+      bool isShortHash =
+        text.Length == HeaderCoding.TrialHashBytes * 2 && text.All(char.IsAsciiHexDigitLower);
+      if (!isShortHash)
+        throw new TrialFileException(
+          $"{at}, field '{key}[{hashes.Count}]': expected 16 lowercase hex characters"
+        );
+      hashes.Add(Convert.FromHexString(text));
+    }
+    return hashes;
   }
 
   private static RunDefinition ReadRun(JsonElement run, string at)

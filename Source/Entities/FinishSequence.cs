@@ -41,6 +41,9 @@ public class FinishSequence : Entity
   private const string DiamondMedalSound = SFX.game_07_gem_unlock_5;
   private const string MasterMedalSound = SFX.game_07_gem_unlock_6;
   private const string PbSound = SFX.ui_postgame_strawberry_total;
+  private const string TiedPbSound = SFX.char_theo_resort_ceilingvent_hey;
+  private const string TiedPbLaughSound = SFX.char_gran_laugh_firstphrase;
+  private const float TiedPbLaughDelay = 0.8f;
   private const string FinishSound = SFX.game_07_checkpointconfetti;
   private const float ConfettiLift = 8f;
 
@@ -125,6 +128,8 @@ public class FinishSequence : Entity
     level.Frozen = true;
     if (watcher)
       yield break;
+    if (result.TiesPersonalBest)
+      Add(new Coroutine(PlayTiedPbSounds()));
     if (result.IsPersonalBest)
     {
       Audio.Play(PbSound);
@@ -144,6 +149,13 @@ public class FinishSequence : Entity
       }
     }
     promptAge = 0f;
+  }
+
+  private IEnumerator PlayTiedPbSounds()
+  {
+    Audio.Play(TiedPbSound);
+    yield return TiedPbLaughDelay;
+    Audio.Play(TiedPbLaughSound);
   }
 
   public override void Update()

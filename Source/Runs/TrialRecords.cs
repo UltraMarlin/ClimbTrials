@@ -131,6 +131,7 @@ public static class TrialRecords
       Ticks = ticks,
       PreviousBestTicks = faster ? previous.BestTicks : null,
       IsPersonalBest = isPb,
+      TiesPersonalBest = !isPb && ticks == previous.BestTicks,
       PreviousMedal = before,
       NewMedal = newMedal,
     };

@@ -19,14 +19,17 @@ public static class RoomGoal
 
   public static void Reset() => sequencePending = false;
 
+  private static bool IsFinishRoom(string room) =>
+    RunManager.Run?.FinishKind == FinishKind.RoomEnter && room == RunManager.Run.FinishRoom;
+
   private static void OnTransitionTo(Level level, LevelData next, Vector2 direction)
   {
-    if (RunManager.Run is not { FinishKind: FinishKind.RoomEnter } run)
-      return;
+    if (IsFinishRoom(next.Name))
+      TryToFinish(level);
+  }
 
-    if (next.Name != run.FinishRoom)
-      return;
-
+  private static void TryToFinish(Level level)
+  {
     Player player = level.Tracker.GetEntity<Player>();
     if (player == null || !RunManager.Finish())
       return;
@@ -37,6 +40,9 @@ public static class RoomGoal
 
   public static void AfterUpdate(Level level)
   {
+    if (!level.Transitioning && IsFinishRoom(level.Session.Level))
+      TryToFinish(level);
+
     if (!sequencePending || level.Transitioning)
       return;
 

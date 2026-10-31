@@ -95,7 +95,7 @@ public static class ReplayStore
       Stopwatch clock = Stopwatch.StartNew();
       byte[] bytes = File.ReadAllBytes(PathFor(trialId));
       replay = Replay.FromBytes(bytes);
-      if (!replay.MatchesTrialHash(trial.DefinitionHash))
+      if (!replay.MatchesTrialHash(trial.AcceptedTrialHashes))
       {
         replay = null;
         failureNotice = Dialog.Clean("climbtrials_replay_deleted_trial_changed");

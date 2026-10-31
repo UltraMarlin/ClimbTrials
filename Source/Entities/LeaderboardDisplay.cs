@@ -12,16 +12,16 @@ namespace Celeste.Mod.ClimbTrials.Entities;
 [Tracked]
 public class LeaderboardDisplay : Entity
 {
-  private const float NormalTextScale = 0.46f;
-  private const float SubtleTextScale = 0.38f;
-  private const float NormalTextAlpha = 0.9f;
-  private const float SubtleTextAlpha = 0.5f;
+  private const float NormalTextScale = 0.4f;
+  private const float SubtleTextScale = 0.36f;
+  private const float NormalTextAlpha = 0.7f;
+  private const float SubtleTextAlpha = 0.4f;
   private const float RowHeightPerScale = 64f;
   private const float GapBelowGoals = 12f;
   private const float RankX = 16f;
   private const float ColumnGapPerScale = 36f;
   private const float NameMinFit = 0.6f;
-  private const string Ellipsis = "...";
+  private const float RankGapRelativeHeight = 0.35f;
 
   private readonly Color boxColor = Colors.ForChapter(RunManager.Run.Area).Dark;
   private static readonly Color myTimeColor = Calc.HexToColor("fad768");
@@ -38,6 +38,7 @@ public class LeaderboardDisplay : Entity
   private bool built;
   private float rowsTop = RunHudLayout.ListY;
   private float rowHeight;
+  private float rankGap;
   private float textScale;
   private float textAlpha;
   private TimeStyle timeStyle;
@@ -69,7 +70,8 @@ public class LeaderboardDisplay : Entity
     && !RunManager.Replaying
     && !RunHudLayout.PauseScreenOpen;
 
-  private float BoxBottom => rowsTop + rows.Count * rowHeight + RunHudLayout.BoxPaddingBottom;
+  private float BoxBottom =>
+    rowsTop + rows.Count * rowHeight + rankGap + RunHudLayout.BoxPaddingBottom;
 
   public override void Added(Scene scene)
   {
@@ -135,6 +137,8 @@ public class LeaderboardDisplay : Entity
     timeStyle = TimeText.SmallHud.At(textScale);
     rowsTop = RowsTop(trial, best, goalsShown);
     rows = RowsOf(standing, state);
+    bool rankJumpAfterTopThree = rows.Count > 3 && standing.Window[3].Rank > 4;
+    rankGap = rankJumpAfterTopThree ? rowHeight * RankGapRelativeHeight : 0f;
     MeasureColumns();
     RebuildLayers();
   }
@@ -160,8 +164,6 @@ public class LeaderboardDisplay : Entity
     List<Row> rows = [];
     foreach (BoardRow row in standing.Window)
     {
-      if (rows.Count == 3 && row.Rank is int rank && rank > 4)
-        rows.Add(new Row(Ellipsis, "", "", Color.White));
       Color color = row.Me ? myTimeColor : Color.White;
       rows.Add(
         new Row(
@@ -221,17 +223,19 @@ public class LeaderboardDisplay : Entity
         () => DrawRow(index)
       )
       {
-        Origin = new Vector2(0f, rowsTop + index * rowHeight - RunHudLayout.RowPad),
+        Origin = new Vector2(0f, RowTop(index) - RunHudLayout.RowPad),
       };
       Add(layer);
       layers.Add(layer);
     }
   }
 
+  private float RowTop(int index) => rowsTop + index * rowHeight + (index >= 3 ? rankGap : 0f);
+
   private void DrawRow(int index)
   {
     Row row = rows[index];
-    float centerY = rowsTop + index * rowHeight + rowHeight / 2f;
+    float centerY = RowTop(index) + rowHeight / 2f;
     Vector2 justify = new(0f, 0.5f);
     Vector2 scale = Vector2.One * textScale;
     ActiveFont.DrawOutline(
@@ -276,7 +280,7 @@ public class LeaderboardDisplay : Entity
       0f,
       rowsTop - RunHudLayout.BoxPaddingTop,
       widest + RunHudLayout.BoxPaddingRight,
-      rows.Count * rowHeight + RunHudLayout.BoxPaddingTop + RunHudLayout.BoxPaddingBottom,
+      rows.Count * rowHeight + rankGap + RunHudLayout.BoxPaddingTop + RunHudLayout.BoxPaddingBottom,
       boxColor * (RunHudLayout.BoxAlpha * duck)
     );
 

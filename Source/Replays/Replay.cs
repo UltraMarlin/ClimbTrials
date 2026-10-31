@@ -71,8 +71,8 @@ public sealed class Replay
   public static byte[] ShortTrialHash(byte[] definitionHash) =>
     definitionHash[..HeaderCoding.TrialHashBytes];
 
-  public bool MatchesTrialHash(byte[] definitionHash) =>
-    TrialHash.AsSpan().SequenceEqual(ShortTrialHash(definitionHash));
+  public bool MatchesTrialHash(IEnumerable<byte[]> acceptedTrialHashes) =>
+    acceptedTrialHashes.Any(acceptedHash => TrialHash.AsSpan().SequenceEqual(acceptedHash));
 
   public byte AddAnimation(string animation)
   {

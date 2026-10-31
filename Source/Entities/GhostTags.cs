@@ -17,7 +17,7 @@ public class GhostTags : Entity
   private readonly GhostLayer ghosts;
   private readonly Dictionary<PlaybackGhost, float> shownLifts = [];
   private readonly Dictionary<PlaybackGhost, float> sortHeights = [];
-  private readonly Dictionary<PlaybackGhost, Ink> inks = [];
+  private readonly Dictionary<PlaybackGhost, TagBounds> tagBounds = [];
   private readonly List<NameTag> tags = [];
   private readonly List<NameTag> placed = [];
   private readonly Dictionary<PlaybackGhost, float> targets = [];
@@ -31,8 +31,8 @@ public class GhostTags : Entity
     PlaybackGhost Ghost,
     Vector2 Anchor,
     float Width,
-    float InkTop,
-    float InkBottom,
+    float VisibleTop,
+    float VisibleBottom,
     int Order
   );
 
@@ -52,7 +52,7 @@ public class GhostTags : Entity
       return;
     Vector2 scale = Vector2.One * PlaybackGhost.TagScale;
     if (measuredIn != Dialog.Language)
-      inks.Clear();
+      tagBounds.Clear();
     measuredIn = Dialog.Language;
     tags.Clear();
     for (int i = 0; i < ghosts.Ghosts.Count; i++)
@@ -61,9 +61,9 @@ public class GhostTags : Entity
       if (!ghost.Visible || string.IsNullOrEmpty(ghost.Name))
         continue;
       Vector2 anchor = level.WorldToScreen(ghost.Position - Vector2.UnitY * PlaybackGhost.TagLift);
-      if (!inks.TryGetValue(ghost, out Ink ink))
-        inks[ghost] = ink = Measure(ghost.Name, scale.X);
-      tags.Add(new NameTag(ghost, anchor, ink.Width, ink.Top, ink.Bottom, i));
+      if (!tagBounds.TryGetValue(ghost, out TagBounds bounds))
+        tagBounds[ghost] = bounds = Measure(ghost.Name, scale.X);
+      tags.Add(new NameTag(ghost, anchor, bounds.Width, bounds.Top, bounds.Bottom, i));
     }
     Stack();
     float step =
@@ -79,12 +79,12 @@ public class GhostTags : Entity
     }
     Forget(shownLifts);
     Forget(sortHeights);
-    Forget(inks);
+    Forget(tagBounds);
   }
 
-  private readonly record struct Ink(float Width, float Top, float Bottom);
+  private readonly record struct TagBounds(float Width, float Top, float Bottom);
 
-  private static Ink Measure(string name, float scale)
+  private static TagBounds Measure(string name, float scale)
   {
     PixelFontSize font = ActiveFont.FontSize;
     float top = font.LineHeight;
@@ -102,9 +102,9 @@ public class GhostTags : Entity
       bottom = font.LineHeight;
     }
     float width = ActiveFont.Measure(name).X * scale + OutlineStroke * 2f;
-    float inkTop = (font.LineHeight - top) * scale + OutlineStroke;
-    float inkBottom = (font.LineHeight - bottom) * scale - OutlineStroke;
-    return new Ink(width, inkTop, inkBottom);
+    float visibleTop = (font.LineHeight - top) * scale + OutlineStroke;
+    float visibleBottom = (font.LineHeight - bottom) * scale - OutlineStroke;
+    return new TagBounds(width, visibleTop, visibleBottom);
   }
 
   private void Stack()
@@ -131,17 +131,17 @@ public class GhostTags : Entity
         foreach (NameTag other in placed)
         {
           float margin = stackedBefore.Contains((other.Ghost, tag.Ghost)) ? HoldMargin : 0f;
-          float otherTop = other.Anchor.Y - targets[other.Ghost] - other.InkTop;
-          float otherBottom = other.Anchor.Y - targets[other.Ghost] - other.InkBottom;
-          float top = tag.Anchor.Y - lift - tag.InkTop;
-          float bottom = tag.Anchor.Y - lift - tag.InkBottom;
+          float otherTop = other.Anchor.Y - targets[other.Ghost] - other.VisibleTop;
+          float otherBottom = other.Anchor.Y - targets[other.Ghost] - other.VisibleBottom;
+          float top = tag.Anchor.Y - lift - tag.VisibleTop;
+          float bottom = tag.Anchor.Y - lift - tag.VisibleBottom;
           bool sideBySide =
             MathF.Abs(tag.Anchor.X - other.Anchor.X) * 2f < tag.Width + other.Width + margin * 2f;
           bool level = bottom > otherTop - margin && top < otherBottom + margin;
           if (!sideBySide || !level)
             continue;
           stacked.Add((other.Ghost, tag.Ghost));
-          float above = tag.Anchor.Y - tag.InkBottom - otherTop + StackGap;
+          float above = tag.Anchor.Y - tag.VisibleBottom - otherTop + StackGap;
           if (above <= lift + MinRise)
             continue;
           lift = above;

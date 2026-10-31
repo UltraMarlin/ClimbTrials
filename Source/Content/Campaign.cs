@@ -28,12 +28,17 @@ public sealed class Trial
   public RunDefinition Run { get; init; }
   public GoalTimes Goals { get; init; }
   public int ReplayLimitSeconds { get; init; } = DefaultReplayLimitSeconds;
+  public IReadOnlyList<byte[]> PreviousTrialHashes { get; init; } = [];
 
   public bool FitsReplayLimit(long ticks) => TrialSpec.FitsReplayLimit(ReplayLimitSeconds, ticks);
 
   public byte[] DefinitionHash =>
     definitionHash ??= SHA256.HashData(Encoding.UTF8.GetBytes(DefinitionText()));
   private byte[] definitionHash;
+
+  public IReadOnlyList<byte[]> AcceptedTrialHashes =>
+    acceptedTrialHashes ??= [Replay.ShortTrialHash(DefinitionHash), .. PreviousTrialHashes];
+  private byte[][] acceptedTrialHashes;
 
   public string SkullTexture =>
     Difficulty switch
@@ -64,12 +69,6 @@ public sealed class Trial
         )
       ),
       string.Join(";", run.CameraOffsets.Select(offset => $"{offset.Room}|{Vec(offset.Offset)}")),
-      run.BloomBaseAdd is float bloom ? Float(bloom) : "",
-      run.LightingAlphaAdd is float lighting ? Float(lighting) : "",
-      string.Join(
-        ";",
-        run.IgnoredStrawberries.Select(strawberry => $"{strawberry.Level}|{Int(strawberry.ID)}")
-      ),
       Int(run.RequiredStrawberries),
       Int(run.RequiredSummitGems),
       run.Dashes is int dashes ? Int(dashes) : "",
@@ -78,7 +77,6 @@ public sealed class Trial
       run.CoreMode is Session.CoreModes coreMode ? Int((int)coreMode) : "",
       run.DreamDash is bool dreamDash ? Bool(dreamDash) : "",
       Int((int)run.IntroType),
-      Int(ReplayLimitSeconds),
     ];
     return string.Join("\n", lines);
   }
