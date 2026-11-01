@@ -53,6 +53,8 @@ public class OuiEvents : CampaignListScreen
     if (menu?.Focused != true || BoardOpen)
       return;
 
+    MarkSeen(menu.Current);
+
     if (Events.HasPending || UpcomingChangedSinceBuild())
     {
       ApplyPendingAndRebuild();
@@ -136,6 +138,19 @@ public class OuiEvents : CampaignListScreen
       current.TakeSlideFrom(selected);
     menu.Current?.OnEnter?.Invoke();
     menu.Focused = true;
+  }
+
+  private static void MarkSeen(TextMenu.Item item)
+  {
+    switch (item)
+    {
+      case EventRow row when Events.Of(row.Campaign) is EventCampaign entry:
+        Events.MarkSeen(entry.Id, entry.Phase(Events.Now));
+        break;
+      case UpcomingEventRow row:
+        Events.MarkSeen(row.Entry.Id, EventPhase.Upcoming);
+        break;
+    }
   }
 
   private static string IdOf(TextMenu.Item item) =>

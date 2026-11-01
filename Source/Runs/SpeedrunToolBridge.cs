@@ -231,7 +231,6 @@ public static class SpeedrunToolBridge
     if (!enabled)
       clearPbTimesMethod.Invoke(null, [true]);
     module.SaveSettings();
-    Logger.Log(LogLevel.Info, LogTag, $"Speedrun Tool enabled: {enabled}");
     return true;
   }
 

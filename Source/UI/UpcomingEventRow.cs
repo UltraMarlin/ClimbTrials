@@ -18,9 +18,8 @@ public class UpcomingEventRow(UpcomingEvent upcoming) : SlidingRow
   {
     float alpha = Container.Alpha;
     float top = position.Y - Height() / 2f;
-    Vector2 nameAt =
-      RowStart(new Vector2(position.X, top + RowLayout.RowHeight / 2f))
-      + new Vector2(RowLayout.CampaignNameX, 0f);
+    Vector2 rowStart = RowStart(new Vector2(position.X, top + RowLayout.RowHeight / 2f));
+    Vector2 nameAt = rowStart + new Vector2(RowLayout.CampaignNameX, 0f);
     Color color = Color.DarkSlateGray * alpha;
     ActiveFont.DrawOutline(
       Entry.Name,
@@ -31,6 +30,8 @@ public class UpcomingEventRow(UpcomingEvent upcoming) : SlidingRow
       2f,
       TextOutline.StrokeFor(color)
     );
+    if (Container.Current != this && Events.IsNew(Entry.Id, EventPhase.Upcoming))
+      NewMark.Draw(rowStart + new Vector2(LeftWidth(), 0f), alpha);
     EventRow.DrawTimingLine(EventTiming.FormatOpensIn(Entry.OpensAt), nameAt.X, top, alpha);
   }
 }

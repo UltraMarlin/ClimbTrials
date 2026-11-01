@@ -60,6 +60,7 @@ public sealed record EventInfo
   public ReplayMode ReplayMode { get; init; }
   public BoardMode BoardBeforeReveal { get; init; }
   public ReplayMode ReplaysBeforeReveal { get; init; }
+  public bool TeamMatesVisible { get; init; }
   public int? Total { get; init; }
   public int? Rank { get; init; }
 }
@@ -130,6 +131,7 @@ public static class Events
     public double ServerTimeOffsetSeconds { get; set; }
     public DateTime AnsweredAt { get; set; }
     public List<EventInfo> Events { get; set; } = [];
+    public Dictionary<string, EventPhase> SeenPhases { get; set; } = [];
   }
 
   private static readonly JsonSerializerOptions cacheJson = new()
@@ -147,10 +149,11 @@ public static class Events
   private static List<string> listed = [];
   private static List<EventCampaign> shown = [];
   private static List<UpcomingEvent> upcoming = [];
+  private static Dictionary<string, EventPhase> seenPhases = [];
   private static TimeSpan serverOffset;
   private static DateTime answeredAt = DateTime.MinValue;
   private static bool loaded;
-  private static string writtenEvents;
+  private static string writtenComparison;
 
   private static string CachePath => Path.Combine(ReplayStore.Folder, CacheFileName);
 
@@ -278,7 +281,8 @@ public static class Events
           bool changed =
             before == null
             || before.BoardMode != info.BoardMode
-            || before.ReplayMode != info.ReplayMode;
+            || before.ReplayMode != info.ReplayMode
+            || before.TeamMatesVisible != info.TeamMatesVisible;
           if (changed)
             modesChanged.Add(info.Id);
           break;
@@ -296,6 +300,24 @@ public static class Events
       unreadable.Remove(id);
     WriteCache();
     return new EventsReceived(modesChanged, missing);
+  }
+
+  public static bool IsNew(string id, EventPhase phase) =>
+    phase != EventPhase.Closed
+    && !(seenPhases.TryGetValue(id, out EventPhase seen) && seen == phase);
+
+  public static bool AnyNew()
+  {
+    DateTime now = Now;
+    return OrderedEntries().Any(entry => IsNew(entry.Id, entry.Phase(now)));
+  }
+
+  public static void MarkSeen(string id, EventPhase phase)
+  {
+    if (!IsNew(id, phase))
+      return;
+    seenPhases[id] = phase;
+    WriteCache();
   }
 
   public static void ReceiveUpcoming(List<UpcomingEvent> answer) =>
@@ -432,7 +454,8 @@ public static class Events
       foreach (EventInfo info in content.Events ?? [])
         if (info?.Id != null && info.Definition != null && Accept(info) == Acceptance.Taken)
           listed.Add(info.Id);
-      writtenEvents = JsonSerializer.Serialize(content.Events, cacheJson);
+      seenPhases = content.SeenPhases ?? [];
+      writtenComparison = SerializeComparison(content);
       unreadable.Clear();
     }
     catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException)
@@ -440,6 +463,10 @@ public static class Events
       Logger.Log(LogLevel.Warn, LogTag, $"the events copy on disk was not read: {e.Message}");
     }
   }
+
+  private static string SerializeComparison(CacheContent content) =>
+    JsonSerializer.Serialize(content.Events, cacheJson)
+    + JsonSerializer.Serialize(content.SeenPhases, cacheJson);
 
   private static void WriteCache()
   {
@@ -458,9 +485,10 @@ public static class Events
           }
         )
         .ToList(),
+      SeenPhases = seenPhases,
     };
-    string events = JsonSerializer.Serialize(content.Events, cacheJson);
-    if (events == writtenEvents)
+    string compared = SerializeComparison(content);
+    if (compared == writtenComparison)
       return;
     string text = JsonSerializer.Serialize(content, cacheJson);
     string path = CachePath;
@@ -470,7 +498,7 @@ public static class Events
       Directory.CreateDirectory(ReplayStore.Folder);
       File.WriteAllText(temporary, text);
       File.Move(temporary, path, overwrite: true);
-      writtenEvents = events;
+      writtenComparison = compared;
     }
     catch (Exception e) when (e is IOException or UnauthorizedAccessException)
     {

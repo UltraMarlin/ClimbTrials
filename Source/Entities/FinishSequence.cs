@@ -44,6 +44,8 @@ public class FinishSequence : Entity
   private const string TiedPbSound = SFX.char_theo_resort_ceilingvent_hey;
   private const string TiedPbLaughSound = SFX.char_gran_laugh_firstphrase;
   private const float TiedPbLaughDelay = 0.8f;
+  private const double TiedPbLaughChance = 0.2;
+  private static readonly Random laughRandom = new();
   private const string FinishSound = SFX.game_07_checkpointconfetti;
   private const float ConfettiLift = 8f;
 
@@ -154,6 +156,8 @@ public class FinishSequence : Entity
   private IEnumerator PlayTiedPbSounds()
   {
     Audio.Play(TiedPbSound);
+    if (laughRandom.NextDouble() >= TiedPbLaughChance)
+      yield break;
     yield return TiedPbLaughDelay;
     Audio.Play(TiedPbLaughSound);
   }

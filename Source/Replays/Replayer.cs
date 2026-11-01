@@ -1,8 +1,10 @@
+using System;
 using System.Collections.Generic;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Replays.Codec;
 using Celeste.Mod.ClimbTrials.Runs;
 using Celeste.Mod.ClimbTrials.UI;
+using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
@@ -38,7 +40,7 @@ public static class Replayer
   public static bool PausedOnFinish { get; private set; }
   public static bool Silenced =>
     (State is ReplayState.Playing or ReplayState.Paused) && !PausedOnFinish;
-  public static bool MenuOpen => menu != null;
+  public static bool MenuOpen => menu != null || modOptions != null;
 
   private static Replay current;
   private static bool timePending;
@@ -50,6 +52,7 @@ public static class Replayer
   private static bool resumeOnClose;
   private static bool pauseEffectsHeld;
   private static TextMenu recordedMenu;
+  private static TextMenu modOptions;
   private static float recordedMenuAlpha;
   private static bool menuStarted;
   private static Level watchedLevel;
@@ -135,28 +138,23 @@ public static class Replayer
 
     State = PauseQueued ? ReplayState.Paused : ReplayState.Playing;
     PauseQueued = false;
-    Logger.Log(
-      LogLevel.Info,
-      LogTag,
-      $"replay '{replay.TrialId}' started, {replay.Frames.Count} frames"
-    );
   }
 
-  public static bool Finish(long elapsedTicks)
+  public static void Finish(long elapsedTicks)
   {
     if (current == null)
-      return false;
+      return;
 
     int missing = current.Frames.Count - Frame;
     RestoreInputs();
     State = ReplayState.Finished;
     if (Desynced)
-      return false;
+      return;
 
     if (missing != 0)
     {
       Desync($"finished {missing} frames early");
-      return false;
+      return;
     }
     if (elapsedTicks != current.Ticks)
     {
@@ -164,14 +162,13 @@ public static class Replayer
         $"finished at {TimeText.Format(elapsedTicks)}, "
           + $"the recording is {TimeText.Format(current.Ticks)}"
       );
-      return false;
+      return;
     }
     if (stepping)
     {
       PausedOnFinish = true;
       State = ReplayState.Paused;
     }
-    return true;
   }
 
   private static void ReleaseFinish()
@@ -196,6 +193,7 @@ public static class Replayer
     WatcherOverlay.End();
     menu = null;
     board = null;
+    DropModOptions();
     resumeOnClose = false;
     watchedLevel = null;
   }
@@ -396,7 +394,14 @@ public static class Replayer
       Input.ESC.ConsumePress();
     }
     menuStarted = false;
-    menu = new WatcherMenu(ResumeReplay, PlayTrial, RaceGhost, OpenBoard, LeaveReplay);
+    menu = new WatcherMenu(
+      ResumeReplay,
+      PlayTrial,
+      RaceGhost,
+      OpenBoard,
+      OpenModOptions,
+      LeaveReplay
+    );
     WatcherOverlay.Add(menu);
   }
 
@@ -491,6 +496,55 @@ public static class Replayer
   {
     DropMenu();
     RunManager.LeaveToTrials();
+  }
+
+  private static void OpenModOptions()
+  {
+    if (Engine.Scene is not Level level)
+      return;
+    menu.RemoveSelf();
+    menu = null;
+    recordedMenu?.RemoveSelf();
+    recordedMenu = null;
+    EndPlaybackEarly(level);
+    SpeedrunToolBridge.ResumeAfterReplay();
+    RunBinds.Restore();
+    level.PauseMainMenuOpen = false;
+    level.Paused = true;
+    Replay replay = RunManager.Replay;
+    TextMenu options = OuiModOptions.CreateMenu(inGame: true, Level._PauseSnapshot);
+    Action startSearching = OuiModOptions.AddSearchBox(options);
+    options.OnUpdate = () =>
+    {
+      if (options.Focused && Input.QuickRestart.Pressed)
+        startSearching();
+    };
+    Action close = () => CloseModOptions(options, replay);
+    options.OnESC = close;
+    options.OnCancel = close;
+    options.OnPause = close;
+    modOptions = options;
+    level.Add(options);
+  }
+
+  private static void CloseModOptions(TextMenu options, Replay replay)
+  {
+    if (options.Focused)
+      options.CloseAndRun(Everest.SaveSettings(), () => RestartAfterModOptions(replay));
+  }
+
+  private static void RestartAfterModOptions(Replay replay)
+  {
+    modOptions = null;
+    ReleasePauseAudio();
+    if (!RestartReplay(replay, paused: false))
+      RunManager.LeaveToTrials();
+  }
+
+  private static void DropModOptions()
+  {
+    modOptions?.RemoveSelf();
+    modOptions = null;
   }
 
   private static void ReleasePauseAudio()
@@ -624,7 +678,7 @@ public static class Replayer
 
   private static void HandleWatcherControls()
   {
-    if (!RunManager.Replaying)
+    if (!RunManager.Replaying || modOptions != null)
       return;
 
     ToggleHitboxesOnPress();
@@ -726,6 +780,7 @@ public static class Replayer
   public static void StopOnReload(Level level)
   {
     StoppedByReload = true;
+    DropModOptions();
     AnnounceStop("replay stopped: the level was reloaded");
     EndPlaybackEarly(level);
   }

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Replays.Codec;
@@ -40,7 +39,6 @@ public static class ReplayStore
 
   public static void Save(Replay replay)
   {
-    Stopwatch clock = Stopwatch.StartNew();
     byte[] bytes;
     try
     {
@@ -58,14 +56,6 @@ public static class ReplayStore
     Directory.CreateDirectory(Folder);
     File.WriteAllBytes(PathFor(replay.TrialId), bytes);
     Present.Add(replay.TrialId);
-    int frames = replay.Frames.Count;
-    Logger.Log(
-      LogLevel.Info,
-      LogTag,
-      $"saved replay {Path.GetFileName(PathFor(replay.TrialId))}: {frames} frames, "
-        + $"{frames * FrameTable.FrameBytes} raw bytes, {bytes.Length} bytes compressed "
-        + $"in {clock.ElapsedMilliseconds} ms"
-    );
   }
 
   public static bool TryLoadPb(Trial trial, out Replay replay, out string failureNotice)
@@ -92,7 +82,6 @@ public static class ReplayStore
     }
     try
     {
-      Stopwatch clock = Stopwatch.StartNew();
       byte[] bytes = File.ReadAllBytes(PathFor(trialId));
       replay = Replay.FromBytes(bytes);
       if (!replay.MatchesTrialHash(trial.AcceptedTrialHashes))
@@ -109,13 +98,6 @@ public static class ReplayStore
       }
       replay.IsOwn = true;
       replay.IsPersonalBest = true;
-      Logger.Log(
-        LogLevel.Info,
-        LogTag,
-        $"loaded replay {Path.GetFileName(PathFor(trialId))}: {replay.Frames.Count} frames, "
-          + $"{replay.Frames.Count * FrameTable.FrameBytes} raw bytes, "
-          + $"{bytes.Length} bytes compressed in {clock.ElapsedMilliseconds} ms"
-      );
       failureNotice = null;
       return true;
     }

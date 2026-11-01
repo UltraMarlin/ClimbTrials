@@ -17,7 +17,14 @@ public class WatcherMenu : MenuOnTop
   public float RowsAlpha = 1f;
   public bool Covered;
 
-  public WatcherMenu(Action resume, Action play, Action race, Action board, Action leave)
+  public WatcherMenu(
+    Action resume,
+    Action play,
+    Action race,
+    Action board,
+    Action modOptions,
+    Action leave
+  )
     : base(inLevel: true)
   {
     this.resume = resume;
@@ -33,6 +40,7 @@ public class WatcherMenu : MenuOnTop
         board
       )
     );
+    Add(new Button(Dialog.Clean("menu_pause_modoptions")).Pressed(modOptions));
     Add(new Button(Dialog.Clean("climbtrials_return_to_trials")).Pressed(leave));
   }
 

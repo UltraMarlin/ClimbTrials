@@ -588,7 +588,7 @@ public class LeaderboardView : Entity
   {
     if (local != null)
       return null;
-    if (!row.Me && ReplaysLocked)
+    if (!row.Me && row.ReplayId == null && ReplaysLocked)
       return EventTiming.LockedReplays(current.Subject.Event);
     if (row.ReplayId == null)
       return Dialog.Clean("climbtrials_ghost_no_replay");

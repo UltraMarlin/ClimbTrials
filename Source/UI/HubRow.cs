@@ -9,7 +9,8 @@ public class HubRow(
   Func<bool> live,
   string icon = null,
   bool outlineIcon = true,
-  float iconScale = 1f
+  float iconScale = 1f,
+  Func<bool> showsNewMark = null
 ) : SlidingRow
 {
   public override void Update()
@@ -50,6 +51,8 @@ public class HubRow(
       2f,
       TextOutline.StrokeFor(color * alpha)
     );
+    if (showsNewMark != null && showsNewMark())
+      NewMark.Draw(start + new Vector2(LeftWidth(), 0f), alpha);
   }
 
   private static void DrawIcon(

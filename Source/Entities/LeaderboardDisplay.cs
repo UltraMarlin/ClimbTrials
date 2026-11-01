@@ -157,7 +157,10 @@ public class LeaderboardDisplay : Entity
       return [Message("climbtrials_offline_mode")];
     if (state == StandingsState.Offline)
       return [Message("climbtrials_board_unavailable")];
-    if (standing == null || standing.BoardMode == BoardMode.OwnTimeOnly)
+    if (standing == null)
+      return [];
+    bool onlyOwnRow = standing.Window.TrueForAll(row => row.Me);
+    if (standing.BoardMode == BoardMode.OwnTimeOnly && onlyOwnRow)
       return [];
     if (standing.Total == 0)
       return [Message("climbtrials_board_no_times")];
@@ -201,7 +204,7 @@ public class LeaderboardDisplay : Entity
       string time = row.HiddenTime ? TimeText.TypicalTime : row.Time;
       widestTime = Math.Max(widestTime, TimeText.Width(time, timeStyle));
     }
-    nameX = RankX + rankColumn + columnGap;
+    nameX = rankColumn > 0f ? RankX + rankColumn + columnGap : RankX;
     float timeX = nameX + widestName + columnGap;
     if (widestTime > 0f)
       widest = Math.Max(widest, timeX + widestTime);

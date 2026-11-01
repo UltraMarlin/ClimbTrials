@@ -65,7 +65,8 @@ public class OuiHub : ListScreen
       () => Dialog.Clean("climbtrials_hub_events"),
       AnyEventKnown,
       EventsIcon,
-      outlineIcon: false
+      outlineIcon: false,
+      showsNewMark: Events.AnyNew
     );
     eventsRow.Pressed(OpenEvents);
     built.Add(eventsRow);

@@ -14,9 +14,14 @@ public class EventRow(Campaign campaign) : CampaignRow(campaign)
   public override void Render(Vector2 position, bool highlighted)
   {
     float top = position.Y - Height() / 2f;
-    base.Render(new Vector2(position.X, top + RowLayout.RowHeight / 2f), highlighted);
+    Vector2 nameLine = new(position.X, top + RowLayout.RowHeight / 2f);
+    base.Render(nameLine, highlighted);
     if (Events.Of(Campaign) is not EventCampaign eventCampaign)
       return;
+    bool showsMark =
+      Container.Current != this && Events.IsNew(eventCampaign.Id, eventCampaign.Phase(Events.Now));
+    if (showsMark)
+      NewMark.Draw(RowStart(nameLine) + new Vector2(LeftWidth(), 0f), Container.Alpha);
     float nameX = RowStart(position).X + RowLayout.CampaignNameX;
     DrawTimingLine(EventTiming.PhaseText(eventCampaign), nameX, top, Container.Alpha);
   }

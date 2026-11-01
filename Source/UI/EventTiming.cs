@@ -40,7 +40,9 @@ public static class EventTiming
       return null;
 
     string key =
-      shown == BoardMode.OwnTimeOnly ? "climbtrials_board_other_times" : "climbtrials_board_times";
+      info.TeamMatesVisible ? "climbtrials_board_team_times"
+      : shown == BoardMode.OwnTimeOnly ? "climbtrials_board_other_times"
+      : "climbtrials_board_times";
     return info.RevealAt.HasValue
       ? Until(key + "_show", info.RevealAt.Value, now)
       : Dialog.Clean(key + "_hidden");
@@ -50,8 +52,11 @@ public static class EventTiming
   {
     string key = info.BoardBeforeReveal switch
     {
+      not BoardMode.FullTimes when info.TeamMatesVisible => "climbtrials_board_players_see_team",
       BoardMode.RanksOnly => "climbtrials_board_players_see_ranks",
       BoardMode.OwnTimeOnly => "climbtrials_board_players_see_own",
+      _ when info.ReplaysBeforeReveal == ReplayMode.OrganizersOnly && info.TeamMatesVisible =>
+        "climbtrials_board_players_team_replays",
       _ when info.ReplaysBeforeReveal == ReplayMode.OrganizersOnly =>
         "climbtrials_board_players_no_replays",
       _ => null,

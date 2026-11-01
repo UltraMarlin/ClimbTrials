@@ -237,9 +237,10 @@ public class BoardMenu : TextMenu
       Vector2 rankAt = left + new Vector2(BoardLayout.RankX, 0f);
       ActiveFont.DrawOutline(RankText.Format(rank), rankAt, justify, scale, color, 2f, stroke);
     }
+    float nameX = NameColumnX(mode);
     if (row.ShowsTeamTag)
-      DrawTeamTag(row, left, alpha);
-    Vector2 nameAt = left + new Vector2(BoardLayout.NameX + tagColumnWidth, 0f);
+      DrawTeamTag(row, left + new Vector2(nameX, 0f), alpha);
+    Vector2 nameAt = left + new Vector2(nameX + tagColumnWidth, 0f);
     ActiveFont.DrawOutline(row.Name, nameAt, justify, scale, color, 2f, stroke);
     DrawMarker(row, left, alpha);
 
@@ -257,13 +258,16 @@ public class BoardMenu : TextMenu
     TimeText.Draw(baseline, time, Style, MedalIcon.TextColor(medal) * alpha);
   }
 
-  private static void DrawTeamTag(BoardRow row, Vector2 left, float alpha)
+  private static float NameColumnX(BoardMode mode) =>
+    mode == BoardMode.OwnTimeOnly ? BoardLayout.RankX : BoardLayout.NameX;
+
+  private static void DrawTeamTag(BoardRow row, Vector2 tagAt, float alpha)
   {
     Color color = row.TeamTagColor.Value * alpha;
     float baselineShift = TimeText.LineBelowBaseline * (BoardLayout.TextScale - TeamTagScale);
     ActiveFont.DrawOutline(
       row.TeamTag,
-      left + new Vector2(BoardLayout.NameX, baselineShift),
+      tagAt + new Vector2(0f, baselineShift),
       new Vector2(0f, 0.5f),
       Vector2.One * TeamTagScale,
       color,
@@ -424,7 +428,7 @@ public class BoardMenu : TextMenu
       this.pinned = pinned;
       time = row.Ticks is long ticks ? TimeText.Format(ticks) : TimeText.TypicalTime;
       Selectable = true;
-      bool interactive = row.Me || mode != BoardMode.RanksOnly;
+      bool interactive = row.Me || row.Ticks.HasValue || mode != BoardMode.RanksOnly;
       if (subject.Trial != null && interactive)
         Pressed(() => (Container as BoardMenu)?.OnEntry?.Invoke(row));
     }
@@ -432,7 +436,7 @@ public class BoardMenu : TextMenu
     public override float Height() => BoardLayout.RowHeight;
 
     public override float LeftWidth() =>
-      BoardLayout.NameX + tagColumnWidth + ActiveFont.Measure(Row.Name).X * BoardLayout.TextScale;
+      NameColumnX(mode) + tagColumnWidth + ActiveFont.Measure(Row.Name).X * BoardLayout.TextScale;
 
     public override float RightWidth() => TimeText.Width(time, Style);
 

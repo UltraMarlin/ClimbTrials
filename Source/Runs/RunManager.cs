@@ -192,11 +192,6 @@ public static class RunManager
 
     loadSeed = replay?.LoadSeed ?? Calc.Random.Next();
     introType = replay?.IntroType ?? (countdown ? run.IntroType : Player.IntroTypes.Respawn);
-    Logger.Log(
-      LogLevel.Info,
-      LogTag,
-      $"run started: trial '{Trial?.Id}', replay {replay != null}, practice {Practice}"
-    );
     LevelLoader loader = Determinism.CreateSeededLoader(loadSeed, session, run.Spawn);
     loader.PlayerIntroTypeOverride = introType;
     if (Practice)
@@ -666,23 +661,14 @@ public static class RunManager
 
   public static void RestoreAfterLoad(Level level, RunSnapshot snapshot)
   {
-    string loadedTrialId = TrialIdOf(level.Session);
-    if (loadedTrialId != Trial?.Id)
+    if (TrialIdOf(level.Session) != Trial?.Id)
     {
-      Logger.Log(
-        LogLevel.Info,
-        LogTag,
-        $"save state of trial '{loadedTrialId}' loaded in '{Trial?.Id}', restarting"
-      );
       RestartAttemptAfterSave("climbtrials_notice_state_not_this_trial");
       return;
     }
     pendingRestart = null;
     if (snapshot == null || snapshot.TrialId != Trial?.Id)
-    {
-      Logger.Log(LogLevel.Info, LogTag, $"save state of '{Trial?.Id}' has no run snapshot");
       return;
-    }
     AttemptState restoredState =
       snapshot.State == AttemptState.Finished ? AttemptState.Running : snapshot.State;
     Attempt.Restore(restoredState, snapshot.ElapsedTicks);
@@ -698,7 +684,6 @@ public static class RunManager
     if (Recorder.Recording)
       Audio.Play(ReplayLimitSound);
     Recorder.Stop(reason);
-    Logger.Log(LogLevel.Info, LogTag, $"recording stopped: {reason}, attempt {Attempt.State}");
   }
 
   private static void OnPlayerAdded(On.Celeste.Player.orig_Added orig, Player self, Scene scene)
@@ -791,9 +776,8 @@ public static class RunManager
     finishSnapshot ??= Audio.CreateSnapshot("snapshot:/pause_menu");
     if (Replay != null)
     {
-      bool inSync = Replayer.Finish(Attempt.ElapsedTicks);
+      Replayer.Finish(Attempt.ElapsedTicks);
       LastFinish = new FinishResult { Ticks = Attempt.ElapsedTicks };
-      Logger.Log(LogLevel.Info, LogTag, $"replay of '{Trial?.Id}' finished, in sync: {inSync}");
       return true;
     }
 
@@ -809,13 +793,15 @@ public static class RunManager
           ModCheck.Allowed
         );
         submittable = check.Passes;
-        Logger.Log(LogLevel.Info, LogTag, $"replay check: {check.Describe()}");
+        if (!check.Passes)
+          Logger.Log(LogLevel.Info, LogTag, $"replay check: {check.Describe()}");
       }
       else if (Recorder.Stopped == StopReason.Limit)
       {
         ValidationResult check = ReplayValidator.CheckAttempt(ModCheck.Allowed);
         submittable = check.Passes;
-        Logger.Log(LogLevel.Info, LogTag, $"attempt check without replay: {check.Describe()}");
+        if (!check.Passes)
+          Logger.Log(LogLevel.Info, LogTag, $"attempt check without replay: {check.Describe()}");
       }
       LastFinish = TrialRecords.Record(Trial, Attempt.ElapsedTicks, submittable);
       if (LastFinish.IsPersonalBest)
@@ -834,11 +820,6 @@ public static class RunManager
           RaceReplay = recorded;
       }
     }
-    Logger.Log(
-      LogLevel.Info,
-      LogTag,
-      $"run '{Trial?.Id}' finished in {TimeText.Format(Attempt.ElapsedTicks)}"
-    );
     return true;
   }
 
@@ -851,11 +832,6 @@ public static class RunManager
       SpeedrunToolBridge.CountGoalAsRoom();
     if (Engine.Scene is Level level && level.Tracker.GetEntity<Player>() is Player player)
       FinishSequence.Confetti(level, player);
-    Logger.Log(
-      LogLevel.Info,
-      LogTag,
-      $"practice goal of '{Trial?.Id}' reached at {TimeText.Format(Attempt.ElapsedTicks)}"
-    );
   }
 
   private static void AutoSubmit(Replay recorded)
