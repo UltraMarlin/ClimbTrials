@@ -104,7 +104,7 @@ public static class Replayer
     savedGrabMode = Settings.Instance.GrabMode;
     savedCrouchDashMode = Settings.Instance.CrouchDashMode;
     savedScreenShake = Settings.Instance.ScreenShake;
-    PinSettings();
+    ApplyRecordedSettings();
 
     savedLanguage = Dialog.Language;
     if (Dialog.Languages.TryGetValue(replay.Language, out Language language))
@@ -126,7 +126,7 @@ public static class Replayer
       buttons[i].Nodes.Add(buttonNodes[i]);
     }
     InputCapture.RestoreButtonStates(replay.Buttons);
-    ClearFed();
+    ClearReplayedInputs();
     SilenceAxis(Input.MoveX, moveX);
     SilenceAxis(Input.MoveY, moveY);
     SilenceAxis(Input.GliderMoveY, gliderMoveY);
@@ -209,7 +209,7 @@ public static class Replayer
     level.RawTimeActive = current.RawTimeActive;
   }
 
-  public static InputFrame? FedFrame(int framesBack = 0)
+  public static InputFrame? ReplayedFrame(int framesBack = 0)
   {
     int index = Frame - 1 - framesBack;
     if ((!Silenced && !PausedOnFinish) || index < 0 || index >= current.Frames.Count)
@@ -217,7 +217,7 @@ public static class Replayer
     return current.Frames[index];
   }
 
-  public static void PinSettings()
+  public static void ApplyRecordedSettings()
   {
     if (current == null)
       return;
@@ -226,7 +226,7 @@ public static class Replayer
     Settings.Instance.ScreenShake = current.ScreenShake;
   }
 
-  public static void UnpinSettings()
+  public static void RestorePlayerSettings()
   {
     Settings.Instance.GrabMode = savedGrabMode;
     Settings.Instance.CrouchDashMode = savedCrouchDashMode;
@@ -304,7 +304,7 @@ public static class Replayer
     }
     savedSticks.Clear();
 
-    UnpinSettings();
+    RestorePlayerSettings();
     if (savedLanguage != null)
       Dialog.Language = savedLanguage;
     savedLanguage = null;
@@ -708,14 +708,18 @@ public static class Replayer
     {
       Actions flag = InputCapture.Flags[i];
       buttonNodes[i]
-        .Feed((frame.Held & flag) != 0, (frame.Pressed & flag) != 0, (frame.Released & flag) != 0);
+        .SetReplayedState(
+          (frame.Held & flag) != 0,
+          (frame.Pressed & flag) != 0,
+          (frame.Released & flag) != 0
+        );
     }
     Input.grabToggle = frame.GrabToggle;
-    moveX.Fed = frame.MoveX;
-    moveY.Fed = frame.MoveY;
-    gliderMoveY.Fed = frame.GliderMoveY;
-    aim.Fed = frame.Aim;
-    feather.Fed = frame.Feather;
+    moveX.Replayed = frame.MoveX;
+    moveY.Replayed = frame.MoveY;
+    gliderMoveY.Replayed = frame.GliderMoveY;
+    aim.Replayed = frame.Aim;
+    feather.Replayed = frame.Feather;
     Frame++;
   }
 
@@ -750,20 +754,20 @@ public static class Replayer
 
   private static void AnnounceStop(string message)
   {
-    ClearFed();
+    ClearReplayedInputs();
     Audio.Play(DesyncSound);
     Logger.Log(LogLevel.Warn, LogTag, message);
   }
 
-  private static void ClearFed()
+  private static void ClearReplayedInputs()
   {
     foreach (ButtonNode node in buttonNodes)
       node.Clear();
-    moveX.Fed = 0f;
-    moveY.Fed = 0f;
-    gliderMoveY.Fed = 0f;
-    aim.Fed = Vector2.Zero;
-    feather.Fed = Vector2.Zero;
+    moveX.Replayed = 0f;
+    moveY.Replayed = 0f;
+    gliderMoveY.Replayed = 0f;
+    aim.Replayed = Vector2.Zero;
+    feather.Replayed = Vector2.Zero;
   }
 
   private static void SilenceAxis(VirtualIntegerAxis axis, AxisNode node)
@@ -826,7 +830,7 @@ public static class Replayer
       released = false;
     }
 
-    public void Feed(bool isHeld, bool isPressed, bool isReleased)
+    public void SetReplayedState(bool isHeld, bool isPressed, bool isReleased)
     {
       held = isHeld;
       pressed = isPressed;
@@ -836,13 +840,13 @@ public static class Replayer
 
   private sealed class AxisNode : VirtualAxis.Node
   {
-    public float Fed;
-    public override float Value => Fed;
+    public float Replayed;
+    public override float Value => Replayed;
   }
 
   private sealed class StickNode : VirtualJoystick.Node
   {
-    public Vector2 Fed;
-    public override Vector2 Value => Fed;
+    public Vector2 Replayed;
+    public override Vector2 Value => Replayed;
   }
 }

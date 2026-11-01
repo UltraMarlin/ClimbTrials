@@ -89,7 +89,7 @@ public class ReplayInputDisplay : Entity
   private readonly bool dashOnlyUpUsed;
   private readonly Color boxColor = Colors.ForChapter(RunManager.Run.Area).Dark;
   private readonly FadeBuffer idleLayer;
-  private InputFrame? fed;
+  private InputFrame? replayed;
   private InputFrame? previous;
 
   public ReplayInputDisplay(Replay replay)
@@ -168,8 +168,8 @@ public class ReplayInputDisplay : Entity
     if (Mode == InputDisplayMode.Off || RunManager.Replay == null || Replayer.MenuOpen)
       return;
 
-    fed = Replayer.FedFrame();
-    previous = Replayer.FedFrame(1);
+    replayed = Replayer.ReplayedFrame();
+    previous = Replayer.ReplayedFrame(1);
     float boxTop = TopOfBlock(DetailedRowShown ? TopRowTop : BottomRowTop) - PaddingY;
     Draw.Rect(0f, boxTop, RightEdge() + PaddingX, ScreenBottom - boxTop, boxColor * BoxAlpha);
     base.Render();
@@ -216,7 +216,7 @@ public class ReplayInputDisplay : Entity
   {
     string label = Dialog.Clean(button.Key);
     Vector2 center = new(left + Square / 2f, top + Square / 2f);
-    bool held = fed.HasValue && IsHeldIn(fed.Value, button);
+    bool held = replayed.HasValue && IsHeldIn(replayed.Value, button);
     if (idle)
     {
       Draw.HollowRect(left, top, Square, Square, Color.White);
@@ -234,9 +234,9 @@ public class ReplayInputDisplay : Entity
 
   private bool PressedWhileHeld(Actions flags)
   {
-    if (!fed.HasValue || !previous.HasValue)
+    if (!replayed.HasValue || !previous.HasValue)
       return false;
-    return (fed.Value.Pressed & flags) != 0 && (previous.Value.Held & flags) != 0;
+    return (replayed.Value.Pressed & flags) != 0 && (previous.Value.Held & flags) != 0;
   }
 
   private static void DrawLabel(string label, Vector2 center)
@@ -274,10 +274,10 @@ public class ReplayInputDisplay : Entity
       return;
     }
 
-    if (!fed.HasValue)
+    if (!replayed.HasValue)
       return;
 
-    InputFrame frame = fed.Value;
+    InputFrame frame = replayed.Value;
     DirectionBinds moveOnly = (DirectionBinds)(1 << directionIndex);
     DirectionBinds dashOnly = (DirectionBinds)(1 << (directionIndex + 4));
     if ((frame.Binds & moveOnly) != 0)
@@ -317,10 +317,10 @@ public class ReplayInputDisplay : Entity
       return;
     }
 
-    if (!fed.HasValue)
+    if (!replayed.HasValue)
       return;
 
-    Vector2 stick = fed.Value.Feather;
+    Vector2 stick = replayed.Value.Feather;
     if (stick == Vector2.Zero)
       return;
 

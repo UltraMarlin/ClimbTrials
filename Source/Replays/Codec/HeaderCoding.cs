@@ -80,7 +80,7 @@ internal static class HeaderCoding
     ScreenShake = 11,
     DebugCauses = 12,
     IntroType = 13,
-    RawTimesImplied = 14,
+    RawTimesDerived = 14,
     TimeActive = 15,
     RawTimeActive = 16,
     RawDeltaTime = 17,
@@ -229,13 +229,13 @@ internal static class HeaderCoding
     header.ScreenShake = walk.CodeCount(HeaderField.ScreenShake, given?.ScreenShake, byte.MaxValue);
     header.DebugCauses = walk.CodeCount(HeaderField.DebugCauses, given?.DebugCauses, byte.MaxValue);
     header.IntroType = walk.CodeCount(HeaderField.IntroType, given?.IntroType, byte.MaxValue);
-    bool givenRawTimesImplied =
+    bool givenRawTimesDerived =
       given != null
       && SameBits(given.RawTimeActive, given.TimeActive)
       && SameBits(given.RawDeltaTime, RawDeltaTime);
-    bool rawTimesImplied = walk.CodeFlag(HeaderField.RawTimesImplied, givenRawTimesImplied);
+    bool rawTimesDerived = walk.CodeFlag(HeaderField.RawTimesDerived, givenRawTimesDerived);
     header.TimeActive = walk.CodeFloat(HeaderField.TimeActive, given?.TimeActive);
-    if (rawTimesImplied)
+    if (rawTimesDerived)
     {
       header.RawTimeActive = header.TimeActive;
       header.RawDeltaTime = RawDeltaTime;
@@ -353,8 +353,8 @@ internal static class HeaderCoding
         updates++;
     bool wholeFrames = ticks.HasValue && ticks.Value % TicksPerFrame == 0;
     long extraFrames = wholeFrames ? ticks.Value / TicksPerFrame - updates : -1;
-    bool derivable = extraFrames >= 0 && extraFrames < MaxExtraFrames;
-    int givenExtraFrames = derivable ? (int)extraFrames + 1 : 0;
+    bool ticksDerived = extraFrames >= 0 && extraFrames < MaxExtraFrames;
+    int givenExtraFrames = ticksDerived ? (int)extraFrames + 1 : 0;
     int extraFramesPlusOne = walk.CodeCount(
       HeaderField.ExtraFrames,
       givenExtraFrames,

@@ -27,7 +27,7 @@ public sealed class RunProgress
     && Strawberries >= run.RequiredStrawberries
     && SummitGems >= run.RequiredSummitGems;
 
-  public void ObserveRespawn(Vector2? respawnPoint)
+  public void CheckRespawn(Vector2? respawnPoint)
   {
     if (respawnSeen.HasValue && respawnPoint != respawnSeen)
     {
@@ -37,7 +37,7 @@ public sealed class RunProgress
     respawnSeen = respawnPoint;
   }
 
-  public void DropUnkept() => touched.IntersectWith(kept);
+  public void DropWaypointsLostOnDeath() => touched.IntersectWith(kept);
 
   public RunProgress Copy()
   {

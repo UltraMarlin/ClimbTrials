@@ -12,7 +12,7 @@ namespace Celeste.Mod.ClimbTrials.Replays;
 public sealed class Replay
 {
   public const int FormatVersion = 12;
-  private const int TrailerBytes = 8;
+  private const int ChecksumBytes = 8;
 
   public string TrialId;
   public byte[] TrialHash;
@@ -111,36 +111,36 @@ public sealed class Replay
   {
     byte[] coded = ReplayCodec.Encode(ToCodecReplay());
     int payloadLength = 1 + coded.Length;
-    byte[] bytes = new byte[payloadLength + TrailerBytes];
+    byte[] bytes = new byte[payloadLength + ChecksumBytes];
     bytes[0] = FormatVersion;
     coded.CopyTo(bytes, 1);
     SHA256
       .HashData(bytes.AsSpan(0, payloadLength))
-      .AsSpan(0, TrailerBytes)
+      .AsSpan(0, ChecksumBytes)
       .CopyTo(bytes.AsSpan(payloadLength));
     return bytes;
   }
 
   public static Replay FromBytes(byte[] bytes)
   {
-    int payloadLength = bytes.Length - TrailerBytes;
+    int payloadLength = bytes.Length - ChecksumBytes;
     if (payloadLength <= 1)
       throw new InvalidDataException("replay file is too short");
     if (bytes[0] != FormatVersion)
       throw new InvalidDataException($"unsupported replay format {bytes[0]}");
-    CheckTrailer(bytes, payloadLength);
+    VerifyChecksum(bytes, payloadLength);
     Replay replay = FromCodecReplay(ReplayCodec.Decode(bytes[1..payloadLength]));
     replay.SourceBytes = bytes;
     return replay;
   }
 
-  private static void CheckTrailer(byte[] bytes, int payloadLength)
+  private static void VerifyChecksum(byte[] bytes, int payloadLength)
   {
-    ReadOnlySpan<byte> trailer = bytes.AsSpan(payloadLength);
+    ReadOnlySpan<byte> checksum = bytes.AsSpan(payloadLength);
     ReadOnlySpan<byte> hash = SHA256
       .HashData(bytes.AsSpan(0, payloadLength))
-      .AsSpan(0, trailer.Length);
-    if (!CryptographicOperations.FixedTimeEquals(hash, trailer))
+      .AsSpan(0, checksum.Length);
+    if (!CryptographicOperations.FixedTimeEquals(hash, checksum))
       throw new InvalidDataException("replay file is corrupted");
   }
 

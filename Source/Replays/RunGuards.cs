@@ -41,9 +41,9 @@ public static class RunGuards
 
     if (Replayer.Silenced && settings)
     {
-      Replayer.UnpinSettings();
+      Replayer.RestorePlayerSettings();
       orig(file, settings);
-      Replayer.PinSettings();
+      Replayer.ApplyRecordedSettings();
       return;
     }
 

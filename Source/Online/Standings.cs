@@ -161,9 +161,9 @@ public static class Standings
     List<Action<ServerResult<Board>>>
   > waiting = [];
 
-  private static int identityGeneration;
+  private static int identityChangeCount;
 
-  private static int hubGeneration;
+  private static int hubRequestNumber;
 
   private static ClimbTrialsModuleSettings Settings => ClimbTrialsModule.Settings;
 
@@ -198,7 +198,7 @@ public static class Standings
 
   private static void FetchHub(bool retried)
   {
-    int asked = hubGeneration;
+    int asked = hubRequestNumber;
     AskCurrent<HubAnswer>(
       done => ServerClient.GetHub(Events.HeldDefinitions(), done),
       result => ReceiveHub(result, retried, asked),
@@ -214,7 +214,7 @@ public static class Standings
       return;
     }
 
-    if (asked != hubGeneration && result.Ok)
+    if (asked != hubRequestNumber && result.Ok)
     {
       FetchHub(retried);
       return;
@@ -248,7 +248,7 @@ public static class Standings
 
   public static void RefetchHub()
   {
-    hubGeneration++;
+    hubRequestNumber++;
     if (hub.Fetching)
       return;
     MarkHubStale();
@@ -275,11 +275,11 @@ public static class Standings
     bool passDeleted = false
   )
   {
-    int asked = identityGeneration;
+    int asked = identityChangeCount;
     request(result =>
     {
       bool deleted = passDeleted && result.Error == ServerError.PlayerDeleted;
-      if (asked != identityGeneration && !deleted)
+      if (asked != identityChangeCount && !deleted)
         AskCurrent(request, receive, passDeleted);
       else
         receive(result);
@@ -388,7 +388,7 @@ public static class Standings
 
   public static void MarkStale()
   {
-    identityGeneration++;
+    identityChangeCount++;
     hub.FetchedAt = DateTime.MinValue;
     foreach (Entry<CampaignRecords> entry in records.Values)
       entry.FetchedAt = DateTime.MinValue;

@@ -599,12 +599,12 @@ public static class RunManager
     Replayer.ApplyRecordedTime(level);
     if (pendingRestart != null && !level.Paused)
       RunPendingRestart();
-    DebugUse.ObserveFrame();
+    DebugUse.CheckFrame();
     if (!Practice && !Replaying && SpeedrunToolBridge.Enabled)
       LeaveForPractice();
     RunHudLayout.MeasureTimer(level);
     if (!awaitingLoad)
-      Progress.ObserveRespawn(level.Session.RespawnPoint);
+      Progress.CheckRespawn(level.Session.RespawnPoint);
     if (
       !Replaying
       && AttemptInProgress
@@ -901,7 +901,7 @@ public static class RunManager
   private static void OnLevelReload(On.Celeste.Level.orig_Reload orig, Level self)
   {
     if (Run != null && !self.Completed)
-      Progress.DropUnkept();
+      Progress.DropWaypointsLostOnDeath();
     orig(self);
   }
 

@@ -38,7 +38,7 @@ public static class DebugUse
     order.Clear();
   }
 
-  public static void ObserveFrame()
+  public static void CheckFrame()
   {
     if (Engine.Commands.Open)
       Add(DebugCause.ConsoleUsed);

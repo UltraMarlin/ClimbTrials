@@ -27,8 +27,8 @@ internal static class GameRules
     return value > 0 ? 1 : 0;
   }
 
-  public static Predict PredictFrameBefore(Column column, int lane = 0) =>
-    (table, frame, trackers) => table.Get(column, frame - 1, lane);
+  public static Predict PredictFrameBefore(Column column, int axis = 0) =>
+    (table, frame, trackers) => table.Get(column, frame - 1, axis);
 
   private static uint MenuButtonsOf(FrameTable table, int frame)
   {

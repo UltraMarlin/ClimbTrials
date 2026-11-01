@@ -45,9 +45,9 @@ internal sealed class FrameTable
     FrameCount = frameCount;
     foreach (Column column in Columns)
     {
-      values[(int)column] = new uint[LanesOf(column)][];
-      for (int lane = 0; lane < LanesOf(column); lane++)
-        values[(int)column][lane] = new uint[frameCount];
+      values[(int)column] = new uint[AxesOf(column)][];
+      for (int axis = 0; axis < AxesOf(column); axis++)
+        values[(int)column][axis] = new uint[frameCount];
     }
   }
 
@@ -60,25 +60,25 @@ internal sealed class FrameTable
       _ => 1,
     };
 
-  private static int LanesOf(Column column) => WidthOf(column) == 8 ? 2 : 1;
+  private static int AxesOf(Column column) => WidthOf(column) == 8 ? 2 : 1;
 
-  public static int ValueBytesOf(Column column) => WidthOf(column) / LanesOf(column);
+  public static int ValueBytesOf(Column column) => WidthOf(column) / AxesOf(column);
 
-  public uint Get(Column column, int frame, int lane = 0) =>
-    frame < 0 ? 0 : values[(int)column][lane][frame];
+  public uint Get(Column column, int frame, int axis = 0) =>
+    frame < 0 ? 0 : values[(int)column][axis][frame];
 
-  public void Set(Column column, int frame, int lane, uint value)
+  public void Set(Column column, int frame, int axis, uint value)
   {
     int valueBits = 8 * ValueBytesOf(column);
     if (valueBits < 32 && value >> valueBits != 0)
       throw new ArgumentOutOfRangeException(nameof(value), $"{value} does not fit {column}");
-    values[(int)column][lane][frame] = value;
+    values[(int)column][axis][frame] = value;
   }
 
   public sbyte GetSigned(Column column, int frame) => (sbyte)Get(column, frame);
 
-  public float GetSingle(Column column, int frame, int lane) =>
-    BitConverter.UInt32BitsToSingle(Get(column, frame, lane));
+  public float GetSingle(Column column, int frame, int axis) =>
+    BitConverter.UInt32BitsToSingle(Get(column, frame, axis));
 
   public bool DashStarts(int frame) =>
     frame > 0 && Get(Column.State, frame) == DashState && Get(Column.State, frame - 1) != DashState;

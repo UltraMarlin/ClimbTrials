@@ -45,7 +45,7 @@ internal sealed class Coder
   private const int LengthPart = 0;
   private const int BitsPart = 1;
   private const int MaxBitLength = 32;
-  private const int ImpliedBytes = 3;
+  private const int DerivedBytes = 3;
 
   public readonly bool Decoding;
   private readonly ChanceTable chances;
@@ -134,7 +134,7 @@ internal sealed class Coder
 
   public void CheckEnd()
   {
-    if (bytesRead != input.Length + ImpliedBytes)
+    if (bytesRead != input.Length + DerivedBytes)
       throw new InvalidDataException("the coded replay has the wrong length");
   }
 
@@ -148,7 +148,7 @@ internal sealed class Coder
 
   private uint ReadByte()
   {
-    if (bytesRead >= input.Length + ImpliedBytes)
+    if (bytesRead >= input.Length + DerivedBytes)
       throw new InvalidDataException("the coded replay ends too early");
     uint value = bytesRead < input.Length ? input[bytesRead] : 255u;
     bytesRead++;

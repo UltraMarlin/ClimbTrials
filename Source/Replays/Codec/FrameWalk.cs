@@ -30,7 +30,7 @@ internal sealed class FrameWalk(Coder coder, FrameTable table, FrameTable source
       field.Predict(table, frame, trackers),
       FrameTable.ValueBytesOf(field.Column)
     );
-    uint before = table.Get(field.Column, frame - 1, field.Lane);
+    uint before = table.Get(field.Column, frame - 1, field.Axis);
     uint valueContext = Fields.ValueContextOf(table, frame, fieldIndex, prediction);
     int missAge = trackers.MissAge(fieldIndex, frame);
     uint hitContext = Fields.HitContextOf(
@@ -40,7 +40,7 @@ internal sealed class FrameWalk(Coder coder, FrameTable table, FrameTable source
       missAge,
       prediction != before
     );
-    uint value = source == null ? 0 : source.Get(field.Column, frame, field.Lane);
+    uint value = source == null ? 0 : source.Get(field.Column, frame, field.Axis);
     uint result;
 
     if (prediction == before)
@@ -52,7 +52,7 @@ internal sealed class FrameWalk(Coder coder, FrameTable table, FrameTable source
     else
       result = CodeDifference(valueContext, valueContext, value, prediction, field);
 
-    table.Set(field.Column, frame, field.Lane, result);
+    table.Set(field.Column, frame, field.Axis, result);
     return result != prediction;
   }
 
@@ -76,18 +76,18 @@ internal sealed class FrameWalk(Coder coder, FrameTable table, FrameTable source
   private bool CodeCoordinate(int frame, int fieldIndex)
   {
     Field field = Fields.InCodingOrder[fieldIndex];
-    uint word = source == null ? 0 : source.Get(Column.Position, frame, field.Lane);
+    uint word = source == null ? 0 : source.Get(Column.Position, frame, field.Axis);
     float recorded = BitConverter.UInt32BitsToSingle(word);
     uint formContext = Coder.Extend((uint)ContextKind.CoordinateForm, fieldIndex);
     if (coder.CodeBit(formContext, Coordinates.IsWhole(recorded) ? 1 : 0) == 0)
     {
       uint floatBitsContext = Coder.Extend((uint)ContextKind.CoordinateFloatBits, fieldIndex);
-      table.Set(Column.Position, frame, field.Lane, coder.CodeNumber(floatBitsContext, word));
+      table.Set(Column.Position, frame, field.Axis, coder.CodeNumber(floatBitsContext, word));
       return true;
     }
 
     int prediction = unchecked((int)field.Predict(table, frame, trackers));
-    int before = Coordinates.WholeCoordinate(table, frame - 1, field.Lane) ?? 0;
+    int before = Coordinates.WholeCoordinate(table, frame - 1, field.Axis) ?? 0;
     uint valueContext = Fields.ValueContextOf(
       table,
       frame,
@@ -104,12 +104,14 @@ internal sealed class FrameWalk(Coder coder, FrameTable table, FrameTable source
     );
 
     int recordedStep = source == null ? 0 : (int)recorded - prediction;
-    int step = FromZigzag(coder.CodeNumber(valueContext, ToZigzag(recordedStep), hitContext));
+    int step = UnsignedToSigned(
+      coder.CodeNumber(valueContext, SignedToUnsigned(recordedStep), hitContext)
+    );
     long coordinate = prediction + (long)step;
     if (Math.Abs(coordinate) > Coordinates.MaxWholeCoordinate)
       throw new InvalidDataException($"{field.Name} is out of range");
 
-    table.Set(Column.Position, frame, field.Lane, BitConverter.SingleToUInt32Bits(coordinate));
+    table.Set(Column.Position, frame, field.Axis, BitConverter.SingleToUInt32Bits(coordinate));
     return step != 0;
   }
 
@@ -126,21 +128,21 @@ internal sealed class FrameWalk(Coder coder, FrameTable table, FrameTable source
       _ => unchecked((int)(value - prediction)),
     };
 
-  private static uint ToZigzag(int value) => (uint)((value << 1) ^ (value >> 31));
+  private static uint SignedToUnsigned(int value) => (uint)((value << 1) ^ (value >> 31));
 
-  private static int FromZigzag(uint zigzag) => (int)(zigzag >> 1) ^ -(int)(zigzag & 1);
+  private static int UnsignedToSigned(uint value) => (int)(value >> 1) ^ -(int)(value & 1);
 
   private static uint DifferenceOf(FieldKind kind, uint value, uint prediction, int valueBytes)
   {
     if (kind == FieldKind.Bits)
       return Cut(value ^ prediction, valueBytes);
-    return ToZigzag(SignedDifference(value, prediction, valueBytes));
+    return SignedToUnsigned(SignedDifference(value, prediction, valueBytes));
   }
 
   private static uint ValueFrom(FieldKind kind, uint difference, uint prediction, int valueBytes)
   {
     if (kind == FieldKind.Bits)
       return Cut(difference ^ prediction, valueBytes);
-    return Cut(prediction + (uint)FromZigzag(difference), valueBytes);
+    return Cut(prediction + (uint)UnsignedToSigned(difference), valueBytes);
   }
 }

@@ -10,7 +10,7 @@ internal enum FieldKind
   Coordinate,
 }
 
-internal sealed record Field(string Name, Column Column, int Lane, FieldKind Kind, Predict Predict);
+internal sealed record Field(string Name, Column Column, int Axis, FieldKind Kind, Predict Predict);
 
 internal static class Fields
 {
@@ -80,9 +80,9 @@ internal static class Fields
       bool seesState = row.Column == Column.AnimId || row.Column == Column.ScaleX;
       return seesState ? Coder.Extend(predictionContext, state) : predictionContext;
     }
-    int stepToFrameBefore = Coordinates.ClampStep(Coordinates.LastStep(table, frame, row.Lane));
-    int stepBefore = Coordinates.ClampStep(Coordinates.LastStep(table, frame - 1, row.Lane));
-    int stepBeforeThat = Coordinates.ClampStep(Coordinates.LastStep(table, frame - 2, row.Lane));
+    int stepToFrameBefore = Coordinates.ClampStep(Coordinates.LastStep(table, frame, row.Axis));
+    int stepBefore = Coordinates.ClampStep(Coordinates.LastStep(table, frame - 1, row.Axis));
+    int stepBeforeThat = Coordinates.ClampStep(Coordinates.LastStep(table, frame - 2, row.Axis));
     context = Coder.Extend(Coder.Extend(context, stepToFrameBefore), stepBefore);
     return Coder.Extend(Coder.Extend(context, state), stepBeforeThat);
   }
