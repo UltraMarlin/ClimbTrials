@@ -11,7 +11,7 @@ internal static class StartingValues
 {
   public const string ResourceName = "ClimbTrials.StartingValues.bin";
   private const string FileSha256 =
-    "fe2a4aed00f8c8320542a619450524b61bde1b667357ab6d19ef35686b9f130c";
+    "2b216876700a2d751b94d3fe2de46ef02ab0232aa4aaf02b5e4d5301d2ad0054";
   private const int ChanceCount = 64;
   private const byte TrainedUpdateCount = 5;
 

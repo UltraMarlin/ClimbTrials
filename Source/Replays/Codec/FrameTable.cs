@@ -75,6 +75,13 @@ internal sealed class FrameTable
     values[(int)column][axis][frame] = value;
   }
 
+  public void ClearFrame(int frame)
+  {
+    foreach (uint[][] axes in values)
+    foreach (uint[] frames in axes)
+      frames[frame] = 0;
+  }
+
   public sbyte GetSigned(Column column, int frame) => (sbyte)Get(column, frame);
 
   public float GetSingle(Column column, int frame, int axis) =>

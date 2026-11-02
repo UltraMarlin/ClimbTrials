@@ -36,6 +36,7 @@ internal enum ContextKind : uint
   CoordinateForm = 6,
   CoordinateFloatBits = 7,
   Repeat = 8,
+  GroupFlag = 9,
 }
 
 internal sealed class Coder

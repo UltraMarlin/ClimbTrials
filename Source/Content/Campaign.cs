@@ -20,6 +20,7 @@ public enum Difficulty
 public sealed class Trial
 {
   public const int DefaultReplayLimitSeconds = 120;
+  public const int MaxReplayLimitSeconds = 600;
   public const int DefinitionHashBytes = 32;
 
   public string Id { get; init; }
@@ -175,8 +176,10 @@ public static class Campaigns
     {
       if (!trialIds.Add(trial.Id))
         throw new InvalidOperationException($"duplicate trial id '{trial.Id}'");
-      if (trial.ReplayLimitSeconds < 1)
-        throw new InvalidOperationException($"trial '{trial.Id}' has a replay limit below 1 s");
+      if (trial.ReplayLimitSeconds < 1 || trial.ReplayLimitSeconds > Trial.MaxReplayLimitSeconds)
+        throw new InvalidOperationException(
+          $"trial '{trial.Id}' has a replay limit outside 1 to {Trial.MaxReplayLimitSeconds} s"
+        );
     }
   }
 }

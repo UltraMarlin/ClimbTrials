@@ -66,6 +66,19 @@ internal static class Fields
     new("AnimFrame", Column.AnimFrame, 0, FieldKind.Number, GameRules.PredictAnimFrame),
   ];
 
+  public const int NoGroup = -1;
+
+  private static readonly (string First, string Last)[] Groups =
+  [
+    ("MoveX", "Released"),
+    ("GrabToggle", "FeatherY"),
+    ("HasPlayer", "Flags"),
+    ("ScaleX", "Stamina"),
+    ("AnimId", "AnimFrame"),
+  ];
+  public static readonly int GroupCount = Groups.Length;
+  public static readonly int[] GroupOfField = MapFieldsToGroups();
+
   private const uint PredictionCap = 256;
   private const uint StateCap = 31;
 
@@ -88,18 +101,31 @@ internal static class Fields
   }
 
   public static uint HitContextOf(
-    FrameTable table,
-    int frame,
     uint valueContext,
     int missAge,
-    bool predictionDiffers
+    bool predictionDiffers,
+    int frameParts
   )
   {
     uint context = Coder.Extend((uint)ContextKind.Hit, unchecked((int)valueContext));
     context = Coder.Extend(Coder.Extend(context, missAge), predictionDiffers ? 1 : 0);
-    return Coder.Extend(context, table.LevelUpdated(frame - 1) ? 1 : 0);
+    return Coder.Extend(context, frameParts);
   }
 
   public static uint RepeatContextOf(uint hitContext) =>
     Coder.Extend((uint)ContextKind.Repeat, unchecked((int)hitContext));
+
+  private static int[] MapFieldsToGroups()
+  {
+    int[] groupOfField = new int[InCodingOrder.Length];
+    Array.Fill(groupOfField, NoGroup);
+    for (int group = 0; group < Groups.Length; group++)
+    {
+      int first = Array.FindIndex(InCodingOrder, field => field.Name == Groups[group].First);
+      int last = Array.FindIndex(InCodingOrder, field => field.Name == Groups[group].Last);
+      for (int field = first; field <= last; field++)
+        groupOfField[field] = group;
+    }
+    return groupOfField;
+  }
 }

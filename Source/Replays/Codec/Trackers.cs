@@ -8,7 +8,7 @@ internal readonly record struct Animation(uint Id, uint AnimationFrame, int Time
 internal sealed class Trackers
 {
   private const int AnimationUnitsPerUpdate = 10;
-  private const int MissAgeCap = 4;
+  public const int MissAgeCap = 4;
   private const int ScaleOne = 960;
   private const int ScaleSixteenth = 60;
   private const int ScaleRecoveryPerUpdate = 28;
@@ -28,11 +28,10 @@ internal sealed class Trackers
     Array.Fill(lastMiss, -1);
   }
 
-  public int MissAge(int field, int frame)
-  {
-    int framesSinceMiss = frame - lastMiss[field];
-    return Math.Min(32 - BitOperations.LeadingZeroCount((uint)framesSinceMiss), MissAgeCap);
-  }
+  public int MissAge(int field, int frame) => MissAgeAfter(frame - lastMiss[field]);
+
+  public static int MissAgeAfter(int framesSinceMiss) =>
+    Math.Min(32 - BitOperations.LeadingZeroCount((uint)framesSinceMiss), MissAgeCap);
 
   public void Advance(FrameTable table, int frame, bool[] missed)
   {

@@ -11,7 +11,7 @@ namespace Celeste.Mod.ClimbTrials.Replays;
 
 public sealed class Replay
 {
-  public const int FormatVersion = 12;
+  public const int FormatVersion = 13;
   private const int ChecksumBytes = 8;
 
   public string TrialId;

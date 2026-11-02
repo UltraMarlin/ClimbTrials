@@ -6,40 +6,71 @@ namespace Celeste.Mod.ClimbTrials.Replays.Codec;
 internal sealed class FrameWalk(Coder coder, FrameTable table, FrameTable source)
 {
   private readonly Trackers trackers = new(Fields.InCodingOrder.Length);
+  private readonly GroupFlags groupFlags = new();
 
   public void Run()
   {
     bool[] missed = new bool[Fields.InCodingOrder.Length];
     for (int frame = 0; frame < table.FrameCount; frame++)
     {
+      bool levelUpdatedBefore = table.LevelUpdated(frame - 1);
+      int missedGroups = source == null ? 0 : FindMissedGroups(frame);
+      groupFlags.Code(coder, table, frame, levelUpdatedBefore, missedGroups);
+      int missedGroupsSoFar = 0;
       for (int fieldIndex = 0; fieldIndex < missed.Length; fieldIndex++)
       {
-        missed[fieldIndex] =
-          Fields.InCodingOrder[fieldIndex].Kind == FieldKind.Coordinate
-            ? CodeCoordinate(frame, fieldIndex)
-            : CodeValue(frame, fieldIndex);
+        Field field = Fields.InCodingOrder[fieldIndex];
+        int group = Fields.GroupOfField[fieldIndex];
+        if (group == Fields.NoGroup)
+        {
+          int frameParts = (levelUpdatedBefore ? 1 : 0) + 2 * groupFlags.HitBits;
+          missed[fieldIndex] = CodeCoordinate(frame, fieldIndex, frameParts);
+        }
+        else if (groupFlags.GroupHits[group])
+        {
+          table.Set(field.Column, frame, field.Axis, PredictionOf(field, frame));
+          missed[fieldIndex] = false;
+        }
+        else
+        {
+          bool groupMissed = (missedGroupsSoFar & (1 << group)) != 0;
+          int frameParts = (levelUpdatedBefore ? 1 : 0) + (groupMissed ? 2 : 0);
+          missed[fieldIndex] = CodeValue(frame, fieldIndex, frameParts);
+          if (missed[fieldIndex])
+            missedGroupsSoFar |= 1 << group;
+        }
       }
       trackers.Advance(table, frame, missed);
     }
   }
 
-  private bool CodeValue(int frame, int fieldIndex)
+  private int FindMissedGroups(int frame)
+  {
+    int missedGroups = 0;
+    for (int fieldIndex = 0; fieldIndex < Fields.InCodingOrder.Length; fieldIndex++)
+    {
+      Field field = Fields.InCodingOrder[fieldIndex];
+      int group = Fields.GroupOfField[fieldIndex];
+      uint value = source.Get(field.Column, frame, field.Axis);
+      if (group != Fields.NoGroup && value != PredictionOf(field, frame))
+        missedGroups |= 1 << group;
+      table.Set(field.Column, frame, field.Axis, value);
+    }
+    table.ClearFrame(frame);
+    return missedGroups;
+  }
+
+  private uint PredictionOf(Field field, int frame) =>
+    Cut(field.Predict(table, frame, trackers), FrameTable.ValueBytesOf(field.Column));
+
+  private bool CodeValue(int frame, int fieldIndex, int frameParts)
   {
     Field field = Fields.InCodingOrder[fieldIndex];
-    uint prediction = Cut(
-      field.Predict(table, frame, trackers),
-      FrameTable.ValueBytesOf(field.Column)
-    );
+    uint prediction = PredictionOf(field, frame);
     uint before = table.Get(field.Column, frame - 1, field.Axis);
     uint valueContext = Fields.ValueContextOf(table, frame, fieldIndex, prediction);
     int missAge = trackers.MissAge(fieldIndex, frame);
-    uint hitContext = Fields.HitContextOf(
-      table,
-      frame,
-      valueContext,
-      missAge,
-      prediction != before
-    );
+    uint hitContext = Fields.HitContextOf(valueContext, missAge, prediction != before, frameParts);
     uint value = source == null ? 0 : source.Get(field.Column, frame, field.Axis);
     uint result;
 
@@ -73,7 +104,7 @@ internal sealed class FrameWalk(Coder coder, FrameTable table, FrameTable source
     return ValueFrom(field.Kind, difference, prediction, valueBytes);
   }
 
-  private bool CodeCoordinate(int frame, int fieldIndex)
+  private bool CodeCoordinate(int frame, int fieldIndex, int frameParts)
   {
     Field field = Fields.InCodingOrder[fieldIndex];
     uint word = source == null ? 0 : source.Get(Column.Position, frame, field.Axis);
@@ -95,13 +126,7 @@ internal sealed class FrameWalk(Coder coder, FrameTable table, FrameTable source
       unchecked((uint)prediction)
     );
     int missAge = trackers.MissAge(fieldIndex, frame);
-    uint hitContext = Fields.HitContextOf(
-      table,
-      frame,
-      valueContext,
-      missAge,
-      prediction != before
-    );
+    uint hitContext = Fields.HitContextOf(valueContext, missAge, prediction != before, frameParts);
 
     int recordedStep = source == null ? 0 : (int)recorded - prediction;
     int step = UnsignedToSigned(
