@@ -17,9 +17,10 @@ public class OuiHub : ListScreen
   private const float LoadErrorScale = 0.5f;
   private const float CampaignsIconScale = 1.1f;
 
-  // TODO: Replace Placeholders
-  private const string EventsIcon = "collectables/goldberry";
-  private const string InviteCodeIcon = "menu/journal";
+  private const string EventsIcon = "ClimbTrials/Trophy_Icon";
+  private const string InviteCodeIcon = "ClimbTrials/Letter_Icon";
+
+  // TODO: Replace placeholder
   private const string NameIcon = "dotdotdot";
   private const int InviteCodeEntryMaxLength = 24;
   private const int InviteCodeMinLength = 6;
@@ -65,7 +66,6 @@ public class OuiHub : ListScreen
       () => Dialog.Clean("climbtrials_hub_events"),
       AnyEventKnown,
       EventsIcon,
-      outlineIcon: false,
       showsNewMark: Events.AnyNew
     );
     eventsRow.Pressed(OpenEvents);
@@ -80,8 +80,7 @@ public class OuiHub : ListScreen
     inviteCodeRow = new HubRow(
       () => Dialog.Clean("climbtrials_hub_invite_code"),
       InviteCodeLive,
-      InviteCodeIcon,
-      outlineIcon: false
+      InviteCodeIcon
     );
     inviteCodeRow.Pressed(OpenInviteCodeEntry);
     built.Add(inviteCodeRow);
