@@ -44,6 +44,7 @@ public class ClimbTrialsModule : EverestModule
     Determinism.Load();
     Recorder.Load();
     Replayer.Load();
+    ReplayVerifier.Load();
     PausedEffects.Load();
     RunGuards.Load();
     RunBinds.Load();
@@ -113,6 +114,7 @@ public class ClimbTrialsModule : EverestModule
     Determinism.Unload();
     Recorder.Unload();
     Replayer.Unload();
+    ReplayVerifier.Unload();
     PausedEffects.Unload();
     RunGuards.Unload();
     HeartGoal.Unload();

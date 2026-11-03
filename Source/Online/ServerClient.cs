@@ -33,6 +33,7 @@ public enum ServerError
   NotFound,
   CodeInvalid,
   CodeUsedUp,
+  NotAdmin,
 }
 
 public readonly record struct ServerResult<T>(T Value, ServerError Error, string Message)
@@ -46,10 +47,27 @@ public sealed class DownloadedReplay
   public string OwnerName { get; init; }
 }
 
+public sealed class AdminReplays
+{
+  public List<AdminReplay> Replays { get; set; } = [];
+  public int NotVisible { get; set; }
+  public int WithoutReplay { get; set; }
+}
+
+public sealed class AdminReplay
+{
+  public string TrialId { get; set; }
+  public int? Rank { get; set; }
+  public string Player { get; set; }
+  public long Ticks { get; set; }
+  public string Bytes { get; set; }
+}
+
 public static class ServerClient
 {
   private const string LogTag = "ClimbTrials/Server";
   private const double TimeoutSeconds = 5;
+  private const double AdminReplaysTimeoutSeconds = 120;
   private const string VersionHeader = "X-ClimbTrials-Version";
   private const string ClientIdHeader = "X-Client-Id";
   private const string PlayerNameHeader = "X-Player-Name";
@@ -62,7 +80,8 @@ public static class ServerClient
       ? BuiltInServerUrl
       : Settings.ServerUrl;
 
-  private static readonly HttpClient http = Build();
+  private static readonly HttpClient http = Build(TimeoutSeconds);
+  private static readonly HttpClient adminReplaysHttp = Build(AdminReplaysTimeoutSeconds);
 
   private const int PassiveIconDelayMs = 300;
   private static int pending;
@@ -81,9 +100,9 @@ public static class ServerClient
     public string Message { get; set; }
   }
 
-  private static HttpClient Build()
+  private static HttpClient Build(double timeoutSeconds)
   {
-    HttpClient client = new CompressedHttpClient { Timeout = TimeSpan.FromSeconds(TimeoutSeconds) };
+    HttpClient client = new CompressedHttpClient { Timeout = TimeSpan.FromSeconds(timeoutSeconds) };
     string version = ClimbTrialsModule.Instance.Metadata.Version.ToString();
     client.DefaultRequestHeaders.Add(VersionHeader, version);
     return client;
@@ -190,6 +209,24 @@ public static class ServerClient
     Send($"/v1/trials/{trialId}/times", HttpMethod.Post, Json(body), onDone);
   }
 
+  public static void GetAdminReplays(
+    string scope,
+    string id,
+    int? maxRank,
+    Action<ServerResult<AdminReplays>> onDone
+  )
+  {
+    string body = JsonSerializer.Serialize(
+      new
+      {
+        scope,
+        id,
+        maxRank,
+      }
+    );
+    Send("/v1/admin/replays", HttpMethod.Post, Json(body), onDone, client: adminReplaysHttp);
+  }
+
   private static StringContent Json(string text) => new(text, Encoding.UTF8, "application/json");
 
   private static bool TryBaseUri(out Uri uri) =>
@@ -202,7 +239,8 @@ public static class ServerClient
     HttpContent body,
     Action<ServerResult<T>> onDone,
     bool passive = false,
-    Func<HttpResponseMessage, Task<T>> read = null
+    Func<HttpResponseMessage, Task<T>> read = null,
+    HttpClient client = null
   )
   {
     if (Settings.OfflineMode)
@@ -227,7 +265,14 @@ public static class ServerClient
 
     Task.Run(async () =>
     {
-      ServerResult<T> result = await Request(url, method, body, clientId, read ?? ReadJson<T>);
+      ServerResult<T> result = await Request(
+        client ?? http,
+        url,
+        method,
+        body,
+        clientId,
+        read ?? ReadJson<T>
+      );
       await MainThreadHelper.Schedule(() =>
       {
         EndRequest();
@@ -270,6 +315,7 @@ public static class ServerClient
   }
 
   private static async Task<ServerResult<T>> Request<T>(
+    HttpClient client,
     Uri url,
     HttpMethod method,
     HttpContent body,
@@ -282,7 +328,7 @@ public static class ServerClient
       using HttpRequestMessage request = new(method, url) { Content = body };
       if (clientId != null)
         request.Headers.Add(ClientIdHeader, clientId);
-      using HttpResponseMessage response = await http.SendAsync(request);
+      using HttpResponseMessage response = await client.SendAsync(request);
       if (!response.IsSuccessStatusCode)
         return ReadError<T>(await response.Content.ReadAsStringAsync());
 
@@ -334,6 +380,7 @@ public static class ServerClient
       "not_found" => ServerError.NotFound,
       "code_invalid" => ServerError.CodeInvalid,
       "code_used_up" => ServerError.CodeUsedUp,
+      "not_admin" => ServerError.NotAdmin,
       _ => ServerError.Offline,
     };
     return new ServerResult<T>(default, code, error?.Message);

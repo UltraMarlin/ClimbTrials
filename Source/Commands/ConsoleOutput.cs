@@ -1,3 +1,4 @@
+using Microsoft.Xna.Framework.Input;
 using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.Commands;
@@ -11,6 +12,12 @@ public static class ConsoleOutput
       return true;
     Engine.Commands.Log("not in a level");
     return false;
+  }
+
+  public static void Close()
+  {
+    MInput.Keyboard.CurrentState = new KeyboardState(Keys.Enter);
+    Engine.Commands.Open = false;
   }
 
   public static void Log(string tag, string line)

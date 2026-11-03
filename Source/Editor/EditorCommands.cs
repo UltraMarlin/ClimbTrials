@@ -249,6 +249,6 @@ public static class EditorCommands
   {
     begin();
     Engine.Commands.Log($"{hint}, right click to cancel");
-    Engine.Commands.Open = false;
+    ConsoleOutput.Close();
   }
 }

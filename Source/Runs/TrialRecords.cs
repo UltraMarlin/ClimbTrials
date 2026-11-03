@@ -94,6 +94,26 @@ public static class TrialRecords
     return removed;
   }
 
+  public static bool Delete(string trialId)
+  {
+    EnsureLoaded();
+    try
+    {
+      ReplayStore.Delete(trialId);
+    }
+    catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+    {
+      Logger.Log(
+        LogLevel.Warn,
+        LogTag,
+        $"Delete PB of '{trialId}' stopped, its replay could not be deleted: {e.Message}"
+      );
+      return false;
+    }
+    Remove([trialId]);
+    return true;
+  }
+
   public static FinishResult Record(Trial trial, long ticks, bool submittable)
   {
     EnsureLoaded();

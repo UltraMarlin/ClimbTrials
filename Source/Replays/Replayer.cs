@@ -34,6 +34,7 @@ public static class Replayer
 
   public static ReplayState State { get; private set; }
   public static bool Desynced { get; private set; }
+  public static string DesyncReason { get; private set; }
   public static bool StoppedByReload { get; private set; }
   public static bool PauseQueued { get; private set; }
   public static int Frame { get; private set; }
@@ -99,6 +100,7 @@ public static class Replayer
     pauseMenusShown = 0;
     Frame = 0;
     Desynced = false;
+    DesyncReason = null;
     StoppedByReload = false;
     PausedOnFinish = false;
     stepping = false;
@@ -184,6 +186,7 @@ public static class Replayer
     current = null;
     timePending = false;
     Desynced = false;
+    DesyncReason = null;
     StoppedByReload = false;
     PauseQueued = false;
     PausedOnFinish = false;
@@ -804,6 +807,7 @@ public static class Replayer
   private static void Desync(string reason)
   {
     Desynced = true;
+    DesyncReason = reason;
     AnnounceStop($"replay desynced: {reason}");
   }
 

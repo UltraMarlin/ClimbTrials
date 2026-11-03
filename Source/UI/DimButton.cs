@@ -5,18 +5,18 @@ namespace Celeste.Mod.ClimbTrials.UI;
 
 public class DimButton : TextMenu.Button
 {
-  private readonly Func<bool> live;
+  protected readonly Func<bool> canAct;
 
-  public DimButton(string label, bool live, Action onPressed)
-    : this(label, () => live, onPressed) { }
+  public DimButton(string label, bool canAct, Action onPressed)
+    : this(label, () => canAct, onPressed) { }
 
-  public DimButton(string label, Func<bool> live, Action onPressed)
+  public DimButton(string label, Func<bool> canAct, Action onPressed)
     : base(label)
   {
-    this.live = live;
+    this.canAct = canAct;
     Pressed(() =>
     {
-      if (live())
+      if (canAct())
         onPressed();
     });
   }
@@ -24,18 +24,22 @@ public class DimButton : TextMenu.Button
   public override void Update()
   {
     base.Update();
-    ConfirmSfx = live() ? SFX.ui_main_button_select : SFX.ui_main_button_invalid;
+    ConfirmSfx = canAct() ? SFX.ui_main_button_select : SFX.ui_main_button_invalid;
   }
 
   public override void Render(Vector2 position, bool highlighted)
   {
-    if (live())
+    if (canAct())
     {
       base.Render(position, highlighted);
       return;
     }
 
-    Color color = Color.DarkSlateGray * Container.Alpha;
+    DrawLabel(position, Color.DarkSlateGray * Container.Alpha);
+  }
+
+  protected void DrawLabel(Vector2 position, Color color)
+  {
     bool leftAligned =
       Container.InnerContent == TextMenu.InnerContentMode.TwoColumn && !AlwaysCenter;
     Vector2 at = position + (leftAligned ? Vector2.Zero : new Vector2(Container.Width * 0.5f, 0f));

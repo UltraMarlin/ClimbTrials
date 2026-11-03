@@ -207,6 +207,7 @@ public class OuiTrials : ListScreen
       race: () => CloseThen(() => Race(trial)),
       submit: () => CloseThen(() => SubmitPb(trial)),
       board: () => HandOverToBoard(trial),
+      deletePb: () => CloseThen(() => DeletePb(trial)),
       closed: OnMenuClosed
     );
     Scene.Add(open);
@@ -346,6 +347,15 @@ public class OuiTrials : ListScreen
       Uploader.Start(trial, null, ReportUpload);
     else if (TryLoadPb(trial, out Replay replay))
       Uploader.Start(trial, replay, ReportUpload);
+  }
+
+  private static void DeletePb(Trial trial)
+  {
+    if (!TrialRecords.Delete(trial.Id))
+      return;
+    ServerRecord serverRecord = Standings.RecordFor(trial);
+    if (serverRecord?.Ticks is long serverTicks)
+      TrialRecords.Adopt([(trial.Id, serverTicks, serverRecord.AchievedAt ?? DateTime.UtcNow)]);
   }
 
   private void ReportUpload(Upload upload)

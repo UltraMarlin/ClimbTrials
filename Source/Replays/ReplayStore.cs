@@ -14,28 +14,28 @@ public static class ReplayStore
 
   private static string PathFor(string trialId) => Path.Combine(Folder, trialId + ".ctreplay");
 
-  private static HashSet<string> present;
+  private static HashSet<string> trialsWithReplayFile;
 
   public static void Refresh()
   {
-    present = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    trialsWithReplayFile = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     if (!Directory.Exists(Folder))
       return;
     foreach (string file in Directory.GetFiles(Folder, "*.ctreplay"))
-      present.Add(Path.GetFileNameWithoutExtension(file));
+      trialsWithReplayFile.Add(Path.GetFileNameWithoutExtension(file));
   }
 
-  private static HashSet<string> Present
+  private static HashSet<string> TrialsWithReplayFile
   {
     get
     {
-      if (present == null)
+      if (trialsWithReplayFile == null)
         Refresh();
-      return present;
+      return trialsWithReplayFile;
     }
   }
 
-  public static bool Exists(string trialId) => Present.Contains(trialId);
+  public static bool Exists(string trialId) => TrialsWithReplayFile.Contains(trialId);
 
   public static void Save(Replay replay)
   {
@@ -55,7 +55,7 @@ public static class ReplayStore
     }
     Directory.CreateDirectory(Folder);
     File.WriteAllBytes(PathFor(replay.TrialId), bytes);
-    Present.Add(replay.TrialId);
+    TrialsWithReplayFile.Add(replay.TrialId);
   }
 
   public static bool TryLoadPb(Trial trial, out Replay replay, out string failureNotice)
@@ -124,12 +124,14 @@ public static class ReplayStore
 
   public static bool Delete(string trialId)
   {
-    bool removed = Present.Remove(trialId);
+    bool removed = false;
     if (File.Exists(PathFor(trialId)))
     {
       File.Delete(PathFor(trialId));
       removed = true;
     }
+    if (TrialsWithReplayFile.Remove(trialId))
+      removed = true;
     if (!removed)
       return false;
     Logger.Log(LogLevel.Info, LogTag, $"deleted replay for '{trialId}'");
@@ -169,7 +171,7 @@ public static class ReplayStore
 
   public static int DeleteAll()
   {
-    Present.Clear();
+    TrialsWithReplayFile.Clear();
     if (!Directory.Exists(Folder))
       return 0;
     string[] files = Directory.GetFiles(Folder, "*.ctreplay");

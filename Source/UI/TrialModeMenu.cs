@@ -20,6 +20,7 @@ public class TrialModeMenu : MenuOnTop
   private const float LabelGap = 16f;
 
   private readonly Action closed;
+  private readonly ConfirmButton deletePbRow;
 
   public TrialModeMenu(
     Trial trial,
@@ -28,6 +29,7 @@ public class TrialModeMenu : MenuOnTop
     Action race,
     Action submit,
     Action board,
+    Action deletePb,
     Action closed
   )
     : base(inLevel: false)
@@ -53,9 +55,22 @@ public class TrialModeMenu : MenuOnTop
       Add(new Button(Dialog.Clean("climbtrials_trials_watch_pb")).Pressed(watch));
       Add(new Button(Dialog.Clean("climbtrials_race_pb_ghost")).Pressed(race));
     }
-    if (record != null && !OnBoard(record, serverRecord))
+    bool pbOffBoard = record != null && !OnBoard(record, serverRecord);
+    if (pbOffBoard)
       AddSubmitRow(trial, record, state, submit);
     Add(new Button(Dialog.Clean("climbtrials_trials_leaderboard")).Pressed(board));
+    if (pbOffBoard)
+    {
+      deletePbRow = new ConfirmButton(
+        Dialog.Clean("climbtrials_trials_delete_pb"),
+        Dialog.Clean("climbtrials_trials_delete_pb_confirm"),
+        canAct: () =>
+          Uploader.UploadFor(trial.Id).State
+            is not (UploadState.Submitting or UploadState.Accepted),
+        deletePb
+      );
+      Add(deletePbRow);
+    }
 
     OnCancel = Back;
     OnESC = Back;
@@ -74,7 +89,7 @@ public class TrialModeMenu : MenuOnTop
     bool offlineMode = ClimbTrialsModule.Settings.OfflineMode;
     SubmitRefusal refusal = Events.RefusalFor(trial);
     bool paused = Standings.SubmissionsPaused;
-    bool live =
+    bool canSubmit =
       record.Submittable
       && (hasReplay || !needsReplay)
       && !Identity.Banned
@@ -85,7 +100,7 @@ public class TrialModeMenu : MenuOnTop
       && !paused
       && !submitting;
 
-    DimButton row = new(Dialog.Clean("climbtrials_trials_submit_pb"), live, submit);
+    DimButton row = new(Dialog.Clean("climbtrials_trials_submit_pb"), canSubmit, submit);
     Add(row);
     string reason = null;
     if (Identity.Banned)
@@ -122,6 +137,11 @@ public class TrialModeMenu : MenuOnTop
   private void Back()
   {
     Audio.Play(SFX.ui_main_button_back);
+    if (deletePbRow?.Asking == true)
+    {
+      deletePbRow.StopAsking();
+      return;
+    }
     Dismiss();
   }
 
