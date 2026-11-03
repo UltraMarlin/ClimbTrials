@@ -514,6 +514,7 @@ public static class Replayer
     RunBinds.Restore();
     level.PauseMainMenuOpen = false;
     level.Paused = true;
+    level.HudRenderer.BackgroundFade = 1f;
     Replay replay = RunManager.Replay;
     TextMenu options = OuiModOptions.CreateMenu(inGame: true, Level._PauseSnapshot);
     Action startSearching = OuiModOptions.AddSearchBox(options);
