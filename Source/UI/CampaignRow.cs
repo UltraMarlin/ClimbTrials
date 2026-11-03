@@ -71,13 +71,12 @@ public class CampaignRow : SlidingRow
     float medalCenter = rightEdge - width - RowLayout.MedalGap;
     if (text != null)
     {
-      if (record.Medal != Medal.None)
-        MedalIcon.Draw(
-          new Vector2(medalCenter, rowStart.Y),
-          record.Medal,
-          RowLayout.MedalIconHeight,
-          alpha
-        );
+      MedalIcon.Draw(
+        new Vector2(medalCenter, rowStart.Y),
+        record.Medal,
+        RowLayout.MedalIconHeight,
+        alpha
+      );
 
       TimeText.Draw(
         new Vector2(rightEdge - width, rowStart.Y + RowLayout.PbBaseline),

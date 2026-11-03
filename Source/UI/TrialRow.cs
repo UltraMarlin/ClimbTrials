@@ -53,13 +53,7 @@ public class TrialRow : SlidingRow
     else
     {
       Medal medal = Trial.Goals?.MedalReached(record.BestTicks) ?? Medal.None;
-      if (medal != Medal.None)
-        MedalIcon.Draw(
-          new Vector2(medalCenter, rowStart.Y),
-          medal,
-          RowLayout.MedalIconHeight,
-          alpha
-        );
+      MedalIcon.Draw(new Vector2(medalCenter, rowStart.Y), medal, RowLayout.MedalIconHeight, alpha);
       TimeText.Draw(
         new Vector2(timeRight - width, rowStart.Y + RowLayout.PbBaseline),
         best,

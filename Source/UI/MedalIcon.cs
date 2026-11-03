@@ -7,6 +7,7 @@ namespace Celeste.Mod.ClimbTrials.UI;
 public static class MedalIcon
 {
   private const float TextBrighten = 0.25f;
+  private const float NoMedalAlpha = 0.6f;
 
   public static Color Tint(Medal medal) =>
     medal switch
@@ -40,6 +41,7 @@ public static class MedalIcon
   {
     MTexture texture = GFX.Gui["collectables/heartgem/3/FakeHeart0000"];
     float scale = height / texture.Height;
-    texture.DrawCentered(center, Tint(medal) * alpha, Vector2.One * scale);
+    float shownAlpha = medal == Medal.None ? alpha * NoMedalAlpha : alpha;
+    texture.DrawCentered(center, Tint(medal) * shownAlpha, Vector2.One * scale);
   }
 }
