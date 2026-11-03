@@ -110,7 +110,7 @@ public class ClimbTrialsModuleSettings : EverestModuleSettings
 
   [SettingRange(min: 1, max: 5)]
   public int CountdownLength { get; set; } = 3;
-  public CountdownMode CountdownMode { get; set; } = CountdownMode.Fast;
+  public CountdownMode CountdownMode { get; set; } = CountdownMode.Off;
   public bool ResetOnDeath { get; set; } = false;
 
   [SettingSubText("modoptions_climbtrialsmodule_pbautosubmit_desc")]
