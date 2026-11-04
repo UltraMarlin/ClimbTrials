@@ -236,7 +236,8 @@ public class OuiHub : ListScreen
     string text,
     int minLength,
     int maxLength,
-    Action<string> onConfirm
+    Action<string> onConfirm,
+    MTexture letter = null
   )
   {
     Audio.Play(SFX.ui_main_savefile_rename_start);
@@ -244,6 +245,7 @@ public class OuiHub : ListScreen
     textEntryRowIndex = menu.Selection;
     OuiHubTextEntry input = Overworld.Goto<OuiHubTextEntry>();
     input.Headline = Dialog.Clean(headlineKey);
+    input.Letter = letter;
     input.Init<OuiHub>(
       text,
       null,
@@ -301,7 +303,8 @@ public class OuiHub : ListScreen
       "",
       InviteCodeMinLength,
       InviteCodeEntryMaxLength,
-      JoinWithCode
+      JoinWithCode,
+      GFX.Gui[InviteCodeIcon]
     );
   }
 
