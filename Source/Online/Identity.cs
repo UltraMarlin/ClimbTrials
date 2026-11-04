@@ -75,7 +75,7 @@ public static class Identity
     Settings.PlayerName = name;
     Settings.PlayerNameChosen = false;
     Save();
-    Standings.MarkStale();
+    Standings.ForgetPlayer();
   }
 
   public static void AdoptName(string name)

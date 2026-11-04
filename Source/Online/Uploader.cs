@@ -164,7 +164,7 @@ public static class Uploader
     {
       ServerError.Rejected when result.Message != null => result.Message,
       ServerError.UpdateRequired => Dialog.Clean("climbtrials_update_required"),
-      ServerError.Banned => Dialog.Clean("climbtrials_submit_banned"),
+      ServerError.Banned or ServerError.Refused => Dialog.Clean("climbtrials_submit_banned"),
       ServerError.SubmissionsPaused => NotSubmitted(Dialog.Clean("climbtrials_submit_paused")),
       _ => Dialog.Clean("climbtrials_submit_failed"),
     };

@@ -57,7 +57,12 @@ public class OuiClimbTrialsOptions : Oui
 
   private TextMenu BuildMenu()
   {
-    TextMenu built = new() { CompactWidthMode = true, BatchMode = true };
+    TextMenu built = new()
+    {
+      CompactWidthMode = true,
+      BatchMode = true,
+      RenderAsFocused = true,
+    };
     built.Add(new TextMenu.Header(Dialog.Clean("climbtrials_options_title")));
     ClimbTrialsModule.Instance.CreateModMenuSection(built, false, null);
     if (built.Height > built.ScrollableMinSize)

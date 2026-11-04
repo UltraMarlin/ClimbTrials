@@ -14,7 +14,7 @@ public abstract class ListScreen : Oui
   public const float TitleScale = 1.6f;
   private const float OfflineX = 60f;
   private const float OfflineScale = 0.5f;
-  private const float PollSeconds = 180f;
+  private const float PollSeconds = 60f;
 
   protected TrialsMenu menu;
   protected readonly TransientText notice = new();
@@ -50,6 +50,15 @@ public abstract class ListScreen : Oui
   protected virtual void FetchOnline() { }
 
   protected virtual bool Reopen() => false;
+
+  protected void SelectRow(TextMenu.Item row)
+  {
+    if (menu.Current == row)
+      return;
+    menu.Current?.OnLeave?.Invoke();
+    menu.Selection = menu.Items.IndexOf(row);
+    menu.Current?.OnEnter?.Invoke();
+  }
 
   protected void SetDim(float value)
   {
@@ -165,7 +174,7 @@ public abstract class ListScreen : Oui
     if (sinceFetch < PollSeconds)
       return;
     sinceFetch = 0f;
-    FetchOnline();
+    ServerClient.RunWithoutIcon(FetchOnline);
   }
 
   private void ToggleSpeedrunTool()

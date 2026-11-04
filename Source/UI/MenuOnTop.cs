@@ -43,6 +43,7 @@ public abstract class MenuOnTop : TextMenu
   {
     if (closing)
       return;
+    RenderAsFocused |= Focused;
     Focused = false;
     closing = true;
     timer = inLevel ? Duration * (1f - backdrop) : Duration - timer;
@@ -50,6 +51,7 @@ public abstract class MenuOnTop : TextMenu
 
   public float HandOver()
   {
+    RenderAsFocused |= Focused;
     Focused = false;
     handedOver = true;
     Alpha = 0f;

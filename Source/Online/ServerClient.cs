@@ -34,6 +34,7 @@ public enum ServerError
   CodeInvalid,
   CodeUsedUp,
   NotAdmin,
+  Refused,
 }
 
 public readonly record struct ServerResult<T>(T Value, ServerError Error, string Message)
@@ -84,7 +85,8 @@ public static class ServerClient
   private static readonly HttpClient adminReplaysHttp = Build(AdminReplaysTimeoutSeconds);
 
   private const int PassiveIconDelayMs = 300;
-  private static int pending;
+  private static int loadsShowingIcon;
+  private static bool iconSuppressed;
   private static LoadingIcon icon;
   private static readonly JsonSerializerOptions json = new()
   {
@@ -261,7 +263,7 @@ public static class ServerClient
     string clientId = Identity.ClientId;
     Uri url = new(baseUri, path);
 
-    BeginRequest(passive);
+    bool showsIcon = BeginRequest(passive);
 
     Task.Run(async () =>
     {
@@ -275,7 +277,8 @@ public static class ServerClient
       );
       await MainThreadHelper.Schedule(() =>
       {
-        EndRequest();
+        if (showsIcon)
+          ReleaseIcon();
         if (!result.Ok)
           Logger.Log(LogLevel.Info, LogTag, $"{path}: {result.Error}, {result.Message}");
         Identity.UpdateFromAnswer(result.Error, clientId);
@@ -284,34 +287,57 @@ public static class ServerClient
     });
   }
 
-  private static void BeginRequest(bool passive)
+  public static void RunWithoutIcon(Action startRequests)
   {
-    pending++;
+    bool suppressedBefore = iconSuppressed;
+    iconSuppressed = true;
+    try
+    {
+      startRequests();
+    }
+    finally
+    {
+      iconSuppressed = suppressedBefore;
+    }
+  }
+
+  private static bool BeginRequest(bool passive)
+  {
+    if (iconSuppressed)
+      return false;
+    loadsShowingIcon++;
     if (!passive)
     {
-      ShowIconWhilePending();
-      return;
+      ShowIconWhileLoading();
+      return true;
     }
     Task.Run(async () =>
     {
       await Task.Delay(PassiveIconDelayMs);
-      await MainThreadHelper.Schedule(ShowIconWhilePending);
+      await MainThreadHelper.Schedule(ShowIconWhileLoading);
     });
+    return true;
   }
 
-  private static void ShowIconWhilePending()
+  public static void HoldIcon()
   {
-    if (pending == 0 || icon?.TryToKeep() == true)
+    loadsShowingIcon++;
+    ShowIconWhileLoading();
+  }
+
+  public static void ReleaseIcon()
+  {
+    if (--loadsShowingIcon > 0)
+      return;
+    icon?.Hide();
+  }
+
+  private static void ShowIconWhileLoading()
+  {
+    if (loadsShowingIcon == 0 || icon?.TryToKeep() == true)
       return;
     icon = new LoadingIcon();
     (WatcherOverlay.Scene ?? Engine.Scene).Add(icon);
-  }
-
-  private static void EndRequest()
-  {
-    if (--pending > 0)
-      return;
-    icon?.Hide();
   }
 
   private static async Task<ServerResult<T>> Request<T>(
@@ -381,6 +407,7 @@ public static class ServerClient
       "code_invalid" => ServerError.CodeInvalid,
       "code_used_up" => ServerError.CodeUsedUp,
       "not_admin" => ServerError.NotAdmin,
+      "payload_too_large" or "bad_request" => ServerError.Refused,
       _ => ServerError.Offline,
     };
     return new ServerResult<T>(default, code, error?.Message);

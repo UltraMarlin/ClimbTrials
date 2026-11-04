@@ -15,7 +15,8 @@ public abstract class BoardSubject
   public abstract MTexture Skull { get; }
   public abstract string CountKey { get; }
   public abstract IReadOnlyList<BoardSubject> Siblings { get; }
-  public abstract void Fetch(int chunk, double maxAgeSeconds, Action<ServerResult<Board>> onDone);
+  public abstract void Fetch(int chunk, Action<ServerResult<Board>> onDone);
+  public abstract bool Holds(int chunk);
   public abstract Campaign Campaign { get; }
   public virtual Trial Trial => null;
 
@@ -44,11 +45,10 @@ public abstract class BoardSubject
     public override IReadOnlyList<BoardSubject> Siblings =>
       !alone && Campaign is Campaign campaign ? campaign.Trials.Select(ForTrial).ToList() : [this];
 
-    public override void Fetch(
-      int chunk,
-      double maxAgeSeconds,
-      Action<ServerResult<Board>> onDone
-    ) => Standings.FetchTrialBoard(trial, chunk, maxAgeSeconds, onDone);
+    public override void Fetch(int chunk, Action<ServerResult<Board>> onDone) =>
+      Standings.FetchTrialBoard(trial, chunk, onDone);
+
+    public override bool Holds(int chunk) => Standings.HoldsTrialChunk(trial, chunk);
 
     protected override Medal MedalOf(BoardRow row) =>
       trial.Goals == null || row.Ticks is not long ticks
@@ -69,11 +69,10 @@ public abstract class BoardSubject
     public override IReadOnlyList<BoardSubject> Siblings =>
       (Campaigns.IsEvent(campaign) ? Events.Ordered() : Campaigns.All).Select(ForCampaign).ToList();
 
-    public override void Fetch(
-      int chunk,
-      double maxAgeSeconds,
-      Action<ServerResult<Board>> onDone
-    ) => Standings.FetchCampaignBoard(campaign, chunk, maxAgeSeconds, onDone);
+    public override void Fetch(int chunk, Action<ServerResult<Board>> onDone) =>
+      Standings.FetchCampaignBoard(campaign, chunk, onDone);
+
+    public override bool Holds(int chunk) => Standings.HoldsCampaignChunk(campaign, chunk);
 
     protected override Medal MedalOf(BoardRow row) =>
       GoalTimes.HideUnreachedGrandmaster(

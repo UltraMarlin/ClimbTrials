@@ -8,8 +8,9 @@ public static class Motion
 {
   public static readonly Transition ScreenSlide = new(0.35f, 0.2f, 0.2f);
   public const float SlideDistance = 120f;
-  public static readonly Transition PageTurn = new(0.2f, 0.12f, 0.12f);
-  public const float PageDistance = 60f;
+  public static readonly Transition PageTurn = new(0.3f, 0.18f, 0.18f);
+  public const float PageDistance = 40f;
+  public const float PageFadeFloor = 0.15f;
   public static readonly Transition BoardCover = new(0.35f, 0.2f, 0.2f);
   public static readonly Transition MenuCover = new(0.25f, 0.15f, 0.15f);
   public static readonly Transition LevelBoardOpen = new(0.25f, 0.25f, 0.25f);
@@ -24,6 +25,9 @@ public static class Motion
   public const float LevelBoardBackdropAlpha = 0.7f;
 
   public static float Rise(float arrived) => OpenRise * (1f - arrived);
+
+  public static float PageAlphaAboveFloor(float alpha) =>
+    PageFadeFloor + (1f - PageFadeFloor) * alpha;
 
   public static float DimUnder(float covered, float floor) => 1f - (1f - floor) * covered;
 

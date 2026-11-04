@@ -272,7 +272,10 @@ public class OuiTrials : ListScreen
       resume,
       coveredFrom: coveredFrom,
       backdropFrom: backdropFrom
-    );
+    )
+    {
+      OnSubjectChanged = SelectRowOf,
+    };
     Scene.Add(view);
   }
 
@@ -309,16 +312,16 @@ public class OuiTrials : ListScreen
   private void OnBoardClosed(BoardSubject shown)
   {
     view = null;
-    int index = rows.FindIndex(row => row.Trial.Id == shown.Id);
-    if (index >= 0 && menu.Current != rows[index])
-    {
-      menu.Current?.OnLeave?.Invoke();
-      menu.Selection = menu.Items.IndexOf(rows[index]);
-      menu.Current?.OnEnter?.Invoke();
-    }
     RefreshCampaign();
     menu.Focused = true;
     Focused = true;
+  }
+
+  private void SelectRowOf(BoardSubject shown)
+  {
+    int index = rows.FindIndex(row => row.Trial.Id == shown.Id);
+    if (index >= 0)
+      SelectRow(rows[index]);
   }
 
   private void Start(Trial trial)

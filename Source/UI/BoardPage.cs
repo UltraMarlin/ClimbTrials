@@ -29,8 +29,6 @@ public sealed class BoardPage
 
   public static int ChunkOf(int page) => (page - 1) * BoardLayout.PageRows / Standings.ChunkRows;
 
-  public static bool LastOfChunk(int page) => ChunkOf(page + 1) != ChunkOf(page);
-
   public static bool Covers(Board chunk, int page)
   {
     int start = (page - 1) * BoardLayout.PageRows;

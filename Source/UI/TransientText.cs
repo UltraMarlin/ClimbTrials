@@ -39,14 +39,17 @@ public sealed class TransientText
     if (!Showing)
       return;
     Color shown = color * (alpha * Math.Clamp((duration - age) / FadeTime, 0f, 1f));
+    DrawLine(text, center, scale, shown);
+  }
+
+  public static void DrawLine(string text, Vector2 center, float scale, Color color) =>
     ActiveFont.DrawOutline(
       text,
       center,
       new Vector2(0.5f, 0.5f),
       Vector2.One * scale,
-      shown,
+      color,
       2f,
-      TextOutline.StrokeFor(shown)
+      TextOutline.StrokeFor(color)
     );
-  }
 }

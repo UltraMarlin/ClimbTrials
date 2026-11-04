@@ -453,7 +453,7 @@ public static class Replayer
     RestoreRecordedMenu();
     board?.Discard();
     board = null;
-    menu?.RemoveSelf();
+    menu?.Release();
     menu = null;
   }
 
@@ -505,7 +505,7 @@ public static class Replayer
   {
     if (Engine.Scene is not Level level)
       return;
-    menu.RemoveSelf();
+    menu.Release();
     menu = null;
     recordedMenu?.RemoveSelf();
     recordedMenu = null;

@@ -103,7 +103,7 @@ public class OuiEvents : CampaignListScreen
   {
     for (int retries = 0; ; retries++)
     {
-      Standings.RefetchHub();
+      ServerClient.RunWithoutIcon(Standings.RefetchHub);
       while (Standings.HubFetching)
         yield return null;
 
@@ -123,7 +123,6 @@ public class OuiEvents : CampaignListScreen
   private void ApplyPendingAndRebuild()
   {
     string selectedId = IdOf(menu.Current);
-    SlidingRow selected = menu.Current as SlidingRow;
     Events.ApplyPending();
     TrialsMenu previous = menu;
     previous.Focused = false;
@@ -134,8 +133,6 @@ public class OuiEvents : CampaignListScreen
     menu.Alpha = previous.Alpha;
     previous.RemoveSelf();
     Scene.Add(menu);
-    if (selected != null && menu.Current is SlidingRow current)
-      current.TakeSlideFrom(selected);
     menu.Current?.OnEnter?.Invoke();
     menu.Focused = true;
   }

@@ -16,11 +16,11 @@ public abstract class SlidingRow : TextMenu.Item
 
   public override void Update()
   {
-    bool selected = Container.Focused && Container.Current == this;
+    bool selected = Container.Current == this;
     ease = Calc.Approach(ease, selected ? 1f : 0f, 6f * Engine.DeltaTime);
   }
 
-  public void TakeSlideFrom(SlidingRow previous) => ease = previous.ease;
+  public void ShowSelectedAtOnce() => ease = 1f;
 
   protected Vector2 RowStart(Vector2 position) =>
     position + new Vector2(Ease.CubeInOut(ease) * RowLayout.HoveredRowShift, 0f);

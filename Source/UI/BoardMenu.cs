@@ -27,6 +27,10 @@ public class BoardMenu : TextMenu
   public bool HeaderVisible = true;
   public float EntryOffsetX;
   public float EntryAlpha = 1f;
+  public int LoadingDirection;
+  public float RowsAlpha = 1f;
+  public BoardMenu MenuToDiscard;
+  public BoardMenu MenuLosingHeader;
 
   private static TimeStyle Style => TimeText.Hud.At(BoardLayout.TextScale);
   private readonly BoardPage page;
@@ -124,28 +128,40 @@ public class BoardMenu : TextMenu
   public void SetFocus(bool focus)
   {
     focus &= HasHoverable;
+    RenderAsFocused = HasHoverable;
     if (!keys.Raw)
     {
       Focused = focus;
       return;
     }
     Focused = false;
-    RenderAsFocused = focus;
     driven = focus;
+  }
+
+  public void StopInput()
+  {
+    Focused = false;
+    driven = false;
   }
 
   public void Discard()
   {
     discarded = true;
-    Focused = false;
-    driven = false;
+    StopInput();
     Visible = false;
     RemoveSelf();
+    MenuToDiscard?.Discard();
+    MenuToDiscard = null;
   }
 
   public override void Added(Scene scene)
   {
     base.Added(scene);
+    MenuToDiscard?.Discard();
+    MenuToDiscard = null;
+    if (MenuLosingHeader != null)
+      MenuLosingHeader.HeaderVisible = false;
+    MenuLosingHeader = null;
     if (discarded)
       RemoveSelf();
   }
@@ -198,6 +214,14 @@ public class BoardMenu : TextMenu
     }
   }
 
+  private Color ArrowColor(int direction)
+  {
+    if (!HasPage(direction))
+      return Color.DarkSlateGray * Alpha;
+    bool highlighted = RenderAsFocused && Current is EntryRow && LoadingDirection != direction;
+    return (highlighted ? TrialsMenu.Highlight : Color.White) * Alpha;
+  }
+
   public override void Render()
   {
     base.Render();
@@ -208,10 +232,8 @@ public class BoardMenu : TextMenu
     float centerY = top + EntriesSpan / 2f;
     float half = Math.Max(BoardLayout.PageArrowX, Width / 2f + BoardLayout.PageArrowGap);
     MTexture arrow = GFX.Gui["dotarrow_outline"];
-    Color active = (HasFocus && Current is EntryRow ? TrialsMenu.Highlight : Color.White) * Alpha;
-    Color disabled = Color.DarkSlateGray * Alpha;
-    Color right = HasPage(1) ? active : disabled;
-    Color left = HasPage(-1) ? active : disabled;
+    Color right = ArrowColor(1);
+    Color left = ArrowColor(-1);
     Vector2 scale = Vector2.One * BoardLayout.PageArrowScale;
     arrow.DrawCentered(new Vector2(Position.X + half, centerY), right, scale);
     arrow.DrawCentered(new Vector2(Position.X - half, centerY), left, scale * new Vector2(-1f, 1f));
@@ -228,7 +250,7 @@ public class BoardMenu : TextMenu
     bool highlighted
   )
   {
-    Color color = (highlighted ? TrialsMenu.Highlight : Color.White) * alpha;
+    Color color = (highlighted ? TrialsMenu.Highlight : Colors.DimText) * alpha;
     Vector2 justify = new(0f, 0.5f);
     Vector2 scale = Vector2.One * BoardLayout.TextScale;
     Color stroke = TextOutline.StrokeFor(color);
@@ -248,14 +270,16 @@ public class BoardMenu : TextMenu
     {
       float hiddenWidth = TimeText.Width(TimeText.TypicalTime, Style);
       Vector2 hiddenAt = new(left.X + width - hiddenWidth, left.Y + TimeText.Height(Style) / 2f);
-      TimeText.DrawHidden(hiddenAt, Style, Color.White * (BoardLayout.HiddenTimeAlpha * alpha));
+      Color hidden = Colors.DimText * (BoardLayout.HiddenTimeAlpha * alpha);
+      TimeText.DrawHidden(hiddenAt, Style, hidden);
       return;
     }
     string time = TimeText.Format(ticks);
     Medal medal = subject.ShownMedal(row, mode);
     float timeWidth = TimeText.Width(time, Style);
     Vector2 baseline = new(left.X + width - timeWidth, left.Y + TimeText.Height(Style) / 2f);
-    TimeText.Draw(baseline, time, Style, MedalIcon.TextColor(medal) * alpha);
+    Color timeColor = medal == Medal.None ? Colors.DimText : MedalIcon.TextColor(medal);
+    TimeText.Draw(baseline, time, Style, timeColor * alpha);
   }
 
   private static float NameColumnX(BoardMode mode) =>
@@ -452,7 +476,8 @@ public class BoardMenu : TextMenu
         if (!menu.HeaderVisible)
           return;
 
-        float ruleY = position.Y - Height() / 2f - BoardLayout.RuleGap;
+        float bounce = SelectWiggler.Value * 8f;
+        float ruleY = position.Y - bounce - Height() / 2f - BoardLayout.RuleGap;
         Color rule = Color.White * (BoardLayout.RuleAlpha * Container.Alpha);
         Draw.Rect(position.X, ruleY, Container.Width, 1f, rule);
         float alpha = Container.Alpha;
@@ -460,7 +485,7 @@ public class BoardMenu : TextMenu
         return;
       }
       Vector2 left = position + new Vector2(menu.EntryOffsetX, 0f);
-      float rowAlpha = Container.Alpha * menu.EntryAlpha;
+      float rowAlpha = Container.Alpha * menu.EntryAlpha * menu.RowsAlpha;
       DrawRow(Row, subject, mode, left, Container.Width, tagColumnWidth, rowAlpha, highlighted);
     }
   }

@@ -88,23 +88,26 @@ public abstract class CampaignListScreen : ListScreen
       BoardSubject.ForCampaign(campaign),
       opened => SetDim(Motion.DimUnder(opened, Motion.BoardUnderDim)),
       OnBoardClosed
-    );
+    )
+    {
+      OnSubjectChanged = SelectRowOf,
+    };
     Scene.Add(view);
   }
 
   private void OnBoardClosed(BoardSubject shown)
   {
     view = null;
-    int index = rows.FindIndex(row => row.Campaign.Id == shown.Id);
-    if (index >= 0 && menu.Current != rows[index])
-    {
-      menu.Current?.OnLeave?.Invoke();
-      menu.Selection = menu.Items.IndexOf(rows[index]);
-      menu.Current?.OnEnter?.Invoke();
-    }
     Standings.EnsureFreshHub();
     menu.Focused = true;
     Focused = true;
+  }
+
+  private void SelectRowOf(BoardSubject shown)
+  {
+    int index = rows.FindIndex(row => row.Campaign.Id == shown.Id);
+    if (index >= 0)
+      SelectRow(rows[index]);
   }
 
   protected override int InitialSelection(Oui from)

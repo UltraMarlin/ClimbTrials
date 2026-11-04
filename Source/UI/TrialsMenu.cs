@@ -8,6 +8,8 @@ public class TrialsMenu : TextMenu
 {
   public const float ListMinWidth = 1200f;
 
+  private bool settled;
+
   public static readonly Color Highlight = HighlightColorA;
 
   public float ListTop = 240f;
@@ -81,10 +83,21 @@ public class TrialsMenu : TextMenu
 
   public override void Update()
   {
+    if (!settled)
+      SettleLandingRow();
+    settled = true;
     base.Update();
     HighlightColor = Highlight;
     float lerp = 1f - (float)Math.Pow(0.01, Engine.RawDeltaTime);
     Position.Y += (TargetY - Position.Y) * lerp;
+  }
+
+  private void SettleLandingRow()
+  {
+    (Current as SlidingRow)?.ShowSelectedAtOnce();
+    int below = Items.IndexOf(Current) + 1;
+    if (Current != null && below < Items.Count)
+      RowDescription.OpenAtOnce(Items[below]);
   }
 
   public override void Render()
@@ -103,7 +116,7 @@ public class TrialsMenu : TextMenu
       if (fade > 0f)
       {
         Alpha = menuAlpha * fade;
-        item.Render(center, Focused && Current == item);
+        item.Render(center, Current == item);
       }
       cursor.Y += height + ItemSpacing;
     }

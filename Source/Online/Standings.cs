@@ -130,7 +130,7 @@ public enum StandingsState
 
 public static class Standings
 {
-  public const double FreshSeconds = 60;
+  public const double FreshSeconds = 15;
 
   private sealed class Entry<T>
   {
@@ -162,6 +162,14 @@ public static class Standings
   > waiting = [];
 
   private static int identityChangeCount;
+
+  public static int FailedBoardFetchesInARow { get; private set; }
+
+  public static void CountFailedBoardFetch()
+  {
+    if (!Settings.OfflineMode)
+      FailedBoardFetchesInARow++;
+  }
 
   private static int hubRequestNumber;
 
@@ -275,11 +283,11 @@ public static class Standings
     bool passDeleted = false
   )
   {
-    int asked = identityChangeCount;
+    int identityChangesAtRequest = identityChangeCount;
     request(result =>
     {
       bool deleted = passDeleted && result.Error == ServerError.PlayerDeleted;
-      if (asked != identityChangeCount && !deleted)
+      if (identityChangesAtRequest != identityChangeCount && !deleted)
         AskCurrent(request, receive, passDeleted);
       else
         receive(result);
@@ -338,9 +346,11 @@ public static class Standings
 
     entry.Fetching = true;
     entry.TriedAt = now;
-    AskCurrent<TrialStanding>(
-      done => ServerClient.GetTrialStanding(trial.Id, done),
-      result => ReceiveStanding(entry, result)
+    ServerClient.RunWithoutIcon(() =>
+      AskCurrent<TrialStanding>(
+        done => ServerClient.GetTrialStanding(trial.Id, done),
+        result => ReceiveStanding(entry, result)
+      )
     );
   }
 
@@ -370,7 +380,8 @@ public static class Standings
     entry.Fetching = false;
     if (!result.Ok)
     {
-      entry.Value = default;
+      if (Settings.OfflineMode)
+        entry.Value = default;
       entry.State = StandingsState.Offline;
       return false;
     }
@@ -386,9 +397,26 @@ public static class Standings
       Identity.AdoptName(name);
   }
 
+  public static void ForgetPlayer()
+  {
+    ClearValue(hub);
+    foreach (Entry<CampaignRecords> entry in records.Values)
+      ClearValue(entry);
+    foreach (Entry<TrialStanding> entry in standings.Values)
+      ClearValue(entry);
+    MarkStale();
+  }
+
+  private static void ClearValue<T>(Entry<T> entry)
+  {
+    entry.Value = default;
+    entry.State = StandingsState.Idle;
+  }
+
   public static void MarkStale()
   {
     identityChangeCount++;
+    FailedBoardFetchesInARow = 0;
     hub.FetchedAt = DateTime.MinValue;
     foreach (Entry<CampaignRecords> entry in records.Values)
       entry.FetchedAt = DateTime.MinValue;
@@ -404,32 +432,32 @@ public static class Standings
 
   private static string CampaignKey(string campaignId) => $"campaign:{campaignId}";
 
-  public static void FetchTrialBoard(
-    Trial trial,
-    int chunk,
-    double maxAgeSeconds,
-    Action<ServerResult<Board>> onDone
-  ) =>
+  public static void FetchTrialBoard(Trial trial, int chunk, Action<ServerResult<Board>> onDone) =>
     FetchChunk(
       TrialKey(trial.Id),
       chunk,
-      maxAgeSeconds,
       (offset, limit, done) => ServerClient.GetBoard(trial.Id, offset, limit, done),
       onDone
     );
 
   public static void DropTrialBoard(Trial trial) => DropChunks(TrialKey(trial.Id));
 
+  public static bool HoldsTrialChunk(Trial trial, int chunk) => Holds(TrialKey(trial.Id), chunk);
+
+  public static bool HoldsCampaignChunk(Campaign campaign, int chunk) =>
+    Holds(CampaignKey(campaign.Id), chunk);
+
+  private static bool Holds(string key, int chunk) =>
+    !Settings.OfflineMode && chunks.ContainsKey((key, chunk));
+
   public static void FetchCampaignBoard(
     Campaign campaign,
     int chunk,
-    double maxAgeSeconds,
     Action<ServerResult<Board>> onDone
   ) =>
     FetchChunk(
       CampaignKey(campaign.Id),
       chunk,
-      maxAgeSeconds,
       (offset, limit, done) => ServerClient.GetCampaignBoard(campaign.Id, offset, limit, done),
       onDone
     );
@@ -437,18 +465,17 @@ public static class Standings
   private static void FetchChunk(
     string key,
     int chunk,
-    double maxAgeSeconds,
     BoardRequest request,
     Action<ServerResult<Board>> onDone
   )
   {
     (string, int) at = (key, chunk);
     bool hit = chunks.TryGetValue(at, out (DateTime FetchedAt, Board Board) cached);
-    bool fresh = hit && (DateTime.UtcNow - cached.FetchedAt).TotalSeconds < maxAgeSeconds;
-    if (fresh && !Settings.OfflineMode)
+    if (hit && !Settings.OfflineMode)
     {
       onDone(new ServerResult<Board>(cached.Board, ServerError.None, null));
-      return;
+      if ((DateTime.UtcNow - cached.FetchedAt).TotalSeconds < FreshSeconds)
+        return;
     }
     if (waiting.TryGetValue(at, out List<Action<ServerResult<Board>>> waiters))
     {
@@ -456,15 +483,25 @@ public static class Standings
       return;
     }
     waiting[at] = [onDone];
+    int identityChangesAtRequest = identityChangeCount;
     request(
       chunk * ChunkRows,
       ChunkRows,
       result =>
       {
-        if (result.Ok)
-          chunks[at] = (DateTime.UtcNow, result.Value);
         List<Action<ServerResult<Board>>> done = waiting[at];
         waiting.Remove(at);
+        if (identityChangesAtRequest != identityChangeCount)
+        {
+          foreach (Action<ServerResult<Board>> callback in done)
+            FetchChunk(key, chunk, request, callback);
+          return;
+        }
+        if (result.Ok)
+        {
+          chunks[at] = (DateTime.UtcNow, result.Value);
+          FailedBoardFetchesInARow = 0;
+        }
         foreach (Action<ServerResult<Board>> callback in done)
           callback(result);
       }

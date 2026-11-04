@@ -21,7 +21,6 @@ public static class Hints
 
   private static readonly Hint[] All =
   [
-    new(() => OptionsUntouched, "climbtrials_hint_countdown"),
     new(() => OptionsUntouched, "climbtrials_hint_hud"),
     new(() => OptionsUntouched, "climbtrials_hint_ghost"),
     new(() => OptionsUntouched, "climbtrials_hint_reset_on_death"),

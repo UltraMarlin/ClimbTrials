@@ -52,6 +52,9 @@ public sealed class MenuKeys
   public bool Back =>
     Pressed(Binds.Cancel) || Pressed(Binds.Pause) || Pressed(Replayer.EscapeBinding());
 
+  public bool SideRepeating =>
+    Raw ? left.Repeating || right.Repeating : Input.MenuLeft.Repeating || Input.MenuRight.Repeating;
+
   public bool PageDown => Pressed(CoreModule.Settings.MenuPageDown);
   public bool PageUp => Pressed(CoreModule.Settings.MenuPageUp);
   public bool ToggleComparison => Pressed(ClimbTrialsModule.Settings.ToggleComparison);

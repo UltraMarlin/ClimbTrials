@@ -15,6 +15,9 @@ public class LeaderboardView : Entity
   private const float MessageScale = 0.8f;
   private const float PromptGap = 48f;
   private const float BlockedPromptAlpha = 0.4f;
+  private const int FailedFetchesBeforeNotice = 3;
+  private const float FailedFetchDim = 0.5f;
+  private const int PrefetchPages = 3;
 
   public readonly record struct Bookmark(string SubjectId, int Page, int Selection);
 
@@ -32,7 +35,8 @@ public class LeaderboardView : Entity
     public Board Chunk;
     public BoardState State = BoardState.Loading;
     public BoardMenu Menu;
-    public BoardMenu Leaving;
+    public readonly List<BoardMenu> Leaving = [];
+    public int Turns;
     public float X = ListScreen.OnScreenX;
     public float Alpha = 1f;
   }
@@ -58,6 +62,8 @@ public class LeaderboardView : Entity
   private int requestSequence;
   private int selectAfter;
   private int pageDirection;
+  private int loadingDirection;
+  private int waits;
   private bool sliding;
   private bool ended;
   private readonly float coveredFrom;
@@ -68,11 +74,17 @@ public class LeaderboardView : Entity
 
   public bool Focused { get; set; } = true;
 
+  public Action<BoardSubject> OnSubjectChanged;
+
   private bool Switchable => siblings.Count > 1;
 
   private MenuKeys Keys => options.Keys;
 
   private static bool RetryAllowed => !ClimbTrialsModule.Settings.OfflineMode;
+
+  private bool BoardFetchesFailing =>
+    current.State == BoardState.Ready
+    && Standings.FailedBoardFetchesInARow >= FailedFetchesBeforeNotice;
 
   public LeaderboardView(
     BoardSubject subject,
@@ -204,12 +216,14 @@ public class LeaderboardView : Entity
       shown.Menu.Position = at;
       shown.Menu.Alpha = alpha;
       shown.Menu.SetFocus(Focused && !sliding && ghostMenu == null && shown == current);
+      shown.Menu.LoadingDirection = shown == current ? loadingDirection : 0;
+      bool failing = shown == current && BoardFetchesFailing;
+      shown.Menu.RowsAlpha = failing ? FailedFetchDim : 1f;
     }
-    if (shown.Leaving != null)
+    foreach (BoardMenu leaving in shown.Leaving)
     {
-      shown.Leaving.Position = at;
-      shown.Leaving.Alpha = alpha;
-      shown.Leaving.Focused = false;
+      leaving.Position = at;
+      leaving.Alpha = alpha;
     }
   }
 
@@ -227,53 +241,57 @@ public class LeaderboardView : Entity
     };
     shown.Menu.SelectSlot(slot);
     Scene.Add(shown.Menu);
+    previous?.StopInput();
     if (turned != 0 && previous?.HasEntries == true)
     {
-      shown.Leaving?.Discard();
-      shown.Leaving = previous;
-      previous.RenderAsFocused = true;
+      shown.Leaving.Add(previous);
+      shown.Menu.MenuLosingHeader = previous;
       shown.Menu.EntryOffsetX = turned * Motion.PageDistance;
       shown.Menu.EntryAlpha = 0f;
-      Add(new Coroutine(PageRoutine(shown, previous, shown.Menu, turned)));
+      Add(new Coroutine(PageRoutine(shown, previous, turned, ++shown.Turns)));
     }
     else
-      previous?.Discard();
+    {
+      shown.Menu.MenuToDiscard = previous;
+      if (previous != null)
+      {
+        shown.Menu.EntryOffsetX = previous.EntryOffsetX;
+        shown.Menu.EntryAlpha = previous.EntryAlpha;
+      }
+    }
     Place();
   }
 
-  private static IEnumerator PageRoutine(
-    Shown shown,
-    BoardMenu leaving,
-    BoardMenu entering,
-    int direction
-  )
+  private IEnumerator PageRoutine(Shown shown, BoardMenu leaving, int direction, int turn)
   {
-    while (entering.Scene == null)
+    while (shown.Menu.Scene == null)
       yield return null;
-    leaving.HeaderVisible = false;
-    leaving.RenderAsFocused = false;
-    yield return Motion.Slide(
-      Motion.PageTurn,
-      direction,
-      Motion.PageDistance,
-      (outX, outAlpha, inX, inAlpha) =>
-      {
-        leaving.EntryOffsetX = outX;
-        leaving.EntryAlpha = outAlpha;
-        if (shown.Menu != entering)
-          return;
-        entering.EntryOffsetX = inX;
-        entering.EntryAlpha = inAlpha;
-      }
-    );
-    leaving.Discard();
-    if (shown.Leaving == leaving)
-      shown.Leaving = null;
-    if (shown.Menu == entering)
+    Transition pageTurn = Motion.PageTurn;
+    float startOffset = leaving.EntryOffsetX;
+    float startAlpha = leaving.EntryAlpha;
+    float leaveTo = -direction * Motion.PageDistance;
+    for (float elapsed = 0f; elapsed < pageTurn.Duration; elapsed += Engine.RawDeltaTime)
     {
-      entering.EntryOffsetX = 0f;
-      entering.EntryAlpha = 1f;
+      leaving.EntryOffsetX = MathHelper.Lerp(startOffset, leaveTo, pageTurn.LeavingMove(elapsed));
+      bool faded = elapsed >= pageTurn.OutSeconds;
+      float leavingAlpha = Motion.PageAlphaAboveFloor(1f - pageTurn.Leaving(elapsed));
+      leaving.EntryAlpha = faded ? 0f : startAlpha * leavingAlpha;
+      if (turn == shown.Turns)
+      {
+        float arrived = pageTurn.ArrivingMove(elapsed);
+        shown.Menu.EntryOffsetX = direction * Motion.PageDistance * (1f - arrived);
+        bool appeared = elapsed >= pageTurn.InStart;
+        float arrivingAlpha = Motion.PageAlphaAboveFloor(pageTurn.Arriving(elapsed));
+        shown.Menu.EntryAlpha = appeared ? arrivingAlpha : 0f;
+      }
+      yield return null;
     }
+    leaving.Discard();
+    shown.Leaving.Remove(leaving);
+    if (turn != shown.Turns)
+      yield break;
+    shown.Menu.EntryOffsetX = 0f;
+    shown.Menu.EntryAlpha = 1f;
   }
 
   private void ShowHeaderWhileLoading(Shown shown)
@@ -287,10 +305,10 @@ public class LeaderboardView : Entity
     Shown target = current;
     int sequence = ++requestSequence;
     selectAfter = select;
+    SetLoadingDirection(0);
     target.State = BoardState.Loading;
     target.Subject.Fetch(
       BoardPage.ChunkOf(page),
-      options.MaxAgeSeconds,
       result =>
       {
         if (sequence != requestSequence || Gone)
@@ -307,6 +325,15 @@ public class LeaderboardView : Entity
       bool gone = result.Error == ServerError.NotFound && target.Subject.Event != null;
       if (gone)
         Standings.MarkHubStale();
+      else
+        Standings.CountFailedBoardFetch();
+      pageDirection = 0;
+      if (!gone && target.Chunk != null && BoardPage.Covers(target.Chunk, page))
+      {
+        target.State = BoardState.Ready;
+        return;
+      }
+
       target.State = gone ? BoardState.EventGone : BoardState.Offline;
       target.Chunk = null;
       ShowMenu(target, BoardMenu.HeaderSlot);
@@ -325,40 +352,92 @@ public class LeaderboardView : Entity
         return;
       }
     }
+
     ShowMenu(target, selectAfter, pageDirection);
+    selectAfter = KeepSelection;
     pageDirection = 0;
-    PrefetchNextChunk();
+    PrefetchNearbyChunks();
   }
 
-  private void PrefetchNextChunk()
+  private void PrefetchNearbyChunks()
   {
     Board chunk = current.Chunk;
-    if (chunk == null || !BoardPage.LastOfChunk(page))
+    if (chunk == null)
       return;
 
-    int next = BoardPage.ChunkOf(page) + 1;
-    if (chunk.Total is not int total || next * Standings.ChunkRows >= total)
-      return;
-
-    current.Subject.Fetch(next, options.MaxAgeSeconds, _ => { });
+    int shownChunk = BoardPage.ChunkOf(page);
+    int nextChunk = BoardPage.ChunkOf(page + PrefetchPages);
+    int previousChunk = BoardPage.ChunkOf(Math.Max(1, page - PrefetchPages));
+    BoardSubject subject = current.Subject;
+    ServerClient.RunWithoutIcon(() =>
+    {
+      if (
+        nextChunk != shownChunk
+        && chunk.Total is int total
+        && nextChunk * Standings.ChunkRows < total
+      )
+        subject.Fetch(nextChunk, _ => { });
+      if (previousChunk != shownChunk)
+        subject.Fetch(previousChunk, _ => { });
+    });
   }
 
   private void TurnPage(int direction)
   {
-    if (current.Menu?.HasPage(direction) != true)
+    if (current.Menu?.HasPage(direction) != true || loadingDirection != 0)
       return;
-    page += direction;
-    pageDirection = direction;
-    Audio.Play(direction > 0 ? SFX.ui_main_roll_down : SFX.ui_main_roll_up);
-    if (current.Chunk != null && BoardPage.Covers(current.Chunk, page))
+
+    int target = page + direction;
+    int chunk = BoardPage.ChunkOf(target);
+    bool targetInShownChunk = current.Chunk != null && BoardPage.Covers(current.Chunk, target);
+    if (!targetInShownChunk && !current.Subject.Holds(chunk))
     {
-      ShowMenu(current, KeepSelection, direction);
-      pageDirection = 0;
-      PrefetchNextChunk();
+      WaitForChunk(chunk, direction);
       return;
     }
-    Fetch(KeepSelection);
+
+    page = target;
+    PlayPageSound(direction);
+    if (!targetInShownChunk)
+    {
+      pageDirection = TurnDirectionFor(direction);
+      Fetch(KeepSelection);
+      return;
+    }
+    
+    ShowMenu(current, KeepSelection, TurnDirectionFor(direction));
+    PrefetchNearbyChunks();
   }
+
+  private void WaitForChunk(int chunk, int direction)
+  {
+    SetLoadingDirection(direction);
+    int wait = waits;
+    current.Subject.Fetch(
+      chunk,
+      _ =>
+      {
+        if (wait == waits)
+          SetLoadingDirection(0);
+      }
+    );
+  }
+
+  private void SetLoadingDirection(int direction)
+  {
+    if (loadingDirection == 0 && direction != 0)
+      ServerClient.HoldIcon();
+    else if (loadingDirection != 0 && direction == 0)
+      ServerClient.ReleaseIcon();
+    if (direction != loadingDirection)
+      waits++;
+    loadingDirection = direction;
+  }
+
+  private int TurnDirectionFor(int direction) => Keys.SideRepeating ? 0 : direction;
+
+  private static void PlayPageSound(int direction) =>
+    Audio.Play(direction > 0 ? SFX.ui_main_roll_down : SFX.ui_main_roll_up);
 
   private void Switch(int direction)
   {
@@ -369,6 +448,7 @@ public class LeaderboardView : Entity
     Audio.Play(direction > 0 ? SFX.ui_main_button_toggle_on : SFX.ui_main_button_toggle_off);
     outgoing = current;
     current = new Shown(siblings[subjectIndex]) { Alpha = 0f };
+    OnSubjectChanged?.Invoke(current.Subject);
     page = 1;
     Fetch(BoardMenu.HeaderSlot);
     ShowHeaderWhileLoading(current);
@@ -391,29 +471,39 @@ public class LeaderboardView : Entity
       }
     );
     outgoing.Menu?.Discard();
-    outgoing.Leaving?.Discard();
+    DiscardLeaving(outgoing);
     outgoing = null;
     current.X = ListScreen.OnScreenX;
     current.Alpha = 1f;
     Place();
   }
 
+  private static void DiscardLeaving(Shown shown)
+  {
+    foreach (BoardMenu leaving in shown.Leaving)
+      leaving.Discard();
+    shown.Leaving.Clear();
+  }
+
   public override void SceneEnd(Scene scene)
   {
     base.SceneEnd(scene);
     ended = true;
+    SetLoadingDirection(0);
   }
 
   public void Discard()
   {
     ended = true;
     requestSequence++;
+    SetLoadingDirection(0);
     ghostMenu?.Discard();
     ghostMenu = null;
     current.Menu?.Discard();
-    current.Leaving?.Discard();
+    DiscardLeaving(current);
     outgoing?.Menu?.Discard();
-    outgoing?.Leaving?.Discard();
+    if (outgoing != null)
+      DiscardLeaving(outgoing);
     backdrop?.RemoveSelf();
     RemoveSelf();
   }
@@ -472,6 +562,13 @@ public class LeaderboardView : Entity
       return;
 
     notice.Render(new Vector2(current.X, ScreenLayout.NoticeY), ScreenLayout.NoticeScale, 1f);
+    if (BoardFetchesFailing && !notice.Showing)
+      TransientText.DrawLine(
+        Dialog.Clean("climbtrials_board_update_failed"),
+        new Vector2(current.X, ScreenLayout.NoticeY),
+        ScreenLayout.NoticeScale,
+        Color.White * current.Alpha
+      );
     if (outgoing == null && current.State == BoardState.Offline && RetryAllowed)
       ButtonRow.DrawCenter(Dialog.Clean("climbtrials_board_retry"), Input.MenuConfirm, dim);
     else if (Comparing)
