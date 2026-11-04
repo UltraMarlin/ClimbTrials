@@ -520,17 +520,8 @@ public static class RunManager
 
   private static void SpawnFinish(Level level)
   {
-    switch (Run.FinishKind)
-    {
-      case FinishKind.Zone when level.Tracker.GetEntity<FinishZone>() == null:
-        level.Add(new FinishZone(Run.Finish));
-        break;
-      case FinishKind.Heart
-        when !level.Session.LevelData.Entities.Exists(data =>
-          data.Name == "blackGem" && !data.Bool("fake")
-        ):
-        break;
-    }
+    if (Run.FinishKind == FinishKind.Zone && level.Tracker.GetEntity<FinishZone>() == null)
+      level.Add(new FinishZone(Run.Finish));
   }
 
   private static void OnBeforeUpdate(Level level)
