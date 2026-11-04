@@ -19,10 +19,10 @@ public class WatcherMenu : MenuOnTop
 
   public WatcherMenu(
     Action resume,
+    Action modOptions,
     Action play,
     Action race,
     Action board,
-    Action modOptions,
     Action leave
   )
     : base(inLevel: true)
@@ -31,6 +31,7 @@ public class WatcherMenu : MenuOnTop
     Focused = false;
     RenderAsFocused = true;
     Add(new Button(Dialog.Clean("climbtrials_watcher_resume")).Pressed(resume));
+    Add(new Button(Dialog.Clean("menu_pause_modoptions")).Pressed(modOptions));
     Add(new Button(Dialog.Clean("climbtrials_play_trial")).Pressed(play));
     Add(new Button(Dialog.Clean("climbtrials_race_this_ghost")).Pressed(race));
     Add(
@@ -40,7 +41,6 @@ public class WatcherMenu : MenuOnTop
         board
       )
     );
-    Add(new Button(Dialog.Clean("menu_pause_modoptions")).Pressed(modOptions));
     Add(new Button(Dialog.Clean("climbtrials_return_to_trials")).Pressed(leave));
   }
 

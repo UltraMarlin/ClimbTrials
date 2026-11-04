@@ -399,10 +399,10 @@ public static class Replayer
     menuStarted = false;
     menu = new WatcherMenu(
       ResumeReplay,
+      OpenModOptions,
       PlayTrial,
       RaceGhost,
       OpenBoard,
-      OpenModOptions,
       LeaveReplay
     );
     WatcherOverlay.Add(menu);
