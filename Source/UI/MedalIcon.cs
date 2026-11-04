@@ -7,7 +7,7 @@ namespace Celeste.Mod.ClimbTrials.UI;
 public static class MedalIcon
 {
   private const float TextBrighten = 0.25f;
-  private const float NoMedalAlpha = 0.6f;
+  private const float NoMedalAlpha = 0.4f;
 
   public static Color Tint(Medal medal) =>
     medal switch
@@ -17,7 +17,7 @@ public static class MedalIcon
       Medal.Gold => Calc.HexToColor("facb32"),
       Medal.Diamond => Calc.HexToColor("12c8ff"),
       Medal.Grandmaster => Calc.HexToColor("ff54b5"),
-      _ => Color.White,
+      _ => Color.Black,
     };
 
   public static Color TextColor(Medal medal) =>
