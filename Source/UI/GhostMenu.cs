@@ -127,6 +127,11 @@ public class GhostMenu : MenuOnTop
       );
       Color timeColor = MedalIcon.TextColor(subject.ShownMedal(row, mode)) * alpha;
       TimeText.Draw(baseline, time, Style, timeColor);
+      Vector2 watchStatusAt = new(
+        position.X + Container.Width / 2f,
+        position.Y + HeaderHeight / 2f
+      );
+      BoardMenu.DrawWatchStatus(row, watchStatusAt, new Vector2(0.5f, 0.5f), alpha);
     }
   }
 }

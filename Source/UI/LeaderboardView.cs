@@ -404,7 +404,7 @@ public class LeaderboardView : Entity
       Fetch(KeepSelection);
       return;
     }
-    
+
     ShowMenu(current, KeepSelection, TurnDirectionFor(direction));
     PrefetchNearbyChunks();
   }
@@ -615,20 +615,24 @@ public class LeaderboardView : Entity
 
     Audio.Play(SFX.ui_main_button_select);
     Replay local = LocalPb(row);
-    List<GhostOption> choices =
-    [
-      new(
-        Dialog.Clean(Comparing ? "climbtrials_switch_replay" : "climbtrials_watch_replay"),
-        () => GhostReason(row, local) ?? WatchedReason(row),
-        () => ChooseGhost(row, local, GhostChoice.Watch)
-      ),
+    bool watched = GhostComparisons.IsWatched(row);
+    List<GhostOption> choices = [];
+    if (!watched)
+      choices.Add(
+        new(
+          Dialog.Clean(Comparing ? "climbtrials_switch_replay" : "climbtrials_watch_replay"),
+          () => GhostReason(row, local),
+          () => ChooseGhost(row, local, GhostChoice.Watch)
+        )
+      );
+    choices.Add(
       new(
         Dialog.Clean("climbtrials_race_this_ghost"),
         () => GhostReason(row, local),
         () => ChooseGhost(row, local, GhostChoice.Race)
-      ),
-    ];
-    if (GhostComparisons.Planning && GhostComparisons.IsWatched(row))
+      )
+    );
+    if (GhostComparisons.Planning && watched)
       choices.Add(
         new(Dialog.Clean("climbtrials_cancel_comparison"), () => null, () => CancelPlan())
       );
@@ -636,11 +640,11 @@ public class LeaderboardView : Entity
       choices.Add(
         new(Dialog.Clean("climbtrials_remove_comparison"), () => null, () => RemoveFromMenu(row))
       );
-    else if (Comparing)
+    else if (Comparing && !watched)
       choices.Add(
         new(
           Dialog.Clean("climbtrials_add_comparison"),
-          () => GhostReason(row, local) ?? WatchedReason(row),
+          () => GhostReason(row, local),
           () => AddFromMenu(row, local)
         )
       );

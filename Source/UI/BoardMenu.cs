@@ -15,8 +15,8 @@ public class BoardMenu : TextMenu
   public const int HeaderSlot = -1;
   public const int OwnSlot = -2;
 
-  private const float MarkerScale = 0.5f;
-  private const float MarkerGap = 24f;
+  private const float WatchStatusScale = 0.5f;
+  private const float WatchStatusGap = 24f;
   private const float TeamTagScaleOfName = 0.8f;
   private const float TeamTagGap = 16f;
   private const float TeamTagScale = BoardLayout.TextScale * TeamTagScaleOfName;
@@ -264,7 +264,12 @@ public class BoardMenu : TextMenu
       DrawTeamTag(row, left + new Vector2(nameX, 0f), alpha);
     Vector2 nameAt = left + new Vector2(nameX + tagColumnWidth, 0f);
     ActiveFont.DrawOutline(row.Name, nameAt, justify, scale, color, 2f, stroke);
-    DrawMarker(row, left, alpha);
+    DrawWatchStatus(
+      row,
+      left + new Vector2(BoardLayout.RankX - WatchStatusGap, 0f),
+      new Vector2(1f, 0.5f),
+      alpha
+    );
 
     if (row.Ticks is not long ticks)
     {
@@ -300,30 +305,30 @@ public class BoardMenu : TextMenu
     );
   }
 
-  private static void DrawMarker(BoardRow row, Vector2 left, float alpha)
+  public static void DrawWatchStatus(BoardRow row, Vector2 at, Vector2 justify, float alpha)
   {
     if (!RunManager.Replaying && !GhostComparisons.Planning)
       return;
-    string marker;
+    string watchStatus;
     Color color;
     if (GhostComparisons.IsWatched(row))
     {
-      marker = Dialog.Clean("climbtrials_marker_watching");
+      watchStatus = Dialog.Clean("climbtrials_marker_watching");
       color = Color.White;
     }
     else if (GhostComparisons.Find(row) is ComparedGhost ghost)
     {
-      marker = Dialog.Clean("climbtrials_marker_ghost");
+      watchStatus = Dialog.Clean("climbtrials_marker_ghost");
       color = GhostComparisons.NameColor(ghost.Color);
     }
     else
       return;
     Color shown = color * alpha;
     ActiveFont.DrawOutline(
-      marker,
-      left + new Vector2(BoardLayout.RankX - MarkerGap, 0f),
-      new Vector2(1f, 0.5f),
-      Vector2.One * MarkerScale,
+      watchStatus,
+      at,
+      justify,
+      Vector2.One * WatchStatusScale,
       shown,
       TextOutline.DimStroke,
       TextOutline.StrokeFor(shown)
