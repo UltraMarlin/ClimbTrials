@@ -16,7 +16,7 @@ public class RunTimerDisplay : Entity
   public RunTimerDisplay()
     : base()
   {
-    Tag = Tags.HUD | Tags.Persistent | Tags.TransitionUpdate;
+    Tag = Tags.HUD | Tags.Persistent;
   }
 
   public static bool ShouldShow =>

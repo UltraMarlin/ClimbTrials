@@ -86,14 +86,12 @@ public static class TrialDraft
     Id = trial.Id;
     Name = trial.Name;
     Difficulty = trial.Difficulty;
-    if (trial.Goals is GoalTimes goals)
-    {
-      Bronze = ToSeconds(goals.BronzeTicks);
-      Silver = ToSeconds(goals.SilverTicks);
-      Gold = ToSeconds(goals.GoldTicks);
-      Diamond = ToSeconds(goals.DiamondTicks);
-      Grandmaster = ToSeconds(goals.GrandmasterTicks);
-    }
+    GoalTimes goals = trial.Goals;
+    Bronze = ToSeconds(goals.BronzeTicks);
+    Silver = ToSeconds(goals.SilverTicks);
+    Gold = ToSeconds(goals.GoldTicks);
+    Diamond = ToSeconds(goals.DiamondTicks);
+    Grandmaster = ToSeconds(goals.GrandmasterTicks);
     ReplayLimitSeconds = trial.ReplayLimitSeconds;
     RunDefinition run = trial.Run;
     Dashes = run.Dashes;

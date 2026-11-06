@@ -1,5 +1,4 @@
 using Celeste.Mod.ClimbTrials.Entities;
-using Monocle;
 using MonoMod.Utils;
 
 namespace Celeste.Mod.ClimbTrials.Runs;

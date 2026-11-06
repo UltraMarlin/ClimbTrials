@@ -29,7 +29,7 @@ public class RunInfoDisplay : Entity
 
   public RunInfoDisplay()
   {
-    Tag = Tags.HUD | Tags.Persistent | Tags.TransitionUpdate;
+    Tag = Tags.HUD | Tags.Persistent;
   }
 
   public override void Render()

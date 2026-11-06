@@ -93,7 +93,7 @@ public class GoalListDisplay : Entity
       layer.Visible = Shown;
 
     Trial trial = RunManager.Trial;
-    if (trial?.Goals == null)
+    if (trial == null)
       return;
     long best = TrialRecords.Get(trial.Id)?.BestTicks ?? long.MaxValue;
     GoalTimesDisplayMode mode = Mode;
@@ -171,7 +171,7 @@ public class GoalListDisplay : Entity
 
   public static bool Shown =>
     Mode != GoalTimesDisplayMode.Off
-    && RunManager.Trial?.Goals != null
+    && RunManager.Trial != null
     && RunManager.Run != null
     && !RunManager.Replaying
     && !RunHudLayout.PauseScreenOpen;

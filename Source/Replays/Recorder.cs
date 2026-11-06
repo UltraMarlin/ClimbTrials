@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using Celeste.Mod.ClimbTrials.Content;
-using Celeste.Mod.Core;
 using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.Replays;

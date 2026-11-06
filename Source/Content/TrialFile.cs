@@ -50,7 +50,7 @@ public static class TrialFile
 
   public static IReadOnlyList<Campaign> Load()
   {
-    if (!Everest.Content.TryGet(Folder, out ModAsset folder, includeDirs: true))
+    if (!Everest.Content.TryGet(Folder, out ModAsset folder))
       throw new TrialFileException($"The mod's campaign folder '{Folder}' is missing");
 
     List<(Campaign Campaign, int Order)> loaded = [];
@@ -228,53 +228,46 @@ public static class TrialFile
       throw new TrialFileException(
         $"{at}, field 'run.introType': expected {string.Join(", ", IntroNames.Keys)} or null"
       );
-    try
+    return new RunDefinition
     {
-      return new RunDefinition
-      {
-        Sid = String(run, "sid", at),
-        Mode = mode,
-        StartRoom = String(run, "startRoom", at),
-        Spawn = Vector(Field(run, "spawn", at), $"{at}, field 'run.spawn'"),
-        SpawnFacing = facing,
-        FinishRoom = String(run, "finishRoom", at),
-        FinishKind = kind,
-        Finish = finishRect,
-        Waypoints = List(run, "waypoints", at, ReadWaypoint),
-        CameraOffsets = List(
-          run,
-          "cameraOffsets",
-          at,
-          (element, path) =>
-            new CameraOffsetDef(
-              String(element, "room", path),
-              Vector(Field(element, "offset", path), $"{path}.offset")
-            )
-        ),
-        BloomBaseAdd = OptionalFloat(run, "bloomBaseAdd", at),
-        LightingAlphaAdd = OptionalFloat(run, "lightingAlphaAdd", at),
-        IgnoredStrawberries = List(
-          run,
-          "ignoredStrawberries",
-          at,
-          (element, path) => new EntityID(String(element, "room", path), Int(element, "id", path))
-        ),
-        RequiredStrawberries = OptionalInt(run, "requiredStrawberries", at) ?? 0,
-        RequiredSummitGems = gems,
-        Dashes = dashes,
-        Grabless = OptionalBool(run, "grabless", at) ?? false,
-        NoRefills = OptionalBool(run, "noRefills", at) ?? false,
-        CoreMode = coreMode,
-        DreamDash = OptionalBool(run, "dreamDash", at),
-        IntroType = intro,
-        SplitCategories = ReadSplitCategories(run, at),
-        SplitRects = List(run, "splitRects", at, ReadSplitRect),
-      };
-    }
-    catch (ArgumentOutOfRangeException e)
-    {
-      throw new TrialFileException($"{at}: {e.Message}");
-    }
+      Sid = String(run, "sid", at),
+      Mode = mode,
+      StartRoom = String(run, "startRoom", at),
+      Spawn = Vector(Field(run, "spawn", at), $"{at}, field 'run.spawn'"),
+      SpawnFacing = facing,
+      FinishRoom = String(run, "finishRoom", at),
+      FinishKind = kind,
+      Finish = finishRect,
+      Waypoints = List(run, "waypoints", at, ReadWaypoint),
+      CameraOffsets = List(
+        run,
+        "cameraOffsets",
+        at,
+        (element, path) =>
+          new CameraOffsetDef(
+            String(element, "room", path),
+            Vector(Field(element, "offset", path), $"{path}.offset")
+          )
+      ),
+      BloomBaseAdd = OptionalFloat(run, "bloomBaseAdd", at),
+      LightingAlphaAdd = OptionalFloat(run, "lightingAlphaAdd", at),
+      IgnoredStrawberries = List(
+        run,
+        "ignoredStrawberries",
+        at,
+        (element, path) => new EntityID(String(element, "room", path), Int(element, "id", path))
+      ),
+      RequiredStrawberries = OptionalInt(run, "requiredStrawberries", at) ?? 0,
+      RequiredSummitGems = gems,
+      Dashes = dashes,
+      Grabless = OptionalBool(run, "grabless", at) ?? false,
+      NoRefills = OptionalBool(run, "noRefills", at) ?? false,
+      CoreMode = coreMode,
+      DreamDash = OptionalBool(run, "dreamDash", at),
+      IntroType = intro,
+      SplitCategories = ReadSplitCategories(run, at),
+      SplitRects = List(run, "splitRects", at, ReadSplitRect),
+    };
   }
 
   private static WaypointDef ReadWaypoint(JsonElement element, string where)

@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using Celeste.Editor;
 using Celeste.Mod.ClimbTrials.Content;

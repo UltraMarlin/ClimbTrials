@@ -16,13 +16,12 @@ public class RunNotice : Entity
   private const float StatusAlpha = 0.7f;
 
   private readonly TransientText notice = new();
-  private readonly FadeBuffer status;
 
   public RunNotice()
   {
     Tag = Tags.HUD | Tags.Persistent | Tags.TransitionUpdate | Tags.FrozenUpdate;
     Add(
-      status = new FadeBuffer("climbtrials-run-status", 1920, StatusHeight, DrawStatus)
+      new FadeBuffer("climbtrials-run-status", 1920, StatusHeight, DrawStatus)
       {
         Origin = new Vector2(0f, ScreenLayout.StatusY - StatusHeight / 2f),
         Alpha = StatusAlpha,

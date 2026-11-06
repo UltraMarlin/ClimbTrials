@@ -1,5 +1,4 @@
 using System;
-using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.UI;
 

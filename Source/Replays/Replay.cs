@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
-using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Replays.Codec;
 using Celeste.Mod.ClimbTrials.Runs;
 

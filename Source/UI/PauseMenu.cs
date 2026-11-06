@@ -3,7 +3,6 @@ using System.Linq;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.Runs;
-using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.UI;
 

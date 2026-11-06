@@ -68,8 +68,6 @@ public class PlaybackGhost : Entity
     sprite = new PlayerSprite(comparison ? PlayerSpriteMode.Madeline : PlayerSpriteMode.Playback);
     Add(hair = new PlayerHair(sprite));
     Add(sprite);
-    sprite.Active = false;
-    hair.Active = false;
     sprite.Visible = false;
     hair.Visible = false;
     sprite.Play(FirstKnownAnimation());
@@ -84,8 +82,6 @@ public class PlaybackGhost : Entity
     }
     Visible = shownFrames.Length > 0;
   }
-
-  public long Ticks => ticks;
 
   public void Sync(long elapsedTicks)
   {
@@ -128,7 +124,7 @@ public class PlaybackGhost : Entity
     );
     string animation = Replay.AnimationAt(frame.AnimId);
     if (animation != null && animation != sprite.CurrentAnimationID && sprite.Has(animation))
-      sprite.Play(animation, restart: true);
+      sprite.Play(animation);
     sprite.SetAnimationFrame(frame.AnimFrame);
     hair.Facing = (Facings)(int)facing;
 
@@ -192,7 +188,6 @@ public class PlaybackGhost : Entity
   {
     sprite.Color = color;
     hair.Color = color;
-    hair.Alpha = 1f;
     hair.Render();
     sprite.Render();
   }

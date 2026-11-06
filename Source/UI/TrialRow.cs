@@ -3,7 +3,6 @@ using Celeste.Mod.ClimbTrials.Online;
 using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.Runs;
 using Microsoft.Xna.Framework;
-using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.UI;
 
@@ -52,7 +51,7 @@ public class TrialRow : SlidingRow
       DrawWord("new", timeRight, rowStart.Y, alpha);
     else
     {
-      Medal medal = Trial.Goals?.MedalReached(record.BestTicks) ?? Medal.None;
+      Medal medal = Trial.Goals.MedalReached(record.BestTicks);
       MedalIcon.Draw(new Vector2(medalCenter, rowStart.Y), medal, RowLayout.MedalIconHeight, alpha);
       TimeText.Draw(
         new Vector2(timeRight - width, rowStart.Y + RowLayout.PbBaseline),

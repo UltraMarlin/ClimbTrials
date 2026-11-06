@@ -6,8 +6,6 @@ public static class RunGuards
 {
   private const string LogTag = "ClimbTrials/Guards";
 
-  public static bool RenderFixes = true;
-
   public static void Load()
   {
     On.Celeste.UserIO.SaveHandler += OnSaveHandler;
@@ -120,7 +118,7 @@ public static class RunGuards
     self.Add(
       new PostUpdateHook(() =>
       {
-        if (!RenderFixes || RunManager.Run == null || self.Sprite == null)
+        if (RunManager.Run == null || self.Sprite == null)
           return;
         self.Sprite.Scale.X = self.facing;
         self.Sprite.Scale.Y = 1f;

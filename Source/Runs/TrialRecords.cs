@@ -27,7 +27,7 @@ public static class TrialRecords
       if (record == null)
         return new CampaignRecord(Medal.None, null);
       total += record.BestTicks;
-      Medal earned = trial.Goals?.MedalReached(record.BestTicks) ?? Medal.None;
+      Medal earned = trial.Goals.MedalReached(record.BestTicks);
       if (earned < medal)
         medal = earned;
     }
@@ -136,15 +136,9 @@ public static class TrialRecords
       Write();
     }
 
-    Medal before = Medal.None;
-    Medal newMedal = Medal.None;
-    if (trial.Goals != null)
-    {
-      before = previous == null ? Medal.None : trial.Goals.MedalReached(previous.BestTicks);
-      Medal after = trial.Goals.MedalReached(ticks);
-      if (isPb && after > before)
-        newMedal = after;
-    }
+    Medal before = previous == null ? Medal.None : trial.Goals.MedalReached(previous.BestTicks);
+    Medal after = trial.Goals.MedalReached(ticks);
+    Medal newMedal = isPb && after > before ? after : Medal.None;
 
     return new FinishResult
     {

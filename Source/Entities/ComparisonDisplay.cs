@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Celeste.Mod.ClimbTrials.Online;
-using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.Runs;
 using Celeste.Mod.ClimbTrials.UI;
 using Microsoft.Xna.Framework;

@@ -2,7 +2,6 @@ using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Online;
 using Celeste.Mod.ClimbTrials.Runs;
 using Microsoft.Xna.Framework;
-using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.UI;
 

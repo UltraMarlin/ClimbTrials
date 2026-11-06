@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reflection;
 using Celeste.Mod.ClimbTrials.Entities;
 using Celeste.Mod.ClimbTrials.Replays;
-using Monocle;
 using MonoMod.ModInterop;
 
 namespace Celeste.Mod.ClimbTrials.Runs;

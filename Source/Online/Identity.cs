@@ -10,7 +10,6 @@ public enum RegistrationState
   NotRegistered,
   Registering,
   Registered,
-  Failed,
 }
 
 public static class Identity
@@ -19,7 +18,6 @@ public static class Identity
 
   private static bool registering;
   private static readonly List<Action> afterRegistration = [];
-  private static bool failed;
   private static bool saveDue;
 
   private static ClimbTrialsModuleSettings Settings => ClimbTrialsModule.Settings;
@@ -34,7 +32,6 @@ public static class Identity
   public static RegistrationState Registration =>
     Registered ? RegistrationState.Registered
     : registering ? RegistrationState.Registering
-    : failed ? RegistrationState.Failed
     : RegistrationState.NotRegistered;
 
   public static string NameOf(Replay replay) =>
@@ -54,14 +51,11 @@ public static class Identity
     if (registering)
       return;
     registering = true;
-    failed = false;
     ServerClient.Register(result =>
     {
       registering = false;
       if (result.Ok)
         Store(result.Value.ClientId, result.Value.Name);
-      else
-        failed = true;
       List<Action> waiting = [.. afterRegistration];
       afterRegistration.Clear();
       foreach (Action action in waiting)

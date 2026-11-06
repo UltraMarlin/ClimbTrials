@@ -96,7 +96,6 @@ public class GoalIndicatorSettings
 public class ClimbTrialsModuleSettings : EverestModuleSettings
 {
   [SettingIgnore]
-  [SettingMaxLength(20)]
   public string PlayerName { get; set; } = "";
 
   [SettingIgnore]

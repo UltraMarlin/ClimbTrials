@@ -47,7 +47,7 @@ public class GhostDeltaDisplay : Entity
 
   public GhostDeltaDisplay()
   {
-    Tag = Tags.HUD | Tags.Persistent | Tags.TransitionUpdate;
+    Tag = Tags.HUD | Tags.Persistent;
   }
 
   public override void Render()

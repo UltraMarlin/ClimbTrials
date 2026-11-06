@@ -1,4 +1,3 @@
-using Celeste.Mod.ClimbTrials.Replays;
 using Microsoft.Xna.Framework;
 
 namespace Celeste.Mod.ClimbTrials.Runs;

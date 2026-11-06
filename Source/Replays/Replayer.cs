@@ -6,7 +6,6 @@ using Celeste.Mod.ClimbTrials.Runs;
 using Celeste.Mod.ClimbTrials.UI;
 using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
 using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.Replays;

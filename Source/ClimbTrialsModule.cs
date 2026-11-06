@@ -52,7 +52,6 @@ public class ClimbTrialsModule : EverestModule
     RoomGoal.Load();
     DebugUse.Load();
     TrialDesigner.Load();
-    ModCheck.LogModules();
   }
 
   public override void Initialize()

@@ -59,9 +59,4 @@ public static class ModCheck
 
   private static string Warning(string leadKey) =>
     Dialog.Clean(leadKey) + " " + Describe(Others()) + ". ";
-
-  public static void LogModules()
-  {
-    Logger.Log(LogLevel.Info, "ClimbTrials/Mods", "loaded: " + string.Join(", ", Modules()));
-  }
 }

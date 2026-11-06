@@ -32,8 +32,6 @@ public sealed class BoardRow
 {
   private static readonly Regex HexColor = new("^#[0-9a-fA-F]{6}$");
 
-  private string teamColor;
-
   public int? Rank { get; set; }
   public string Name { get; set; }
   public long? Ticks { get; set; }
@@ -46,10 +44,8 @@ public sealed class BoardRow
 
   public string TeamColor
   {
-    get => teamColor;
     set
     {
-      teamColor = value;
       TeamTagColor = value != null && HexColor.IsMatch(value) ? Calc.HexToColor(value) : null;
     }
   }

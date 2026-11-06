@@ -1,6 +1,5 @@
 using Celeste.Mod.ClimbTrials.Content;
 using Microsoft.Xna.Framework;
-using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.UI;
 

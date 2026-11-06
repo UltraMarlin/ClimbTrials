@@ -1,5 +1,4 @@
 using System.Linq;
-using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.UI;
 

@@ -11,20 +11,18 @@ public static class HotReload
     if (!AssetReloadHelper.IsReloading)
       return;
 
-    MainThreadHelper
-      .Schedule(() =>
+    MainThreadHelper.Schedule(() =>
+    {
+      Scene replacement = AssetReloadHelper.ReturnToScene switch
       {
-        Scene replacement = AssetReloadHelper.ReturnToScene switch
-        {
-          Overworld => MainMenuEntry.RebuildOverworld(),
-          Level level => RunManager.RestartFromSession(level.Session),
-          _ => null,
-        };
-        if (replacement == null)
-          return;
+        Overworld => MainMenuEntry.RebuildOverworld(),
+        Level level => RunManager.RestartFromSession(level.Session),
+        _ => null,
+      };
+      if (replacement == null)
+        return;
 
-        AssetReloadHelper.ReturnToScene = replacement;
-      })
-      .AsTask();
+      AssetReloadHelper.ReturnToScene = replacement;
+    });
   }
 }

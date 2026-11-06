@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Online;
-using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.UI;
 

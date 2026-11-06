@@ -51,7 +51,7 @@ public abstract class BoardSubject
     public override bool Holds(int chunk) => Standings.HoldsTrialChunk(trial, chunk);
 
     protected override Medal MedalOf(BoardRow row) =>
-      trial.Goals == null || row.Ticks is not long ticks
+      row.Ticks is not long ticks
         ? Medal.None
         : GoalTimes.HideUnreachedGrandmaster(
           trial.Goals.MedalReached(ticks),

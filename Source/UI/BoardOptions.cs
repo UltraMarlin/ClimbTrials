@@ -1,5 +1,3 @@
-using Celeste.Mod.ClimbTrials.Online;
-
 namespace Celeste.Mod.ClimbTrials.UI;
 
 public sealed record BoardOptions(

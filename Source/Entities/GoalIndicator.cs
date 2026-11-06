@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Celeste.Mod.ClimbTrials.Runs;
 using Celeste.Mod.ClimbTrials.UI;
 using Microsoft.Xna.Framework;

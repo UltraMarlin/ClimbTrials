@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -77,9 +76,7 @@ public static class ServerClient
   private const string BuiltInServerUrl = "https://climb-trials-server.mabidev.de";
 
   private static string ResolvedServerUrl =>
-    string.IsNullOrEmpty(Settings.ServerUrl) || Settings.ServerUrl == BuiltInServerUrl
-      ? BuiltInServerUrl
-      : Settings.ServerUrl;
+    string.IsNullOrEmpty(Settings.ServerUrl) ? BuiltInServerUrl : Settings.ServerUrl;
 
   private static readonly HttpClient http = Build(TimeoutSeconds);
   private static readonly HttpClient adminReplaysHttp = Build(AdminReplaysTimeoutSeconds);
