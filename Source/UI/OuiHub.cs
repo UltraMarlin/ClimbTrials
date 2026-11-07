@@ -195,13 +195,7 @@ public class OuiHub : ListScreen
 
   private void OnNameRow()
   {
-    if (Settings.OfflineMode)
-    {
-      Audio.Play(SFX.ui_main_button_invalid);
-      return;
-    }
-
-    if (!Identity.Registered)
+    if (Settings.OfflineMode || !Identity.Registered)
     {
       Audio.Play(SFX.ui_main_button_invalid);
       return;

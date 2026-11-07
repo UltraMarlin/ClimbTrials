@@ -44,9 +44,10 @@ public class TrialModeMenu : MenuOnTop
 
     Add(new TitleItem(trial));
     if (record != null)
+    {
       Add(new PbItem(record, serverRecord));
-    if (record != null)
       Add(new DateItem(record));
+    }
 
     Add(new Gap(OptionsGap));
     Add(new Button(Dialog.Clean("climbtrials_play_trial")).Pressed(play));
