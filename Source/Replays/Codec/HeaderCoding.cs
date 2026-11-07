@@ -107,7 +107,7 @@ internal static class HeaderCoding
 
   private sealed class HeaderWalk(Coder coder)
   {
-    private int decodedTextBytes;
+    private int headerTextByteCount;
 
     public bool Decoding => coder.Decoding;
 
@@ -115,8 +115,8 @@ internal static class HeaderCoding
     {
       uint context = Coder.Extend((uint)ContextKind.HeaderNumber, (int)field);
       uint result = coder.CodeNumber(context, value ?? 0);
-      if (coder.Decoding && result > max)
-        throw new InvalidDataException($"the header's {field} is out of range");
+      if (result > max)
+        throw new InvalidDataException($"the header's {field} is over {max}");
       return result;
     }
 
@@ -164,8 +164,8 @@ internal static class HeaderCoding
     public string CodeText(HeaderField field, string value)
     {
       string text = CodeText(field, value, MaxTextBytes, out int byteCount);
-      decodedTextBytes += byteCount;
-      if (coder.Decoding && decodedTextBytes > MaxHeaderTextBytes)
+      headerTextByteCount += byteCount;
+      if (headerTextByteCount > MaxHeaderTextBytes)
         throw new InvalidDataException(
           $"the header's texts are longer than {MaxHeaderTextBytes} bytes"
         );
@@ -179,16 +179,17 @@ internal static class HeaderCoding
       byte[] bytes = value == null ? null : Encoding.UTF8.GetBytes(value);
       byte[] coded = CodeBytes(field, bytes, maxBytes);
       byteCount = coded.Length;
-      if (!coder.Decoding)
-        return value;
-      string text;
-      try
+      string text = value;
+      if (coder.Decoding)
       {
-        text = StrictUtf8.GetString(coded);
-      }
-      catch (DecoderFallbackException)
-      {
-        throw new InvalidDataException($"the header's {field} is not valid UTF-8");
+        try
+        {
+          text = StrictUtf8.GetString(coded);
+        }
+        catch (DecoderFallbackException)
+        {
+          throw new InvalidDataException($"the header's {field} is not valid UTF-8");
+        }
       }
       if (text.Length > MaxTextLength)
         throw new InvalidDataException(
@@ -313,7 +314,7 @@ internal static class HeaderCoding
         bytesLeft -= labelBytes;
         rows.Add(new CodecPauseRow(kind, hoverable, label));
       }
-      if (walk.Decoding && bytesLeft < 0)
+      if (bytesLeft < 0)
         throw new InvalidDataException("the pause menus are too long");
 
       menus.Add(new CodecPauseMenu(selectedRowPlusOne - 1, rows));

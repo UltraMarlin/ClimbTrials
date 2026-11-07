@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using Celeste.Mod.ClimbTrials.Replays;
+using Celeste.Mod.ClimbTrials.Replays.Codec;
 using Celeste.Mod.ClimbTrials.Runs;
 using Microsoft.Xna.Framework;
 
@@ -176,6 +177,10 @@ public static class Campaigns
     {
       if (!trialIds.Add(trial.Id))
         throw new InvalidOperationException($"duplicate trial id '{trial.Id}'");
+      if (trial.Id.Length > HeaderCoding.MaxTextLength)
+        throw new InvalidOperationException(
+          $"trial '{trial.Id}' has an id longer than {HeaderCoding.MaxTextLength} characters"
+        );
       if (trial.ReplayLimitSeconds < 1 || trial.ReplayLimitSeconds > Trial.MaxReplayLimitSeconds)
         throw new InvalidOperationException(
           $"trial '{trial.Id}' has a replay limit outside 1 to {Trial.MaxReplayLimitSeconds} s"

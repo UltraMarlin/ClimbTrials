@@ -75,7 +75,7 @@ public static class Uploader
   {
     try
     {
-      return replay.SourceBytes ?? replay.ToBytes();
+      return replay.ToBytes();
     }
     catch (StartingValuesException e)
     {

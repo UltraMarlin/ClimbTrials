@@ -39,7 +39,7 @@ public sealed class Replay
   public bool IsOwn { get; set; }
   public bool IsPersonalBest { get; set; }
 
-  public byte[] SourceBytes { get; private set; }
+  private byte[] encodedBytes;
 
   private int[] shownFrames;
 
@@ -106,7 +106,9 @@ public sealed class Replay
     return extraIndex < ExtraAnimations.Count ? ExtraAnimations[extraIndex] : null;
   }
 
-  public byte[] ToBytes()
+  public byte[] ToBytes() => encodedBytes ??= Encode();
+
+  private byte[] Encode()
   {
     byte[] coded = ReplayCodec.Encode(ToCodecReplay());
     int payloadLength = 1 + coded.Length;
@@ -129,7 +131,7 @@ public sealed class Replay
       throw new InvalidDataException($"unsupported replay format {bytes[0]}");
     VerifyChecksum(bytes, payloadLength);
     Replay replay = FromCodecReplay(ReplayCodec.Decode(bytes[1..payloadLength]));
-    replay.SourceBytes = bytes;
+    replay.encodedBytes = bytes;
     return replay;
   }
 

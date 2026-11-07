@@ -1,6 +1,8 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using Celeste.Mod.ClimbTrials.Content;
+using Celeste.Mod.ClimbTrials.Replays.Codec;
 using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.Replays;
@@ -15,6 +17,8 @@ public enum StopReason
 
 public static class Recorder
 {
+  private const string LogTag = "ClimbTrials/Replay";
+
   public static Replay Last { get; private set; }
   public static StopReason Stopped { get; private set; }
   private static Replay current;
@@ -75,9 +79,37 @@ public static class Recorder
     current.WallMilliseconds = wall.ElapsedMilliseconds;
     current.AchievedAtUtc = DateTime.UtcNow;
     current.DebugCauses = DebugUse.Causes;
+    string limitViolation = EncodeAndFindLimitViolation(current);
+    if (limitViolation != null)
+    {
+      Logger.Warn(
+        LogTag,
+        $"the run on '{current.TrialId}' has no replay, it violates the format's limits: "
+          + limitViolation
+      );
+      current = null;
+      return null;
+    }
     Last = current;
     current = null;
     return Last;
+  }
+
+  private static string EncodeAndFindLimitViolation(Replay replay)
+  {
+    try
+    {
+      replay.ToBytes();
+      return null;
+    }
+    catch (InvalidDataException e)
+    {
+      return e.Message;
+    }
+    catch (StartingValuesException)
+    {
+      return null;
+    }
   }
 
   public static void RecordPauseMenu(TextMenu menu)

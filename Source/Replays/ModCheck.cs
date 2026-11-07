@@ -12,6 +12,7 @@ public readonly record struct ModuleRef(string Name, string Version)
 public static class ModCheck
 {
   public const int NamesShown = 3;
+  private const int NameLengthShown = 32;
 
   private static readonly IReadOnlySet<string> AlwaysAllowed = new HashSet<string>
   {
@@ -48,10 +49,14 @@ public static class ModCheck
 
   public static string Describe(IReadOnlyList<string> names)
   {
+    string shown = string.Join(", ", names.Take(NamesShown).Select(ShortenName));
     if (names.Count <= NamesShown)
-      return string.Join(", ", names);
-    return string.Join(", ", names.Take(NamesShown)) + $" and {names.Count - NamesShown} more";
+      return shown;
+    return shown + $" and {names.Count - NamesShown} more";
   }
+
+  private static string ShortenName(string name) =>
+    name.Length <= NameLengthShown ? name : name[..(NameLengthShown - 3)] + "...";
 
   public static string RunWarning() => Warning("climbtrials_recording_mods");
 
