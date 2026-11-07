@@ -80,7 +80,7 @@ internal static class Fields
   public static readonly int[] GroupOfField = MapFieldsToGroups();
 
   private const uint PredictionCap = 256;
-  private const uint StateCap = 31;
+  public const uint StateCap = 31;
 
   public static uint ValueContextOf(FrameTable table, int frame, int field, uint prediction)
   {

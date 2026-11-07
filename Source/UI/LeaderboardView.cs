@@ -390,7 +390,7 @@ public class LeaderboardView : Entity
     int target = page + direction;
     int chunk = BoardPage.ChunkOf(target);
     bool targetInShownChunk = current.Chunk != null && BoardPage.Covers(current.Chunk, target);
-    if (!targetInShownChunk && !current.Subject.Holds(chunk))
+    if (!targetInShownChunk && !current.Subject.IsChunkCached(chunk))
     {
       WaitForChunk(chunk, direction);
       return;

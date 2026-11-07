@@ -117,7 +117,7 @@ public class TrialModeMenu : MenuOnTop
       reason = Dialog.Clean("climbtrials_offline");
     else if (state == StandingsState.Idle)
       reason = Dialog.Clean("climbtrials_submit_loading");
-    else if (Identity.Registration == RegistrationState.Registering)
+    else if (Identity.Registering)
       reason = Dialog.Clean("climbtrials_connecting");
     else if (!Identity.Registered)
       reason = Dialog.Clean("climbtrials_not_connected");

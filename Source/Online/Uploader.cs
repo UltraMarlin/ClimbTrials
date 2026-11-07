@@ -46,35 +46,21 @@ public static class Uploader
   {
     int version = versions.GetValueOrDefault(trial.Id) + 1;
     versions[trial.Id] = version;
-    Submission submission;
+    byte[] replayBytes = null;
+    TimeSubmission timeSubmission = null;
     if (replay != null)
     {
-      bool built;
-      ValidationResult check;
-      try
-      {
-        built = Submission.TryBuild(replay, trial, out submission, out check);
-      }
-      catch (StartingValuesException e)
-      {
-        Logger.Log(
-          LogLevel.Error,
-          LogTag,
-          $"could not encode the replay of '{trial.Id}' to submit: {e.Message}"
-        );
-        string text = Dialog.Clean("climbtrials_submit_failed");
-        StoreAndReport(trial.Id, new Upload(UploadState.Failed, null, text), report);
-        return;
-      }
-      if (!built)
+      ValidationResult check = ReplayValidator.Check(replay, trial);
+      if (!check.Passes)
       {
         StoreAndReport(trial.Id, new Upload(UploadState.Failed, null, check.Describe()), report);
         return;
       }
+      replayBytes = EncodeToSubmit(replay, trial.Id);
     }
     else if (TrialRecords.Get(trial.Id) is TrialRecord record)
-      submission = Submission.ForTime(trial, record);
-    else
+      timeSubmission = BuildTimeSubmission(trial, record);
+    if (replayBytes == null && timeSubmission == null)
     {
       string text = Dialog.Clean("climbtrials_submit_failed");
       StoreAndReport(trial.Id, new Upload(UploadState.Failed, null, text), report);
@@ -82,7 +68,36 @@ public static class Uploader
     }
 
     StoreAndReport(trial.Id, new Upload(UploadState.Submitting, null, null), report);
-    TryToPublish(trial.Id, submission, attempt: 1, version, report);
+    TryToPublish(trial.Id, replayBytes, timeSubmission, attempt: 1, version, report);
+  }
+
+  private static byte[] EncodeToSubmit(Replay replay, string trialId)
+  {
+    try
+    {
+      return replay.SourceBytes ?? replay.ToBytes();
+    }
+    catch (StartingValuesException e)
+    {
+      Logger.Log(
+        LogLevel.Error,
+        LogTag,
+        $"could not encode the replay of '{trialId}' to submit: {e.Message}"
+      );
+      return null;
+    }
+  }
+
+  private static TimeSubmission BuildTimeSubmission(Trial trial, TrialRecord record)
+  {
+    DateTime achieved = record.AchievedAtUtc;
+    if (achieved.Kind == DateTimeKind.Local)
+      achieved = achieved.ToUniversalTime();
+    return new TimeSubmission(
+      record.BestTicks,
+      achieved.Ticks.ToString(),
+      Convert.ToHexString(trial.DefinitionHash).ToLowerInvariant()
+    );
   }
 
   public static (string Text, bool Warning) Describe(Upload upload) =>
@@ -101,7 +116,8 @@ public static class Uploader
 
   private static void TryToPublish(
     string trialId,
-    Submission submission,
+    byte[] replayBytes,
+    TimeSubmission timeSubmission,
     int attempt,
     int version,
     Action<Upload> report
@@ -129,7 +145,7 @@ public static class Uploader
         Task.Delay(RetryDelayMs)
           .ContinueWith(_ =>
             MainThreadHelper.Schedule(() =>
-              TryToPublish(trialId, submission, attempt + 1, version, report)
+              TryToPublish(trialId, replayBytes, timeSubmission, attempt + 1, version, report)
             )
           );
         return;
@@ -143,10 +159,10 @@ public static class Uploader
       string message = refusal != SubmitRefusal.None ? RefusalNotice(refusal) : MessageFor(result);
       StoreAndReport(trialId, new Upload(UploadState.Failed, null, message, refusal), report);
     };
-    if (submission.Time != null)
-      ServerClient.SubmitTime(trialId, submission.Time, onDone);
+    if (timeSubmission != null)
+      ServerClient.SubmitTime(trialId, timeSubmission, onDone);
     else
-      ServerClient.Submit(trialId, submission.ReplayBytes, onDone);
+      ServerClient.Submit(trialId, replayBytes, onDone);
   }
 
   private static SubmitRefusal RefusalOf(ServerError error, string trialId) =>

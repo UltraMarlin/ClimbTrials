@@ -1,35 +1,12 @@
 using System;
 using System.Collections.Generic;
 using Celeste.Mod.ClimbTrials.Content;
+using Celeste.Mod.ClimbTrials.Replays.Codec;
 using Celeste.Mod.ClimbTrials.Runs;
 using Celeste.Mod.ClimbTrials.UI;
+using Microsoft.Xna.Framework;
 
 namespace Celeste.Mod.ClimbTrials.Replays;
-
-public sealed record TrialSpec(
-  string Id,
-  float SpawnX,
-  float SpawnY,
-  int ReplayLimitSeconds,
-  IReadOnlyList<byte[]> AcceptedTrialHashes
-)
-{
-  public static TrialSpec From(Trial trial) =>
-    trial == null
-      ? null
-      : new(
-        trial.Id,
-        trial.Run.Spawn.X,
-        trial.Run.Spawn.Y,
-        trial.ReplayLimitSeconds,
-        trial.AcceptedTrialHashes
-      );
-
-  public static bool FitsReplayLimit(int limitSeconds, long ticks) =>
-    ticks <= limitSeconds * TimeSpan.TicksPerSecond;
-
-  public bool FitsReplayLimit(long ticks) => FitsReplayLimit(ReplayLimitSeconds, ticks);
-}
 
 public sealed class ValidationResult
 {
@@ -49,7 +26,6 @@ public sealed class ValidationResult
 
 public static class ReplayValidator
 {
-  public const long FrameTicks = 17 * TimeSpan.TicksPerMillisecond;
   public const double WallRejectBelow = 0.9;
   public const double WallFlagAbove = 1.5;
   public const double FrozenFlagAbove = 0.25;
@@ -58,11 +34,7 @@ public static class ReplayValidator
 
   public const string TrialHashMismatch = "trial definition differs from the server's";
 
-  public static ValidationResult Check(
-    Replay replay,
-    TrialSpec trial,
-    IReadOnlySet<string> allowedModules
-  )
+  public static ValidationResult Check(Replay replay, Trial trial)
   {
     ValidationResult result = new();
     if (trial == null)
@@ -82,7 +54,7 @@ public static class ReplayValidator
       return result;
     }
 
-    if (Attempt.SecondsToTicks(replay.RawDeltaTime) != FrameTicks)
+    if (Attempt.SecondsToTicks(replay.RawDeltaTime) != HeaderCoding.TicksPerFrame)
       result.Rejections.Add($"frame time {replay.RawDeltaTime} s is not 1/60 s");
 
     int counted = 0;
@@ -90,13 +62,13 @@ public static class ReplayValidator
       if (frame.LevelUpdated)
         counted++;
     int frozen = replay.Frames.Count - counted;
-    long expected = counted * FrameTicks;
+    long expected = counted * HeaderCoding.TicksPerFrame;
     if (replay.Ticks != expected)
       result.Rejections.Add(
         $"header time {TimeText.Format(replay.Ticks)}, "
           + $"but {counted} counted frames add up to {TimeText.Format(expected)}"
       );
-    double timerFrames = (double)replay.Ticks / FrameTicks;
+    double timerFrames = (double)replay.Ticks / HeaderCoding.TicksPerFrame;
     long frameLimit = (long)Math.Floor(MaxFrameToTimerRatio * timerFrames) + FreezeBufferFrames;
     if (replay.Frames.Count > frameLimit)
       result.Rejections.Add(
@@ -124,9 +96,10 @@ public static class ReplayValidator
       );
 
     InputFrame first = replay.Frames[0];
-    if (!first.HasPlayer || first.Position.X != trial.SpawnX || first.Position.Y != trial.SpawnY)
+    Vector2 spawn = trial.Run.Spawn;
+    if (!first.HasPlayer || first.Position.X != spawn.X || first.Position.Y != spawn.Y)
       result.Rejections.Add(
-        $"first frame is at {first.Position}, the spawn is at ({trial.SpawnX}, {trial.SpawnY})"
+        $"first frame is at {first.Position}, the spawn is at ({spawn.X}, {spawn.Y})"
       );
 
     double expectedWallMs = replay.Frames.Count * replay.RawDeltaTime * 1000.0;
@@ -141,29 +114,25 @@ public static class ReplayValidator
           + $"expected about {expectedWallMs:F0} ms"
       );
 
-    CheckModules(replay.Modules, allowedModules, result);
+    CheckModules(replay.Modules, result);
     CheckDebug(replay.DebugCauses, result);
 
     return result;
   }
 
-  public static ValidationResult CheckAttempt(IReadOnlySet<string> allowedModules)
+  public static ValidationResult CheckAttempt()
   {
     ValidationResult result = new();
-    CheckModules(ModCheck.Modules(), allowedModules, result);
+    CheckModules(ModCheck.Modules(), result);
     CheckDebug(DebugUse.Causes, result);
     return result;
   }
 
-  private static void CheckModules(
-    IEnumerable<ModuleRef> modules,
-    IReadOnlySet<string> allowedModules,
-    ValidationResult result
-  )
+  private static void CheckModules(IEnumerable<ModuleRef> modules, ValidationResult result)
   {
     List<string> others = [];
     foreach (ModuleRef module in modules)
-      if (!allowedModules.Contains(module.Name))
+      if (!ModCheck.Allowed.Contains(module.Name))
         others.Add(module.Name);
     if (others.Count > 0)
       result.Rejections.Add("mods outside the allowlist: " + string.Join(", ", others));

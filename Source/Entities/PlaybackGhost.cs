@@ -49,7 +49,6 @@ public class PlaybackGhost : Entity
   private readonly PlayerSprite sprite;
   private readonly PlayerHair hair;
   private readonly FadeBuffer layer;
-  private long ticks;
   private float fadeAlpha = 1f;
   private bool hairSettled;
   private int shownIndex = -1;
@@ -83,17 +82,11 @@ public class PlaybackGhost : Entity
     Visible = shownFrames.Length > 0;
   }
 
-  public void Sync(long elapsedTicks)
-  {
-    ticks = elapsedTicks;
-    Apply();
-  }
-
   public void Capture() => layer.Capture();
 
   public void Dispose() => Remove(layer);
 
-  private void Apply()
+  public void Sync(long ticks)
   {
     if (shownFrames.Length == 0)
       return;

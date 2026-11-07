@@ -777,18 +777,14 @@ public static class RunManager
     {
       if (recorded != null)
       {
-        ValidationResult check = ReplayValidator.Check(
-          recorded,
-          TrialSpec.From(Trial),
-          ModCheck.Allowed
-        );
+        ValidationResult check = ReplayValidator.Check(recorded, Trial);
         submittable = check.Passes;
         if (!check.Passes)
           Logger.Log(LogLevel.Info, LogTag, $"replay check: {check.Describe()}");
       }
       else if (Recorder.Stopped == StopReason.Limit)
       {
-        ValidationResult check = ReplayValidator.CheckAttempt(ModCheck.Allowed);
+        ValidationResult check = ReplayValidator.CheckAttempt();
         submittable = check.Passes;
         if (!check.Passes)
           Logger.Log(LogLevel.Info, LogTag, $"attempt check without replay: {check.Describe()}");

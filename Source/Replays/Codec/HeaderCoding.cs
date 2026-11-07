@@ -53,7 +53,7 @@ internal static class HeaderCoding
   private const int PauseBytesPerFrame = 16;
   private const int MaxVersionParts = 4;
   private const int MaxExtraFrames = 1_000_000;
-  private const long TicksPerFrame = 170_000;
+  public const long TicksPerFrame = 170_000;
   private const float RawDeltaTime = 0.0166667f;
 
   private static readonly Regex NumberedVersionForm = new(

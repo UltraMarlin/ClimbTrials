@@ -5,18 +5,10 @@ using Celeste.Mod.ClimbTrials.Runs;
 
 namespace Celeste.Mod.ClimbTrials.Online;
 
-public enum RegistrationState
-{
-  NotRegistered,
-  Registering,
-  Registered,
-}
-
 public static class Identity
 {
   private const string LogTag = "ClimbTrials/Identity";
 
-  private static bool registering;
   private static readonly List<Action> afterRegistration = [];
   private static bool saveDue;
 
@@ -29,10 +21,7 @@ public static class Identity
 
   public static bool Banned { get; set; }
 
-  public static RegistrationState Registration =>
-    Registered ? RegistrationState.Registered
-    : registering ? RegistrationState.Registering
-    : RegistrationState.NotRegistered;
+  public static bool Registering { get; private set; }
 
   public static string NameOf(Replay replay) =>
     replay.IsOwn ? Settings.PlayerName : replay.OwnerName;
@@ -48,12 +37,12 @@ public static class Identity
     }
     if (then != null)
       afterRegistration.Add(then);
-    if (registering)
+    if (Registering)
       return;
-    registering = true;
+    Registering = true;
     ServerClient.Register(result =>
     {
-      registering = false;
+      Registering = false;
       if (result.Ok)
         Store(result.Value.ClientId, result.Value.Name);
       List<Action> waiting = [.. afterRegistration];

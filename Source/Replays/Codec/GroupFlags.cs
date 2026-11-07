@@ -4,7 +4,6 @@ namespace Celeste.Mod.ClimbTrials.Replays.Codec;
 
 internal sealed class GroupFlags
 {
-  private const uint StateCap = 31;
   private const int OlderMissCombinations = 4;
   
   private static readonly int FlagCount = 1 + Fields.GroupCount;
@@ -33,7 +32,7 @@ internal sealed class GroupFlags
     int missedGroups
   )
   {
-    int stateBefore = (int)Math.Min(table.Get(Column.State, frame - 1), StateCap);
+    int stateBefore = (int)Math.Min(table.Get(Column.State, frame - 1), Fields.StateCap);
     int frameParts =
       ((stateBefore * 2 + (levelUpdatedBefore ? 1 : 0)) << Fields.GroupCount) + hitBitsBefore;
     HitBits = 0;

@@ -31,7 +31,7 @@ public sealed class Trial
   public int ReplayLimitSeconds { get; init; } = DefaultReplayLimitSeconds;
   public IReadOnlyList<byte[]> PreviousTrialHashes { get; init; } = [];
 
-  public bool FitsReplayLimit(long ticks) => TrialSpec.FitsReplayLimit(ReplayLimitSeconds, ticks);
+  public bool FitsReplayLimit(long ticks) => ticks <= ReplayLimitSeconds * TimeSpan.TicksPerSecond;
 
   public byte[] DefinitionHash =>
     definitionHash ??= SHA256.HashData(Encoding.UTF8.GetBytes(DefinitionText()));

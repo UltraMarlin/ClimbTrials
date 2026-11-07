@@ -44,10 +44,7 @@ public sealed class BoardRow
 
   public string TeamColor
   {
-    set
-    {
-      TeamTagColor = value != null && HexColor.IsMatch(value) ? Calc.HexToColor(value) : null;
-    }
+    init => TeamTagColor = value != null && HexColor.IsMatch(value) ? Calc.HexToColor(value) : null;
   }
 
   public Color? TeamTagColor { get; private set; }
@@ -137,8 +134,6 @@ public static class Standings
     public DateTime TriedAt;
   }
 
-  private delegate void BoardRequest(int offset, int limit, Action<ServerResult<Board>> onDone);
-
   private static readonly Entry<HubAnswer> hub = new();
 
   private static readonly Dictionary<string, Entry<CampaignRecords>> records = [];
@@ -148,12 +143,12 @@ public static class Standings
   public const int ChunkRows = 150;
 
   private static readonly Dictionary<
-    (string Key, int Chunk),
+    (string BoardPath, int Chunk),
     (DateTime FetchedAt, Board Board)
   > chunks = [];
 
   private static readonly Dictionary<
-    (string Key, int Chunk),
+    (string BoardPath, int Chunk),
     List<Action<ServerResult<Board>>>
   > waiting = [];
 
@@ -203,7 +198,7 @@ public static class Standings
   private static void FetchHub(bool retried)
   {
     int asked = hubRequestNumber;
-    AskCurrent<HubAnswer>(
+    RequestAgainIfIdentityChanged<HubAnswer>(
       done => ServerClient.GetHub(Events.HeldDefinitions(), done),
       result => ReceiveHub(result, retried, asked),
       passDeleted: !retried
@@ -261,10 +256,10 @@ public static class Standings
 
   private static void DropEventBoards(string eventId)
   {
-    DropChunks(CampaignKey(eventId));
+    DropChunks(CampaignBoardPath(eventId));
     foreach (string trialId in Events.TrialIdsOf(eventId))
     {
-      DropChunks(TrialKey(trialId));
+      DropChunks(TrialBoardPath(trialId));
       if (standings.TryGetValue(trialId, out Entry<TrialStanding> entry))
       {
         entry.FetchedAt = DateTime.MinValue;
@@ -273,7 +268,7 @@ public static class Standings
     }
   }
 
-  private static void AskCurrent<T>(
+  private static void RequestAgainIfIdentityChanged<T>(
     Action<Action<ServerResult<T>>> request,
     Action<ServerResult<T>> receive,
     bool passDeleted = false
@@ -284,7 +279,7 @@ public static class Standings
     {
       bool deleted = passDeleted && result.Error == ServerError.PlayerDeleted;
       if (identityChangesAtRequest != identityChangeCount && !deleted)
-        AskCurrent(request, receive, passDeleted);
+        RequestAgainIfIdentityChanged(request, receive, passDeleted);
       else
         receive(result);
     });
@@ -297,7 +292,7 @@ public static class Standings
       return;
 
     entry.Fetching = true;
-    AskCurrent<CampaignRecords>(
+    RequestAgainIfIdentityChanged<CampaignRecords>(
       done => ServerClient.GetRecords(campaign.Id, done),
       result => ReceiveRecords(entry, result)
     );
@@ -343,7 +338,7 @@ public static class Standings
     entry.Fetching = true;
     entry.TriedAt = now;
     ServerClient.RunWithoutIcon(() =>
-      AskCurrent<TrialStanding>(
+      RequestAgainIfIdentityChanged<TrialStanding>(
         done => ServerClient.GetTrialStanding(trial.Id, done),
         result => ReceiveStanding(entry, result)
       )
@@ -367,7 +362,11 @@ public static class Standings
     StoreStanding(result.Value);
     if (result.Value.Ticks is long ticks)
       TrialRecords.Adopt([
-        (result.Value.TrialId, ticks, result.Value.AchievedAt ?? DateTime.UtcNow),
+        (
+          result.Value.TrialId,
+          result.Value.Ticks.Value,
+          result.Value.AchievedAt ?? DateTime.UtcNow
+        ),
       ]);
   }
 
@@ -424,48 +423,33 @@ public static class Standings
     chunks.Clear();
   }
 
-  private static string TrialKey(string trialId) => $"trial:{trialId}";
+  private static string TrialBoardPath(string trialId) => $"trials/{trialId}";
 
-  private static string CampaignKey(string campaignId) => $"campaign:{campaignId}";
+  private static string CampaignBoardPath(string campaignId) => $"campaigns/{campaignId}";
 
   public static void FetchTrialBoard(Trial trial, int chunk, Action<ServerResult<Board>> onDone) =>
-    FetchChunk(
-      TrialKey(trial.Id),
-      chunk,
-      (offset, limit, done) => ServerClient.GetBoard(trial.Id, offset, limit, done),
-      onDone
-    );
+    FetchChunk(TrialBoardPath(trial.Id), chunk, onDone);
 
-  public static void DropTrialBoard(Trial trial) => DropChunks(TrialKey(trial.Id));
+  public static void DropTrialBoard(Trial trial) => DropChunks(TrialBoardPath(trial.Id));
 
-  public static bool HoldsTrialChunk(Trial trial, int chunk) => Holds(TrialKey(trial.Id), chunk);
+  public static bool IsTrialChunkCached(Trial trial, int chunk) =>
+    IsChunkCached(TrialBoardPath(trial.Id), chunk);
 
-  public static bool HoldsCampaignChunk(Campaign campaign, int chunk) =>
-    Holds(CampaignKey(campaign.Id), chunk);
+  public static bool IsCampaignChunkCached(Campaign campaign, int chunk) =>
+    IsChunkCached(CampaignBoardPath(campaign.Id), chunk);
 
-  private static bool Holds(string key, int chunk) =>
-    !Settings.OfflineMode && chunks.ContainsKey((key, chunk));
+  private static bool IsChunkCached(string boardPath, int chunk) =>
+    !Settings.OfflineMode && chunks.ContainsKey((boardPath, chunk));
 
   public static void FetchCampaignBoard(
     Campaign campaign,
     int chunk,
     Action<ServerResult<Board>> onDone
-  ) =>
-    FetchChunk(
-      CampaignKey(campaign.Id),
-      chunk,
-      (offset, limit, done) => ServerClient.GetCampaignBoard(campaign.Id, offset, limit, done),
-      onDone
-    );
+  ) => FetchChunk(CampaignBoardPath(campaign.Id), chunk, onDone);
 
-  private static void FetchChunk(
-    string key,
-    int chunk,
-    BoardRequest request,
-    Action<ServerResult<Board>> onDone
-  )
+  private static void FetchChunk(string boardPath, int chunk, Action<ServerResult<Board>> onDone)
   {
-    (string, int) at = (key, chunk);
+    (string, int) at = (boardPath, chunk);
     bool hit = chunks.TryGetValue(at, out (DateTime FetchedAt, Board Board) cached);
     if (hit && !Settings.OfflineMode)
     {
@@ -479,20 +463,12 @@ public static class Standings
       return;
     }
     waiting[at] = [onDone];
-    int identityChangesAtRequest = identityChangeCount;
-    request(
-      chunk * ChunkRows,
-      ChunkRows,
+    RequestAgainIfIdentityChanged<Board>(
+      done => ServerClient.GetBoard(boardPath, chunk * ChunkRows, ChunkRows, done),
       result =>
       {
         List<Action<ServerResult<Board>>> done = waiting[at];
         waiting.Remove(at);
-        if (identityChangesAtRequest != identityChangeCount)
-        {
-          foreach (Action<ServerResult<Board>> callback in done)
-            FetchChunk(key, chunk, request, callback);
-          return;
-        }
         if (result.Ok)
         {
           chunks[at] = (DateTime.UtcNow, result.Value);
@@ -526,9 +502,9 @@ public static class Standings
     string trialId = answer.Standing.TrialId;
     Trial trial = Campaigns.FindTrial(trialId);
     Campaign campaign = trial == null ? null : Campaigns.CampaignOf(trial);
-    DropChunks(TrialKey(trialId));
+    DropChunks(TrialBoardPath(trialId));
     if (campaign != null)
-      DropChunks(CampaignKey(campaign.Id));
+      DropChunks(CampaignBoardPath(campaign.Id));
     StoreStanding(answer.Standing);
     if (answer.Campaign != null)
       StoreCampaignStanding(answer.Campaign);
@@ -572,9 +548,9 @@ public static class Standings
       campaigns[index] = standing;
   }
 
-  private static void DropChunks(string key)
+  private static void DropChunks(string boardPath)
   {
-    foreach ((string Key, int Chunk) at in chunks.Keys.Where(at => at.Key == key).ToList())
+    foreach ((string, int) at in chunks.Keys.Where(at => at.BoardPath == boardPath).ToList())
       chunks.Remove(at);
   }
 

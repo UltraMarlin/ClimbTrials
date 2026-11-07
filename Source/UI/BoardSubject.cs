@@ -16,7 +16,7 @@ public abstract class BoardSubject
   public abstract string CountKey { get; }
   public abstract IReadOnlyList<BoardSubject> Siblings { get; }
   public abstract void Fetch(int chunk, Action<ServerResult<Board>> onDone);
-  public abstract bool Holds(int chunk);
+  public abstract bool IsChunkCached(int chunk);
   public abstract Campaign Campaign { get; }
   public virtual Trial Trial => null;
 
@@ -48,7 +48,7 @@ public abstract class BoardSubject
     public override void Fetch(int chunk, Action<ServerResult<Board>> onDone) =>
       Standings.FetchTrialBoard(trial, chunk, onDone);
 
-    public override bool Holds(int chunk) => Standings.HoldsTrialChunk(trial, chunk);
+    public override bool IsChunkCached(int chunk) => Standings.IsTrialChunkCached(trial, chunk);
 
     protected override Medal MedalOf(BoardRow row) =>
       row.Ticks is not long ticks
@@ -72,7 +72,8 @@ public abstract class BoardSubject
     public override void Fetch(int chunk, Action<ServerResult<Board>> onDone) =>
       Standings.FetchCampaignBoard(campaign, chunk, onDone);
 
-    public override bool Holds(int chunk) => Standings.HoldsCampaignChunk(campaign, chunk);
+    public override bool IsChunkCached(int chunk) =>
+      Standings.IsCampaignChunkCached(campaign, chunk);
 
     protected override Medal MedalOf(BoardRow row) =>
       GoalTimes.HideUnreachedGrandmaster(

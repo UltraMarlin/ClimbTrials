@@ -196,20 +196,19 @@ public class OuiHub : ListScreen
     Overworld.Goto<OuiClimbTrialsOptions>();
   }
 
-  private static string NameText() =>
-    Identity.Registration switch
-    {
-      RegistrationState.Registering => Dialog.Clean("climbtrials_connecting"),
-      RegistrationState.Registered => Dialog
-        .Get("climbtrials_name_row")
-        .Replace("{0}", Settings.PlayerName),
-      _ when Settings.OfflineMode => Dialog.Clean("climbtrials_offline_mode"),
-      _ => Dialog.Clean("climbtrials_not_connected"),
-    };
+  private static string NameText()
+  {
+    if (Identity.Registering)
+      return Dialog.Clean("climbtrials_connecting");
+    if (Identity.Registered)
+      return Dialog.Get("climbtrials_name_row").Replace("{0}", Settings.PlayerName);
+    if (Settings.OfflineMode)
+      return Dialog.Clean("climbtrials_offline_mode");
+    return Dialog.Clean("climbtrials_not_connected");
+  }
 
   private static bool NameLive() =>
-    !Settings.OfflineMode
-    && Identity.Registration is RegistrationState.Registered or RegistrationState.Registering;
+    !Settings.OfflineMode && (Identity.Registered || Identity.Registering);
 
   private static bool InviteCodeLive() => !Settings.OfflineMode && Identity.Registered;
 

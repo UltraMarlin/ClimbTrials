@@ -41,6 +41,8 @@ public readonly record struct ServerResult<T>(T Value, ServerError Error, string
   public bool Ok => Error == ServerError.None;
 }
 
+public sealed record TimeSubmission(long Ticks, string AchievedAtUtcTicks, string TrialHash);
+
 public sealed class DownloadedReplay
 {
   public byte[] Bytes { get; init; }
@@ -150,27 +152,13 @@ public static class ServerClient
     Send($"/v1/trials/{trialId}/standing", HttpMethod.Get, null, onDone, passive: true);
 
   public static void GetBoard(
-    string trialId,
+    string boardPath,
     int offset,
     int limit,
     Action<ServerResult<Board>> onDone
   ) =>
     Send(
-      $"/v1/trials/{trialId}/board?offset={offset}&limit={limit}",
-      HttpMethod.Get,
-      null,
-      onDone,
-      passive: true
-    );
-
-  public static void GetCampaignBoard(
-    string campaignId,
-    int offset,
-    int limit,
-    Action<ServerResult<Board>> onDone
-  ) =>
-    Send(
-      $"/v1/campaigns/{campaignId}/board?offset={offset}&limit={limit}",
+      $"/v1/{boardPath}/board?offset={offset}&limit={limit}",
       HttpMethod.Get,
       null,
       onDone,

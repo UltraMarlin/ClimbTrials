@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Replays.Codec;
 using Celeste.Mod.ClimbTrials.Runs;
@@ -241,7 +242,6 @@ public static class Replayer
     bool quickReset
   )
   {
-    PauseMenu.ResetBuiltMenu();
     if (quickReset && RunManager.Replaying && !Silenced)
       return;
     if (current == null && RunManager.Replaying)
@@ -249,21 +249,22 @@ public static class Replayer
       OpenMenu();
       return;
     }
-    if (current == null)
-    {
-      orig(self, startIndex, minimal, quickReset);
-      TextMenu pauseMenu = PauseMenu.GetAndResetBuiltMenu();
-      if (pauseMenu != null)
-        Recorder.RecordPauseMenu(pauseMenu);
-      return;
-    }
+    bool watching = current != null;
     orig(self, startIndex, minimal, quickReset);
-    RebuildRecordedPauseMenu(PauseMenu.GetAndResetBuiltMenu());
+    if (quickReset)
+      return;
+    TextMenu pauseMenu = self.Entities.ToAdd.OfType<TextMenu>().FirstOrDefault();
+    if (pauseMenu == null)
+      return;
+    if (watching)
+      RebuildRecordedPauseMenu(pauseMenu);
+    else
+      Recorder.RecordPauseMenu(pauseMenu);
   }
 
   private static void RebuildRecordedPauseMenu(TextMenu built)
   {
-    if (built == null || !Silenced)
+    if (!Silenced)
       return;
     if (pauseMenusShown < current.PauseMenus.Count)
       PauseRows.Rebuild(built, current.PauseMenus[pauseMenusShown]);

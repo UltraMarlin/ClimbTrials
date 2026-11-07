@@ -9,7 +9,6 @@ namespace Celeste.Mod.ClimbTrials.UI;
 public static class PauseMenu
 {
   private static readonly Dictionary<TextMenu.Item, PauseRowKind> ownRows = [];
-  private static TextMenu builtMenu;
 
   public static void Load()
   {
@@ -28,7 +27,6 @@ public static class PauseMenu
     if (RunManager.Run == null)
       return;
     ownRows.Clear();
-    builtMenu = menu;
 
     TextMenu.Item restart = new TextMenu.Button(Dialog.Clean("climbtrials_pause_restart")).Pressed(
       RestartTrial
@@ -84,15 +82,6 @@ public static class PauseMenu
       PauseRowKind.Leaderboard => Dialog.Clean("climbtrials_trials_leaderboard"),
       _ => "",
     };
-
-  public static void ResetBuiltMenu() => builtMenu = null;
-
-  public static TextMenu GetAndResetBuiltMenu()
-  {
-    TextMenu menu = builtMenu;
-    builtMenu = null;
-    return menu;
-  }
 
   private static void LockRowsExcept(TextMenu menu, params string[] exemptLabels)
   {
