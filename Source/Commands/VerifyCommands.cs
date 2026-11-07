@@ -19,9 +19,7 @@ public static class VerifyCommands
     if (target == null)
     {
       Engine.Commands.Log($"usage: {Usage}");
-      Engine.Commands.Log(
-        "runs every replay on leaderboards, or only up to maxRank"
-      );
+      Engine.Commands.Log("runs every replay on leaderboards, or only up to maxRank");
       return;
     }
 

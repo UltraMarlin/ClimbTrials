@@ -5,7 +5,7 @@ namespace Celeste.Mod.ClimbTrials.Replays.Codec;
 internal sealed class GroupFlags
 {
   private const int OlderMissCombinations = 4;
-  
+
   private static readonly int FlagCount = 1 + Fields.GroupCount;
   private static readonly int EveryGroupHitBits = (1 << Fields.GroupCount) - 1;
 
@@ -53,7 +53,7 @@ internal sealed class GroupFlags
     }
     RecordFrame(frame);
   }
-  
+
   private bool CodeFlag(Coder coder, int flag, int frameParts, int frame, bool hit)
   {
     int missAge = Trackers.MissAgeAfter(frame - lastMisses[flag]);
