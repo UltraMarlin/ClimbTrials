@@ -45,6 +45,9 @@ public static class TrialFile
   private static readonly Dictionary<string, Player.IntroTypes> IntroNames =
     RunDefinition.AllowedIntroTypes.ToDictionary(intro => intro.ToString());
 
+  private static readonly Dictionary<string, Difficulty> DifficultyNames =
+    Enum.GetValues<Difficulty>().ToDictionary(difficulty => difficulty.ToString());
+
   private static readonly Dictionary<string, SplitCategory> SplitCategoryNames =
     Enum.GetValues<SplitCategory>().ToDictionary(category => category.ToString());
 
@@ -121,7 +124,7 @@ public static class TrialFile
     string id = String(element, "id", where);
     string at = $"{file}: trial '{id}'";
     string difficultyName = String(element, "difficulty", at);
-    if (!Enum.TryParse(difficultyName, out Difficulty difficulty) || !Enum.IsDefined(difficulty))
+    if (!DifficultyNames.TryGetValue(difficultyName, out Difficulty difficulty))
       throw new TrialFileException($"{at}, field 'difficulty': expected Normal, Hard or Expert");
     JsonElement goals = Field(element, "goals", at);
     Object(goals, $"{at}, field 'goals'");
