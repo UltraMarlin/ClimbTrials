@@ -590,9 +590,11 @@ public class LeaderboardView : Entity
     }
     if (GhostComparisons.All.Count == 0)
       return;
-    string longest = Dialog.Clean("climbtrials_remove_comparison");
+    VirtualButton toggle = binds.ToggleComparison.Button;
+    float removeWidth = ButtonRow.Width(Dialog.Clean("climbtrials_remove_comparison"), toggle);
+    float addWidth = ButtonRow.Width(Dialog.Clean("climbtrials_add_comparison"), toggle);
     string clear = Dialog.Clean("climbtrials_clear_comparisons");
-    float toggleHalf = ButtonRow.Width(longest, binds.ToggleComparison.Button) / 2f;
+    float toggleHalf = Math.Max(removeWidth, addWidth) / 2f;
     float clearHalf = ButtonRow.Width(clear, binds.ClearComparisons.Button) / 2f;
     float centerX = ButtonRow.CenterX + toggleHalf + PromptGap + clearHalf;
     ButtonRow.DrawCenter(clear, binds.ClearComparisons.Button, dim, centerX);
