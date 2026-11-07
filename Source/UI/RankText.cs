@@ -16,14 +16,6 @@ public static class RankText
     string text = Format(place);
     float fit = TextFit.Scale(text, ActiveFont.Measure(WidestOnMedal).X);
     Color color = Color.White * alpha;
-    ActiveFont.DrawOutline(
-      text,
-      center,
-      new Vector2(0.5f, 0.5f),
-      Vector2.One * (RowLayout.RankScale * fit),
-      color,
-      2f,
-      TextOutline.StrokeFor(color)
-    );
+    TextOutline.Draw(text, center, new Vector2(0.5f, 0.5f), RowLayout.RankScale * fit, color);
   }
 }

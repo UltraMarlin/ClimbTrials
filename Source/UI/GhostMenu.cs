@@ -112,14 +112,12 @@ public class GhostMenu : MenuOnTop
       float alpha = Container.Alpha;
       float left = position.X + (Container.Width - LeftWidth()) / 2f;
       Color color = Color.White * alpha;
-      ActiveFont.DrawOutline(
+      TextOutline.Draw(
         label,
         new Vector2(left, position.Y),
         new Vector2(0f, 0.5f),
-        Vector2.One * HeaderScale,
-        color,
-        2f,
-        TextOutline.StrokeFor(color)
+        HeaderScale,
+        color
       );
       Vector2 baseline = new(
         left + LabelWidth + LabelGap,

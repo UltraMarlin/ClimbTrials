@@ -138,14 +138,12 @@ public class GoalListDisplay : Entity
     Vector2 iconCenter = new(RunHudLayout.IconX, rowY + RunHudLayout.RowHeight / 2f);
     Color textColor = MedalIcon.TextColor(row.TextMedal);
     if (row.IsPb)
-      ActiveFont.DrawOutline(
-        "PB",
+      TextOutline.Draw(
+        Dialog.Clean("climbtrials_pb"),
         iconCenter,
         new Vector2(0.5f, 0.5f),
-        Vector2.One * 0.5f,
-        textColor,
-        2f,
-        Color.Black
+        0.5f,
+        textColor
       );
     else
       MedalIcon.Draw(iconCenter, row.Medal, RunHudLayout.IconHeight);

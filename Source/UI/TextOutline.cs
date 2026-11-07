@@ -14,6 +14,23 @@ public static class TextOutline
     return Color.Black * (alpha * alpha);
   }
 
+  public static void Draw(
+    string text,
+    Vector2 position,
+    Vector2 justify,
+    float scale,
+    Color color
+  ) =>
+    ActiveFont.DrawOutline(
+      text,
+      position,
+      justify,
+      Vector2.One * scale,
+      color,
+      2f,
+      StrokeFor(color)
+    );
+
   public static void DrawDim(
     string text,
     Vector2 position,

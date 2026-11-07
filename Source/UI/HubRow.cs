@@ -42,14 +42,12 @@ public class HubRow(
       highlighted ? Container.HighlightColor
       : active ? Color.White
       : Color.DarkSlateGray;
-    ActiveFont.DrawOutline(
+    TextOutline.Draw(
       text(),
       start + new Vector2(84f, 0f),
       new Vector2(0f, 0.5f),
-      Vector2.One,
-      color * alpha,
-      2f,
-      TextOutline.StrokeFor(color * alpha)
+      1f,
+      color * alpha
     );
     if (showsNewMark != null && showsNewMark())
       NewMark.Draw(start + new Vector2(LeftWidth(), 0f), alpha);

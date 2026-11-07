@@ -246,14 +246,12 @@ public class BoardMenu : TextMenu
   {
     Color color = row.TeamTagColor.Value * alpha;
     float baselineShift = TimeText.LineBelowBaseline * (BoardLayout.TextScale - TeamTagScale);
-    ActiveFont.DrawOutline(
+    TextOutline.Draw(
       row.TeamTag,
       tagAt + new Vector2(0f, baselineShift),
       new Vector2(0f, 0.5f),
-      Vector2.One * TeamTagScale,
-      color,
-      2f,
-      TextOutline.StrokeFor(color)
+      TeamTagScale,
+      color
     );
   }
 
@@ -276,15 +274,7 @@ public class BoardMenu : TextMenu
     else
       return;
     Color shown = color * alpha;
-    ActiveFont.DrawOutline(
-      watchStatus,
-      at,
-      justify,
-      Vector2.One * WatchStatusScale,
-      shown,
-      TextOutline.DimStroke,
-      TextOutline.StrokeFor(shown)
-    );
+    TextOutline.DrawDim(watchStatus, at, justify, WatchStatusScale, shown);
   }
 
   private class HeaderRow : Item
@@ -339,14 +329,12 @@ public class BoardMenu : TextMenu
       float left = centerX - width / 2f;
       Skull?.DrawCentered(new Vector2(left + Skull.Width / 2f, nameY), Color.White * alpha);
       Color nameColor = (highlighted ? Container.HighlightColor : Color.White) * alpha;
-      ActiveFont.DrawOutline(
+      TextOutline.Draw(
         subject.Name,
         new Vector2(left + SkullSpan, nameY),
         new Vector2(0f, 0.5f),
-        Vector2.One * BoardLayout.NameScale,
-        nameColor,
-        2f,
-        TextOutline.StrokeFor(nameColor)
+        BoardLayout.NameScale,
+        nameColor
       );
       Color dim = RowLayout.Dim * alpha;
       if (switchable)
@@ -448,18 +436,16 @@ public class BoardMenu : TextMenu
     {
       Color color = (highlighted ? TrialsMenu.Highlight : Colors.DimText) * alpha;
       Vector2 justify = new(0f, 0.5f);
-      Vector2 scale = Vector2.One * BoardLayout.TextScale;
-      Color stroke = TextOutline.StrokeFor(color);
       if (Row.Rank is int rank)
       {
         Vector2 rankAt = left + new Vector2(BoardLayout.RankX, 0f);
-        ActiveFont.DrawOutline(RankText.Format(rank), rankAt, justify, scale, color, 2f, stroke);
+        TextOutline.Draw(RankText.Format(rank), rankAt, justify, BoardLayout.TextScale, color);
       }
       float nameX = NameColumnX(mode);
       if (Row.ShowsTeamTag)
         DrawTeamTag(Row, left + new Vector2(nameX, 0f), alpha);
       Vector2 nameAt = left + new Vector2(nameX + tagColumnWidth, 0f);
-      ActiveFont.DrawOutline(Row.Name, nameAt, justify, scale, color, 2f, stroke);
+      TextOutline.Draw(Row.Name, nameAt, justify, BoardLayout.TextScale, color);
       DrawWatchStatus(
         Row,
         left + new Vector2(BoardLayout.RankX - WatchStatusGap, 0f),

@@ -227,14 +227,12 @@ public abstract class ListScreen : Oui
     if (alpha <= 0f)
       return;
     float totalAlpha = alpha * dim;
-    ActiveFont.DrawOutline(
+    TextOutline.Draw(
       Dialog.Clean(TitleKey),
       new Vector2(screenX, TitleY - TitleLift),
       new Vector2(0.5f, 0.5f),
-      Vector2.One * TitleScale,
-      Color.White * totalAlpha,
-      2f,
-      TextOutline.StrokeFor(Color.White * totalAlpha)
+      TitleScale,
+      Color.White * totalAlpha
     );
     RenderHeader();
     if (BoardPromptShown)
@@ -258,14 +256,12 @@ public abstract class ListScreen : Oui
       : ModCheck.OthersLoaded ? ModCheck.MenuWarning()
       : null;
     if (status != null)
-      ActiveFont.DrawOutline(
+      TextOutline.Draw(
         status,
         new Vector2(screenX, ScreenLayout.StatusY),
         new Vector2(0.5f, 0.5f),
-        Vector2.One * 0.45f,
-        Color.White * 0.7f * totalAlpha,
-        2f,
-        TextOutline.StrokeFor(Color.White * 0.7f * totalAlpha)
+        0.45f,
+        Color.White * 0.7f * totalAlpha
       );
   }
 }

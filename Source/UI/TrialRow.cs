@@ -32,14 +32,12 @@ public class TrialRow : SlidingRow
     GFX.Gui[Trial.SkullTexture]
       .DrawCentered(rowStart + new Vector2(RowLayout.IconX, 0f), Color.White * alpha, Vector2.One);
     Color nameColor = highlighted ? Container.HighlightColor : Color.White;
-    ActiveFont.DrawOutline(
+    TextOutline.Draw(
       Trial.Name,
       rowStart + new Vector2(RowLayout.NameX, 0f),
       new Vector2(0f, 0.5f),
-      Vector2.One,
-      nameColor * alpha,
-      2f,
-      TextOutline.StrokeFor(nameColor * alpha)
+      1f,
+      nameColor * alpha
     );
 
     TrialRecord record = TrialRecords.Get(Trial.Id);
@@ -66,14 +64,12 @@ public class TrialRow : SlidingRow
       return;
 
     Color mark = Colors.Warning * alpha;
-    ActiveFont.DrawOutline(
+    TextOutline.Draw(
       RowLayout.Mark,
       new Vector2(rightEdge, rowStart.Y + RowLayout.PbBaseline),
       new Vector2(1f, 1f),
-      Vector2.One * RowLayout.PbScale,
-      mark,
-      2f,
-      TextOutline.StrokeFor(mark)
+      RowLayout.PbScale,
+      mark
     );
   }
 

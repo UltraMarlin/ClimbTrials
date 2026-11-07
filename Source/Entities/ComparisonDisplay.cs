@@ -98,14 +98,12 @@ public class ComparisonDisplay : Entity
       float bottom = top + TextBottom;
       float scale = NameScale(line.Name);
       Color nameColor = line.NameColor * alpha;
-      ActiveFont.DrawOutline(
+      TextOutline.DrawDim(
         line.Name,
         new Vector2(TextLeft, bottom - TimeText.LineBelowBaseline * (TextScale - scale)),
         new Vector2(0f, 1f),
-        Vector2.One * scale,
-        nameColor,
-        TextOutline.DimStroke,
-        TextOutline.StrokeFor(nameColor)
+        scale,
+        nameColor
       );
       Color timeColor = (line.Watched ? Color.White : Colors.DimText) * alpha;
       TimeText.Draw(new Vector2(timeLeft, bottom), TimeText.Format(line.Ticks), Style, timeColor);

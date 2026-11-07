@@ -563,9 +563,10 @@ public class LeaderboardView : Entity
 
     notice.Render(new Vector2(current.X, ScreenLayout.NoticeY), ScreenLayout.NoticeScale, 1f);
     if (BoardFetchesFailing && !notice.Showing)
-      TransientText.DrawLine(
+      TextOutline.Draw(
         Dialog.Clean("climbtrials_board_update_failed"),
         new Vector2(current.X, ScreenLayout.NoticeY),
+        new Vector2(0.5f, 0.5f),
         ScreenLayout.NoticeScale,
         Color.White * current.Alpha
       );
@@ -888,14 +889,12 @@ public class LeaderboardView : Entity
   private void DrawMessage(string key, Shown shown)
   {
     Color color = Color.White * (shown.Alpha * dim * opened);
-    ActiveFont.DrawOutline(
+    TextOutline.Draw(
       Dialog.Clean(key),
       new Vector2(shown.X, BoardLayout.MessageY + rise),
       new Vector2(0.5f, 0.5f),
-      Vector2.One * MessageScale,
-      color,
-      2f,
-      TextOutline.StrokeFor(color)
+      MessageScale,
+      color
     );
   }
 

@@ -392,14 +392,12 @@ public class OuiTrials : ListScreen
   {
     Color dim = RowLayout.Dim * alpha;
     Color white = Color.White * alpha;
-    ActiveFont.DrawOutline(
+    TextOutline.Draw(
       campaign.Name,
       new Vector2(atX, NameY),
       new Vector2(0.5f, 0.5f),
-      Vector2.One * NameScale,
-      white,
-      2f,
-      TextOutline.StrokeFor(white)
+      NameScale,
+      white
     );
     if (Listed.Count > 1)
     {
@@ -436,14 +434,12 @@ public class OuiTrials : ListScreen
     float timeWidth = TimeText.Width(text, style);
     float left = atX - (labelWidth + TotalLabelGap + timeWidth) / 2f;
     Color white = Color.White * alpha;
-    ActiveFont.DrawOutline(
+    TextOutline.Draw(
       label,
       new Vector2(left, ScreenLayout.NoticeY),
       new Vector2(0f, 0.5f),
-      Vector2.One * TotalScale,
-      white,
-      2f,
-      TextOutline.StrokeFor(white)
+      TotalScale,
+      white
     );
     float baseline = ScreenLayout.NoticeY + TimeText.Height(style) / 2f;
     TimeText.Draw(

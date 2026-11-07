@@ -64,14 +64,12 @@ public class RunNotice : Entity
     string text = StatusText();
     if (text == null)
       return;
-    ActiveFont.DrawOutline(
+    TextOutline.Draw(
       text,
       new Vector2(960f, ScreenLayout.StatusY),
       new Vector2(0.5f, 0.5f),
-      Vector2.One * 0.45f,
-      Color.White,
-      2f,
-      Color.Black
+      0.45f,
+      Color.White
     );
   }
 

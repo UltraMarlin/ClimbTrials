@@ -91,14 +91,12 @@ public class RunInfoDisplay : Entity
 
   private static void DrawText(string text, float top)
   {
-    ActiveFont.DrawOutline(
+    TextOutline.Draw(
       text,
       new Vector2(RunHudLayout.TimeX, top + RunHudLayout.RowHeight / 2f),
       new Vector2(0f, 0.5f),
-      Vector2.One * RunHudLayout.TimeScale,
-      Color.White,
-      2f,
-      TextOutline.StrokeFor(Color.White)
+      RunHudLayout.TimeScale,
+      Color.White
     );
   }
 }

@@ -42,14 +42,12 @@ public class CampaignRow : SlidingRow
     float rightEdge = rowStart.X + Container.Width - RowLayout.HoveredRowShift;
 
     Color nameColor = highlighted ? Container.HighlightColor : Color.White;
-    ActiveFont.DrawOutline(
+    TextOutline.Draw(
       Campaign.Name,
       rowStart + new Vector2(RowLayout.CampaignNameX, 0f),
       new Vector2(0f, 0.5f),
-      Vector2.One,
-      nameColor * alpha,
-      2f,
-      TextOutline.StrokeFor(nameColor * alpha)
+      1f,
+      nameColor * alpha
     );
     if (ShowsCount)
     {

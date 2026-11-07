@@ -100,14 +100,12 @@ public class OuiHub : ListScreen
       return;
 
     Color color = Colors.Warning * menu.Alpha;
-    ActiveFont.DrawOutline(
+    TextOutline.Draw(
       Campaigns.LoadError,
       new Vector2(menu.X, ScreenLayout.NoticeY),
       new Vector2(0.5f, 0.5f),
-      Vector2.One * LoadErrorScale,
-      color,
-      2f,
-      TextOutline.StrokeFor(color)
+      LoadErrorScale,
+      color
     );
   }
 

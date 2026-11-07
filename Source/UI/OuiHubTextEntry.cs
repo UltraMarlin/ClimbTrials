@@ -73,14 +73,12 @@ public class OuiHubTextEntry : OuiModOptionString
     RunForDeviceInHand(base.Render);
     if (!OpenedByHub)
       return;
-    ActiveFont.DrawOutline(
+    TextOutline.Draw(
       Headline,
       Position + new Vector2(ListScreen.OnScreenX, ListScreen.TitleY),
       new Vector2(0.5f, 0.5f),
-      Vector2.One * ListScreen.TitleScale,
-      Color.White,
-      2f,
-      TextOutline.StrokeFor(Color.White)
+      ListScreen.TitleScale,
+      Color.White
     );
     if (Letter != null && Scene.TimeActive >= letterStartTime)
       DrawLetter();

@@ -153,17 +153,6 @@ public class TrialModeMenu : MenuOnTop
     closed?.Invoke();
   }
 
-  private static void Outline(string text, Vector2 at, float scale, Color color) =>
-    ActiveFont.DrawOutline(
-      text,
-      at,
-      new Vector2(0f, 0.5f),
-      Vector2.One * scale,
-      color,
-      2f,
-      TextOutline.StrokeFor(color)
-    );
-
   private class TitleItem(Trial trial) : Item
   {
     private MTexture Skull => GFX.Gui[trial.SkullTexture];
@@ -179,7 +168,7 @@ public class TrialModeMenu : MenuOnTop
       float left = position.X + (Container.Width - LeftWidth()) / 2f;
       Skull.DrawCentered(new Vector2(left + Skull.Width / 2f, position.Y), Color.White * alpha);
       Vector2 at = new(left + Skull.Width + IconGap, position.Y);
-      Outline(trial.Name, at, TitleScale, Color.White * alpha);
+      TextOutline.Draw(trial.Name, at, new Vector2(0f, 0.5f), TitleScale, Color.White * alpha);
     }
   }
 
@@ -206,14 +195,26 @@ public class TrialModeMenu : MenuOnTop
     {
       float alpha = Container.Alpha;
       float left = position.X + (Container.Width - LeftWidth()) / 2f;
-      Outline(label, new Vector2(left, position.Y), PbScale, Color.White * alpha);
+      TextOutline.Draw(
+        label,
+        new Vector2(left, position.Y),
+        new Vector2(0f, 0.5f),
+        PbScale,
+        Color.White * alpha
+      );
       float timeLeft = left + LabelWidth + LabelGap;
       Vector2 baseline = new(timeLeft, position.Y + TimeText.Height(Style) / 2f);
       TimeText.Draw(baseline, time, Style, Color.White * alpha);
       if (rankText.Length == 0)
         return;
       float rankLeft = timeLeft + TimeText.Width(time, Style) + LabelGap;
-      Outline(rankText, new Vector2(rankLeft, position.Y), PbScale, Color.White * alpha);
+      TextOutline.Draw(
+        rankText,
+        new Vector2(rankLeft, position.Y),
+        new Vector2(0f, 0.5f),
+        PbScale,
+        Color.White * alpha
+      );
     }
   }
 
