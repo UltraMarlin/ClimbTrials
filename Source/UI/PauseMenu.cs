@@ -48,7 +48,7 @@ public static class PauseMenu
     DimButton leaderboard = AddLeaderboardRow(level, menu, menu.Items.IndexOf(back));
     ownRows[leaderboard] = PauseRowKind.Leaderboard;
 
-    if (Replayer.Silenced)
+    if (Replayer.IsReplayingInputs)
       LockRowsExcept(
         menu,
         Dialog.Clean("menu_pause_resume"),
@@ -93,7 +93,7 @@ public static class PauseMenu
   private static void LockRow(TextMenu.Button button)
   {
     button.OnPressed = null;
-    if (!Replayer.Silenced)
+    if (!Replayer.IsReplayingInputs)
       button.Disabled = true;
   }
 
@@ -188,7 +188,7 @@ public static class PauseMenu
       menu.Remove(yes);
       TextMenu.Button restart = new(yes.Label);
       restart.Pressed(RestartTrial);
-      if (Replayer.Silenced)
+      if (Replayer.IsReplayingInputs)
         LockRow(restart);
       menu.Insert(index, restart);
     };

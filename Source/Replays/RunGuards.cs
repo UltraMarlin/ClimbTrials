@@ -37,7 +37,7 @@ public static class RunGuards
     if (!file && !settings)
       return;
 
-    if (Replayer.Silenced && settings)
+    if (Replayer.IsReplayingInputs && settings)
     {
       Replayer.RestorePlayerSettings();
       orig(file, settings);

@@ -39,7 +39,7 @@ public static class Replayer
   public static bool PauseQueued { get; private set; }
   public static int Frame { get; private set; }
   public static bool PausedOnFinish { get; private set; }
-  public static bool Silenced =>
+  public static bool IsReplayingInputs =>
     (State is ReplayState.Playing or ReplayState.Paused) && !PausedOnFinish;
   public static bool MenuOpen => menu != null || modOptions != null;
 
@@ -132,11 +132,11 @@ public static class Replayer
     }
     InputCapture.RestoreButtonStates(replay.Buttons);
     ClearReplayedInputs();
-    SilenceAxis(Input.MoveX, moveX);
-    SilenceAxis(Input.MoveY, moveY);
-    SilenceAxis(Input.GliderMoveY, gliderMoveY);
-    SilenceStick(Input.Aim, aim);
-    SilenceStick(Input.Feather, feather);
+    BlankAxisForReplay(Input.MoveX, moveX);
+    BlankAxisForReplay(Input.MoveY, moveY);
+    BlankAxisForReplay(Input.GliderMoveY, gliderMoveY);
+    BlankStickForReplay(Input.Aim, aim);
+    BlankStickForReplay(Input.Feather, feather);
 
     State = PauseQueued ? ReplayState.Paused : ReplayState.Playing;
     PauseQueued = false;
@@ -213,7 +213,8 @@ public static class Replayer
   public static InputFrame? ReplayedFrame(int framesBack = 0)
   {
     int index = Frame - 1 - framesBack;
-    if ((!Silenced && !PausedOnFinish) || index < 0 || index >= current.Frames.Count)
+    bool frameShown = IsReplayingInputs || PausedOnFinish;
+    if (!frameShown || index < 0 || index >= current.Frames.Count)
       return null;
     return current.Frames[index];
   }
@@ -242,7 +243,7 @@ public static class Replayer
     bool quickReset
   )
   {
-    if (quickReset && RunManager.Replaying && !Silenced)
+    if (quickReset && RunManager.Replaying && !IsReplayingInputs)
       return;
     if (current == null && RunManager.Replaying)
     {
@@ -264,7 +265,7 @@ public static class Replayer
 
   private static void RebuildRecordedPauseMenu(TextMenu built)
   {
-    if (!Silenced)
+    if (!IsReplayingInputs)
       return;
     if (pauseMenusShown < current.PauseMenus.Count)
       PauseRows.Rebuild(built, current.PauseMenus[pauseMenusShown]);
@@ -273,7 +274,7 @@ public static class Replayer
 
   private static void RestoreInputs()
   {
-    if (!Silenced)
+    if (!IsReplayingInputs)
       return;
 
     foreach ((VirtualButton button, Binding binding) in savedButtons)
@@ -652,10 +653,10 @@ public static class Replayer
     string fallback
   )
   {
-    Binding original = Silenced ? SavedBinding(button) : null;
+    Binding original = IsReplayingInputs ? SavedBinding(button) : null;
     if (original == null)
       return orig(button, mode, fallback);
-    Binding silenced = button.Binding;
+    Binding blanked = button.Binding;
     button.Binding = original;
     try
     {
@@ -663,7 +664,7 @@ public static class Replayer
     }
     finally
     {
-      button.Binding = silenced;
+      button.Binding = blanked;
     }
   }
 
@@ -830,7 +831,7 @@ public static class Replayer
     feather.Replayed = Vector2.Zero;
   }
 
-  private static void SilenceAxis(VirtualIntegerAxis axis, AxisNode node)
+  private static void BlankAxisForReplay(VirtualIntegerAxis axis, AxisNode node)
   {
     savedAxes.Add((axis, [axis.Negative, axis.NegativeAlt, axis.Positive, axis.PositiveAlt]));
     axis.Negative = new Binding();
@@ -840,7 +841,7 @@ public static class Replayer
     axis.Nodes.Add(node);
   }
 
-  private static void SilenceStick(VirtualJoystick stick, StickNode node)
+  private static void BlankStickForReplay(VirtualJoystick stick, StickNode node)
   {
     savedSticks.Add(
       (
