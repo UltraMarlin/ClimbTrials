@@ -18,10 +18,9 @@ public class OuiHub : ListScreen
   private const float CampaignsIconScale = 1.1f;
 
   private const string EventsIcon = "ClimbTrials/Trophy_Icon";
+  private const string OptionsIcon = "ClimbTrials/Settings_Icon";
   private const string InviteCodeIcon = "ClimbTrials/Letter_Icon";
-
-  // TODO: Replace placeholder
-  private const string NameIcon = "dotdotdot";
+  private const string NameIcon = "ClimbTrials/Name_Icon";
   private const int InviteCodeEntryMaxLength = 24;
   private const int InviteCodeMinLength = 6;
   private const int InviteCodeMaxLength = 12;
@@ -53,6 +52,7 @@ public class OuiHub : ListScreen
   protected override TrialsMenu BuildMenu()
   {
     TrialsMenu built = [];
+
     campaignsRow = new HubRow(
       () => Dialog.Clean("climbtrials_hub_campaigns"),
       () => Campaigns.LoadError == null,
@@ -62,6 +62,7 @@ public class OuiHub : ListScreen
     );
     campaignsRow.Pressed(OpenCampaigns);
     built.Add(campaignsRow);
+
     eventsRow = new HubRow(
       () => Dialog.Clean("climbtrials_hub_events"),
       AnyEventKnown,
@@ -70,13 +71,11 @@ public class OuiHub : ListScreen
     );
     eventsRow.Pressed(OpenEvents);
     built.Add(eventsRow);
-    optionsRow = new HubRow(
-      () => Dialog.Clean("climbtrials_hub_options"),
-      () => true,
-      "menu/options"
-    );
+
+    optionsRow = new HubRow(() => Dialog.Clean("climbtrials_hub_options"), () => true, OptionsIcon);
     optionsRow.Pressed(OpenOptions);
     built.Add(optionsRow);
+
     inviteCodeRow = new HubRow(
       () => Dialog.Clean("climbtrials_hub_invite_code"),
       InviteCodeLive,
@@ -84,9 +83,11 @@ public class OuiHub : ListScreen
     );
     inviteCodeRow.Pressed(OpenInviteCodeEntry);
     built.Add(inviteCodeRow);
+
     nameRow = new HubRow(NameText, NameLive, NameIcon);
     nameRow.Pressed(OnNameRow);
     built.Add(nameRow);
+
     built.OnCancel = GoBackTo<OuiMainMenu>;
     return built;
   }
