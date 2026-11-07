@@ -55,15 +55,8 @@ public class ComparisonDisplay : Entity
   public override void Update()
   {
     base.Update();
-    Level level = SceneAs<Level>();
-    Player player = level.Tracker.GetEntity<Player>();
-    float target = 1f;
-    if (player != null)
-    {
-      Vector2 screen = level.WorldToScreen(player.Center);
-      target = RunHudLayout.DuckTarget(screen, width, RunHudLayout.GhostBlockTop + height);
-    }
-    duck = Calc.Approach(duck, target, Engine.RawDeltaTime / RunHudLayout.DuckTime);
+    float boxBottom = RunHudLayout.GhostBlockTop + height;
+    duck = RunHudLayout.ApproachDuck(duck, SceneAs<Level>(), width, boxBottom);
   }
 
   public override void Render()

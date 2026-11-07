@@ -44,26 +44,14 @@ public class TrialRow : SlidingRow
 
     TrialRecord record = TrialRecords.Get(Trial.Id);
     float timeRight = rightEdge - RowLayout.MarkGap - RowLayout.MarkWidth;
-    string best = record == null ? null : TimeText.Format(record.BestTicks);
-    float width = TimeText.Width(best ?? TimeText.TypicalTime, TimeText.Hud.At(RowLayout.PbScale));
-    float medalCenter = timeRight - width - RowLayout.MedalGap;
     if (record == null)
       DrawWord("new", timeRight, rowStart.Y, alpha);
-    else
-    {
-      Medal medal = Trial.Goals.MedalReached(record.BestTicks);
-      MedalIcon.Draw(new Vector2(medalCenter, rowStart.Y), medal, RowLayout.MedalIconHeight, alpha);
-      TimeText.Draw(
-        new Vector2(timeRight - width, rowStart.Y + RowLayout.PbBaseline),
-        best,
-        TimeText.Hud.At(RowLayout.PbScale),
-        MedalIcon.TextColor(medal) * alpha
-      );
-    }
-
-    RankText.Draw(
+    DrawRightColumn(
+      record == null ? null : TimeText.Format(record.BestTicks),
+      record == null ? Medal.None : Trial.Goals.MedalReached(record.BestTicks),
       Standings.RecordFor(Trial)?.Rank,
-      new Vector2(medalCenter, rowStart.Y + RowLayout.RankDrop),
+      timeRight,
+      rowStart.Y,
       alpha
     );
 

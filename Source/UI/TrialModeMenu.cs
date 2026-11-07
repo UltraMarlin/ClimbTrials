@@ -83,55 +83,54 @@ public class TrialModeMenu : MenuOnTop
   private void AddSubmitRow(Trial trial, TrialRecord record, StandingsState state, Action submit)
   {
     Upload upload = Uploader.UploadFor(trial.Id);
-    bool hasReplay = ReplayStore.Exists(trial.Id);
-    bool needsReplay = trial.FitsReplayLimit(record.BestTicks);
-    bool submitting = upload.State == UploadState.Submitting;
-    bool offlineMode = ClimbTrialsModule.Settings.OfflineMode;
-    SubmitRefusal refusal = Events.RefusalFor(trial);
-    bool paused = Standings.SubmissionsPaused;
-    bool canSubmit =
-      record.Submittable
-      && (hasReplay || !needsReplay)
-      && !Identity.Banned
-      && refusal == SubmitRefusal.None
-      && !offlineMode
-      && state == StandingsState.Ready
-      && Identity.Registered
-      && !paused
-      && !submitting;
-
-    DimButton row = new(Dialog.Clean("climbtrials_trials_submit_pb"), canSubmit, submit);
+    string submitBlockedReason = SubmitBlockedReason(trial, record, state, upload);
+    DimButton row = new(
+      Dialog.Clean("climbtrials_trials_submit_pb"),
+      submitBlockedReason == null,
+      submit
+    );
     Add(row);
-    string reason = null;
-    if (Identity.Banned)
-      reason = Dialog.Clean("climbtrials_submit_banned");
-    else if (!record.Submittable)
-      reason = Dialog.Clean("climbtrials_submit_unsubmittable");
-    else if (!hasReplay && needsReplay)
-      reason = Dialog.Clean("climbtrials_submit_no_replay");
-    else if (refusal != SubmitRefusal.None)
-      reason = Uploader.RefusalReason(refusal);
-    else if (offlineMode)
-      reason = Dialog.Clean("climbtrials_offline_mode");
-    else if (state == StandingsState.Offline)
-      reason = Dialog.Clean("climbtrials_offline");
-    else if (state == StandingsState.Idle)
-      reason = Dialog.Clean("climbtrials_submit_loading");
-    else if (Identity.Registering)
-      reason = Dialog.Clean("climbtrials_connecting");
-    else if (!Identity.Registered)
-      reason = Dialog.Clean("climbtrials_not_connected");
-    else if (paused)
-      reason = Dialog.Clean("climbtrials_submit_paused");
-    else if (submitting)
-      reason = Dialog.Clean("climbtrials_submitting");
-    else if (upload.State == UploadState.Failed)
+    string reason = submitBlockedReason;
+    if (reason == null && upload.State == UploadState.Failed)
       reason =
         upload.Refusal != SubmitRefusal.None
           ? Uploader.RefusalReason(upload.Refusal)
           : upload.Message;
     if (reason != null)
       RowDescription.Attach(this, row, reason);
+  }
+
+  private static string SubmitBlockedReason(
+    Trial trial,
+    TrialRecord record,
+    StandingsState state,
+    Upload upload
+  )
+  {
+    SubmitRefusal refusal = Events.RefusalFor(trial);
+    if (Identity.Banned)
+      return Dialog.Clean("climbtrials_submit_banned");
+    if (!record.Submittable)
+      return Dialog.Clean("climbtrials_submit_unsubmittable");
+    if (!ReplayStore.Exists(trial.Id) && trial.FitsReplayLimit(record.BestTicks))
+      return Dialog.Clean("climbtrials_submit_no_replay");
+    if (refusal != SubmitRefusal.None)
+      return Uploader.RefusalReason(refusal);
+    if (ClimbTrialsModule.Settings.OfflineMode)
+      return Dialog.Clean("climbtrials_offline_mode");
+    if (state == StandingsState.Offline)
+      return Dialog.Clean("climbtrials_offline");
+    if (state == StandingsState.Idle)
+      return Dialog.Clean("climbtrials_submit_loading");
+    if (Identity.Registering)
+      return Dialog.Clean("climbtrials_connecting");
+    if (!Identity.Registered)
+      return Dialog.Clean("climbtrials_not_connected");
+    if (Standings.SubmissionsPaused)
+      return Dialog.Clean("climbtrials_submit_paused");
+    if (upload.State == UploadState.Submitting)
+      return Dialog.Clean("climbtrials_submitting");
+    return null;
   }
 
   private void Back()

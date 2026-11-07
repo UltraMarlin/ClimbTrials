@@ -1,13 +1,11 @@
 using System.Collections.Generic;
 using Celeste.Mod.ClimbTrials.Content;
-using Celeste.Mod.ClimbTrials.Online;
 
 namespace Celeste.Mod.ClimbTrials.UI;
 
 public abstract class CampaignListScreen : ListScreen
 {
   private readonly List<CampaignRow> rows = [];
-  private LeaderboardView view;
 
   protected override int ScreenDepth => 2;
   protected abstract IEnumerable<SlidingRow> ListedRows();
@@ -30,40 +28,13 @@ public abstract class CampaignListScreen : ListScreen
         RowDescription.Attach(built, campaignRow, campaign.Description);
       rows.Add(campaignRow);
     }
-    built.OnCancel = () =>
-    {
-      built.Focused = false;
-      Audio.Play(SFX.ui_main_button_back);
-      Overworld.Goto<OuiHub>();
-    };
+    built.OnCancel = GoBackTo<OuiHub>;
     return built;
   }
 
-  protected override void FetchOnline()
-  {
-    Identity.EnsureRegistered();
-    Standings.EnsureFreshHub();
-  }
-
-  protected override StandingsState ServerState => Standings.HubState;
-
   protected bool BoardOpen => view != null;
 
-  protected override void RenderPrompts(float alpha)
-  {
-    if (view != null || menu?.Current is not CampaignRow)
-      return;
-    ButtonRow.DrawCenter(Dialog.Clean("climbtrials_trials_leaderboard"), Input.MenuJournal, alpha);
-  }
-
-  protected override void CancelTransitions()
-  {
-    if (view == null)
-      return;
-    view.Discard();
-    view = null;
-    SetDim(1f);
-  }
+  protected override bool BoardPromptShown => view == null && menu?.Current is CampaignRow;
 
   public override void Update()
   {
@@ -79,28 +50,17 @@ public abstract class CampaignListScreen : ListScreen
       Audio.Play(SFX.ui_main_button_invalid);
   }
 
-  private void OpenBoard(Campaign campaign)
-  {
-    menu.Focused = false;
-    Focused = false;
-    view = new LeaderboardView(
-      BoardSubject.ForCampaign(campaign),
-      opened => SetDim(Motion.DimUnder(opened, Motion.BoardUnderDim)),
-      OnBoardClosed
-    )
-    {
-      OnSubjectChanged = SelectRowOf,
-    };
-    Scene.Add(view);
-  }
-
-  private void OnBoardClosed(BoardSubject shown)
-  {
-    view = null;
-    Standings.EnsureFreshHub();
-    menu.Focused = true;
-    Focused = true;
-  }
+  private void OpenBoard(Campaign campaign) =>
+    ShowBoard(
+      new LeaderboardView(
+        BoardSubject.ForCampaign(campaign),
+        opened => SetDim(Motion.DimUnder(opened, Motion.BoardUnderDim)),
+        OnBoardClosed
+      )
+      {
+        OnSubjectChanged = SelectRowOf,
+      }
+    );
 
   private void SelectRowOf(BoardSubject shown)
   {

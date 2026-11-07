@@ -84,7 +84,7 @@ public class PlaybackGhost : Entity
 
   public void Capture() => layer.Capture();
 
-  public void Dispose() => Remove(layer);
+  public void RemoveBuffer() => Remove(layer);
 
   public void Sync(long ticks)
   {

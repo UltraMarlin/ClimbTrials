@@ -60,8 +60,18 @@ public static class RunHudLayout
   public const float BoxPaddingBottom = 14f;
   public const int RowPad = 4;
 
-  public static float DuckTarget(Vector2 screen, float boxRight, float boxBottom) =>
-    screen.X < boxRight + DuckMargin && screen.Y < boxBottom + DuckMargin ? DuckAlpha : 1f;
+  public static float ApproachDuck(float duck, Level level, float boxRight, float boxBottom)
+  {
+    Player player = level.Tracker.GetEntity<Player>();
+    float target = 1f;
+    if (player != null)
+    {
+      Vector2 screen = level.WorldToScreen(player.Center);
+      if (screen.X < boxRight + DuckMargin && screen.Y < boxBottom + DuckMargin)
+        target = DuckAlpha;
+    }
+    return Calc.Approach(duck, target, Engine.RawDeltaTime / DuckTime);
+  }
 
   public static float GoalListBottom(int rowCount) =>
     ListY + rowCount * RowHeight + BoxPaddingBottom;

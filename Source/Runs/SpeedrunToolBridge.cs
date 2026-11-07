@@ -135,16 +135,19 @@ public static class SpeedrunToolBridge
       ?.GetMethod("Clear", Type.EmptyTypes);
   }
 
-  private static object ReadSetting(ref PropertyInfo property, string settingName)
+  private static object FindSettingsWithProperty(ref PropertyInfo property, string settingName)
   {
     object speedrunToolSettings = FindModule()?._Settings;
-    if (speedrunToolSettings == null)
-      return null;
-
-    property ??= speedrunToolSettings.GetType().GetProperty(settingName);
+    property ??= speedrunToolSettings?.GetType().GetProperty(settingName);
     if (property == null)
       ReportMissing(settingName);
-    return property?.GetValue(speedrunToolSettings);
+    return property == null ? null : speedrunToolSettings;
+  }
+
+  private static object ReadSetting(ref PropertyInfo property, string settingName)
+  {
+    object speedrunToolSettings = FindSettingsWithProperty(ref property, settingName);
+    return speedrunToolSettings == null ? null : property.GetValue(speedrunToolSettings);
   }
 
   private static bool ReadBool(ref PropertyInfo property, string settingName, bool whenUnreadable)
@@ -190,13 +193,9 @@ public static class SpeedrunToolBridge
 
   private static bool WriteEnabled(bool enabled)
   {
-    object speedrunToolSettings = FindModule()?._Settings;
-    enabledProperty ??= speedrunToolSettings?.GetType().GetProperty("Enabled");
-    if (speedrunToolSettings == null || enabledProperty == null)
-    {
-      ReportMissing("Enabled");
+    object speedrunToolSettings = FindSettingsWithProperty(ref enabledProperty, "Enabled");
+    if (speedrunToolSettings == null)
       return false;
-    }
     enabledProperty.SetValue(speedrunToolSettings, enabled);
     return true;
   }
@@ -218,9 +217,8 @@ public static class SpeedrunToolBridge
   private static bool TryToggle(out bool enabled)
   {
     enabled = false;
-    object speedrunToolSettings = FindModule()?._Settings;
-    enabledProperty ??= speedrunToolSettings?.GetType().GetProperty("Enabled");
-    if (speedrunToolSettings == null || enabledProperty == null || clearPbTimesMethod == null)
+    object speedrunToolSettings = FindSettingsWithProperty(ref enabledProperty, "Enabled");
+    if (speedrunToolSettings == null || clearPbTimesMethod == null)
     {
       ReportMissing("Enabled toggle");
       return false;

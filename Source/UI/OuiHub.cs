@@ -87,22 +87,9 @@ public class OuiHub : ListScreen
     nameRow = new HubRow(NameText, NameLive, NameIcon);
     nameRow.Pressed(OnNameRow);
     built.Add(nameRow);
-    built.OnCancel = () =>
-    {
-      built.Focused = false;
-      Audio.Play(SFX.ui_main_button_back);
-      Overworld.Goto<OuiMainMenu>();
-    };
+    built.OnCancel = GoBackTo<OuiMainMenu>;
     return built;
   }
-
-  protected override void FetchOnline()
-  {
-    Identity.EnsureRegistered();
-    Standings.EnsureFreshHub();
-  }
-
-  protected override StandingsState ServerState => Standings.HubState;
 
   protected override void RenderHeader()
   {
@@ -146,12 +133,8 @@ public class OuiHub : ListScreen
       Events.ApplyPending();
     if (focused && Standings.HubState == StandingsState.Ready && Events.CrossedSinceAnswer())
       Standings.EnsureFreshHub();
-    if (menu?.Current is not HubRow row || !row.Disabled)
-      return;
-
-    menu.Current.OnLeave?.Invoke();
-    menu.Selection = menu.Items.IndexOf(optionsRow);
-    menu.Current.OnEnter?.Invoke();
+    if (menu?.Current is HubRow row && row.Disabled)
+      SelectRow(optionsRow);
   }
 
   public override bool IsStart(Overworld overworld, Overworld.StartMode start)

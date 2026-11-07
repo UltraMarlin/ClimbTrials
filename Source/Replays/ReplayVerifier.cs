@@ -210,7 +210,7 @@ public static class ReplayVerifier
 
   private static void LogResult(AdminReplay entry, string result, bool olderTrial)
   {
-    string rank = entry.Rank is int place ? $"#{place}" : "#-";
+    string rank = entry.Rank is int place ? RankText.Format(place) : "#-";
     string older = olderTrial ? " (older trial)" : "";
     Logger.Log(
       LogLevel.Info,

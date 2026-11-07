@@ -76,19 +76,9 @@ public class GoalListDisplay : Entity
   public override void Update()
   {
     base.Update();
-    Level level = SceneAs<Level>();
-    Player player = level.Tracker.GetEntity<Player>();
-    float target = 1f;
-    if (player != null)
-    {
-      Vector2 screen = level.WorldToScreen(player.Center);
-      target = RunHudLayout.DuckTarget(
-        screen,
-        widest + RunHudLayout.BoxPaddingRight,
-        RunHudLayout.GoalListBottom(rows.Count)
-      );
-    }
-    duck = Calc.Approach(duck, target, Engine.RawDeltaTime / RunHudLayout.DuckTime);
+    float boxRight = widest + RunHudLayout.BoxPaddingRight;
+    float boxBottom = RunHudLayout.GoalListBottom(rows.Count);
+    duck = RunHudLayout.ApproachDuck(duck, SceneAs<Level>(), boxRight, boxBottom);
     foreach (FadeBuffer layer in layers)
       layer.Visible = Shown;
 

@@ -737,7 +737,7 @@ public static class Replayer
       return;
     }
     InputFrame frame = current.Frames[Frame];
-    Player player = (Engine.Scene as Level)?.Tracker.GetEntity<Player>();
+    Player player = InputCapture.FindRecordedPlayer();
     if (frame.HasPlayer != (player != null))
     {
       StopOnDesync($"frame {Frame}: player presence differs");

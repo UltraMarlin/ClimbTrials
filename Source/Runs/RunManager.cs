@@ -615,11 +615,7 @@ public static class RunManager
       else if (!level.Paused)
         ghosts.Advance(Engine.RawDeltaTime);
     }
-    if (
-      !Replaying
-      && Attempt.State is AttemptState.Countdown or AttemptState.Running
-      && RetryPressed
-    )
+    if (!Replaying && AttemptInProgress && RetryPressed)
       StartRun(Run);
   }
 
@@ -887,10 +883,9 @@ public static class RunManager
     PlayerDeadBody body = orig(self, direction, evenIfInvincible, registerDeathInStats);
     if (
       body != null
-      && Run != null
       && !Replaying
       && !Practice
-      && Attempt.State is AttemptState.Countdown or AttemptState.Running
+      && AttemptInProgress
       && (
         ClimbTrialsModule.Settings.ResetOnDeath
         || NothingPermanentYet(self.SceneAs<Level>().Session)

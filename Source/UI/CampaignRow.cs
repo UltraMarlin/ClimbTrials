@@ -65,29 +65,12 @@ public class CampaignRow : SlidingRow
     }
 
     CampaignRecord record = TrialRecords.Totals(Campaign);
-    string text = record.TotalTicks is long total ? TimeText.Format(total) : null;
-    float width = TimeText.Width(text ?? TimeText.TypicalTime, TimeText.Hud.At(RowLayout.PbScale));
-    float medalCenter = rightEdge - width - RowLayout.MedalGap;
-    if (text != null)
-    {
-      MedalIcon.Draw(
-        new Vector2(medalCenter, rowStart.Y),
-        record.Medal,
-        RowLayout.MedalIconHeight,
-        alpha
-      );
-
-      TimeText.Draw(
-        new Vector2(rightEdge - width, rowStart.Y + RowLayout.PbBaseline),
-        text,
-        TimeText.Hud.At(RowLayout.PbScale),
-        MedalIcon.TextColor(record.Medal) * alpha
-      );
-    }
-
-    RankText.Draw(
+    DrawRightColumn(
+      record.TotalTicks is long total ? TimeText.Format(total) : null,
+      record.Medal,
       Standings.CampaignStandingFor(Campaign)?.Rank,
-      new Vector2(medalCenter, rowStart.Y + RowLayout.RankDrop),
+      rightEdge,
+      rowStart.Y,
       alpha
     );
   }

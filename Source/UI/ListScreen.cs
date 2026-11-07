@@ -17,6 +17,7 @@ public abstract class ListScreen : Oui
   private const float PollSeconds = 60f;
 
   protected TrialsMenu menu;
+  protected LeaderboardView view;
   protected readonly TransientText notice = new();
   protected string hintKey;
   protected float screenX = OnScreenX;
@@ -43,11 +44,50 @@ public abstract class ListScreen : Oui
 
   protected virtual void RenderHeader() { }
 
-  protected virtual void RenderPrompts(float alpha) { }
+  protected virtual bool BoardPromptShown => false;
 
   protected virtual void CancelTransitions() { }
 
-  protected virtual void FetchOnline() { }
+  protected virtual void RefreshStandings() => Standings.EnsureFreshHub();
+
+  private void FetchOnline()
+  {
+    Identity.EnsureRegistered();
+    RefreshStandings();
+  }
+
+  protected void GoBackTo<T>()
+    where T : Oui
+  {
+    menu.Focused = false;
+    Audio.Play(SFX.ui_main_button_back);
+    Overworld.Goto<T>();
+  }
+
+  protected void ShowBoard(LeaderboardView board)
+  {
+    menu.Focused = false;
+    Focused = false;
+    view = board;
+    Scene.Add(view);
+  }
+
+  protected void OnBoardClosed(BoardSubject shown)
+  {
+    view = null;
+    RefreshStandings();
+    menu.Focused = true;
+    Focused = true;
+  }
+
+  private void DiscardBoard()
+  {
+    if (view == null)
+      return;
+    view.Discard();
+    view = null;
+    SetDim(1f);
+  }
 
   protected virtual bool Reopen() => false;
 
@@ -66,7 +106,7 @@ public abstract class ListScreen : Oui
     menu?.Alpha = alpha * dim;
   }
 
-  protected abstract StandingsState ServerState { get; }
+  protected virtual StandingsState ServerState => Standings.HubState;
 
   private void DrawOfflineLabel()
   {
@@ -130,6 +170,7 @@ public abstract class ListScreen : Oui
     Focused = false;
     notice.Clear();
     CancelTransitions();
+    DiscardBoard();
     menu.Focused = false;
     float side = DepthOf(next) > ScreenDepth ? -1f : 1f;
     TrialsMenu leaving = menu;
@@ -199,7 +240,12 @@ public abstract class ListScreen : Oui
       TextOutline.StrokeFor(Color.White * totalAlpha)
     );
     RenderHeader();
-    RenderPrompts(totalAlpha);
+    if (BoardPromptShown)
+      ButtonRow.DrawCenter(
+        Dialog.Clean("climbtrials_trials_leaderboard"),
+        Input.MenuJournal,
+        totalAlpha
+      );
     DrawOfflineLabel();
     notice.Render(new Vector2(screenX, ScreenLayout.NoticeY), ScreenLayout.NoticeScale, totalAlpha);
     if (hintKey != null && !notice.Showing)

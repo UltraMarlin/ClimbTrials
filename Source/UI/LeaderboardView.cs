@@ -69,7 +69,7 @@ public class LeaderboardView : Entity
   private readonly float coveredFrom;
   private float backdropFrom;
   private float opened;
-  private float cover;
+  private float coveredBeneath;
   private float rise;
 
   public bool Focused { get; set; } = true;
@@ -112,7 +112,7 @@ public class LeaderboardView : Entity
     Depth = this.options.DepthBase - 1;
   }
 
-  public Bookmark Showing =>
+  public Bookmark CurrentBookmark =>
     new(current.Subject.Id, page, current.Menu?.Slot ?? BoardMenu.HeaderSlot);
 
   private bool Gone => ended || Scene == null;
@@ -150,20 +150,20 @@ public class LeaderboardView : Entity
     bool overworld = !options.InsideLevel;
     if (overworld)
     {
-      Transition cover = Motion.BoardCover;
-      float start = cover.InStart * coveredFrom;
-      for (float elapsed = start; elapsed < cover.Duration; elapsed += Engine.RawDeltaTime)
+      Transition transition = Motion.BoardCover;
+      float start = transition.InStart * coveredFrom;
+      for (float elapsed = start; elapsed < transition.Duration; elapsed += Engine.RawDeltaTime)
       {
-        SetCover(cover, elapsed, Math.Max(coveredFrom, cover.Leaving(elapsed)));
+        SetCover(transition, elapsed, Math.Max(coveredFrom, transition.Leaving(elapsed)));
         yield return null;
       }
     }
     else
     {
-      Transition open = Motion.LevelBoardOpen;
-      for (float elapsed = 0f; elapsed < open.Duration; elapsed += Engine.RawDeltaTime)
+      Transition transition = Motion.LevelBoardOpen;
+      for (float elapsed = 0f; elapsed < transition.Duration; elapsed += Engine.RawDeltaTime)
       {
-        SetCover(open, elapsed, open.Leaving(elapsed));
+        SetCover(transition, elapsed, transition.Leaving(elapsed));
         yield return null;
       }
     }
@@ -175,11 +175,11 @@ public class LeaderboardView : Entity
   private IEnumerator FadeOut()
   {
     sliding = true;
-    Transition cover = Motion.BoardCover;
-    for (float elapsed = 0f; elapsed < cover.Duration; elapsed += Engine.RawDeltaTime)
+    Transition transition = Motion.BoardCover;
+    for (float elapsed = 0f; elapsed < transition.Duration; elapsed += Engine.RawDeltaTime)
     {
-      float along = cover.Duration - elapsed;
-      SetCover(cover, along, cover.Leaving(along));
+      float along = transition.Duration - elapsed;
+      SetCover(transition, along, transition.Leaving(along));
       yield return null;
     }
     SetOpened(0f, 0f, 0f);
@@ -187,16 +187,16 @@ public class LeaderboardView : Entity
     closed(current.Subject);
   }
 
-  private void SetCover(Transition cover, float elapsed, float beneath) =>
-    SetOpened(cover.Arriving(elapsed), beneath, Motion.Rise(cover.ArrivingMove(elapsed)));
+  private void SetCover(Transition transition, float elapsed, float beneath) =>
+    SetOpened(transition.Arriving(elapsed), beneath, Motion.Rise(transition.ArrivingMove(elapsed)));
 
   private void SetOpened(float rows, float under, float lift)
   {
     opened = rows;
-    cover = under;
+    coveredBeneath = under;
     rise = lift;
     Place();
-    slid(cover);
+    slid(coveredBeneath);
   }
 
   private void Place()
@@ -714,12 +714,15 @@ public class LeaderboardView : Entity
 
   private static string Key(BoardRow row) => GhostComparisons.KeyOf(row) ?? "";
 
-  private void ChooseGhost(BoardRow row, Replay local, GhostChoice choice)
+  private void ChooseGhost(BoardRow row, Replay local, GhostChoice choice) =>
+    FetchGhostThen(row, local, (trial, replay) => UseGhost(row, trial, replay, choice));
+
+  private void FetchGhostThen(BoardRow row, Replay local, Action<Trial, Replay> useReplay)
   {
     Trial trial = current.Subject.Trial;
     if (local != null)
     {
-      Chosen(row, trial, local, choice);
+      useReplay(trial, local);
       return;
     }
     downloading = true;
@@ -742,12 +745,12 @@ public class LeaderboardView : Entity
         }
 
         RefreshIfOutdated(row, replay);
-        Chosen(row, trial, replay, choice);
+        useReplay(trial, replay);
       }
     );
   }
 
-  private void Chosen(BoardRow row, Trial trial, Replay replay, GhostChoice choice)
+  private void UseGhost(BoardRow row, Trial trial, Replay replay, GhostChoice choice)
   {
     ghostMenu?.Dismiss();
     if (choice == GhostChoice.Plan)
@@ -774,38 +777,16 @@ public class LeaderboardView : Entity
       : int.MaxValue;
   }
 
-  private void AddFromMenu(BoardRow row, Replay local)
-  {
-    Trial trial = current.Subject.Trial;
-    if (local != null)
-    {
-      GhostComparisons.Add(row, local, trial);
-      ghostMenu?.Dismiss();
-      return;
-    }
-    downloading = true;
-    GhostCache.Fetch(
-      row.ReplayId,
-      row.Ticks.GetValueOrDefault(),
-      row.Me,
-      trial,
-      replay =>
+  private void AddFromMenu(BoardRow row, Replay local) =>
+    FetchGhostThen(
+      row,
+      local,
+      (trial, replay) =>
       {
-        downloading = false;
-        if (Gone || ghostMenu == null || ghostMenu.Closing)
-          return;
-        if (replay == null)
-        {
-          if (!GhostCache.IsOlderTrial(row.ReplayId, row.Ticks.GetValueOrDefault()))
-            notice.Show(Dialog.Clean("climbtrials_ghost_failed"), ScreenLayout.NoticeSeconds);
-          return;
-        }
-        RefreshIfOutdated(row, replay);
         GhostComparisons.Add(row, replay, trial);
         ghostMenu?.Dismiss();
       }
     );
-  }
 
   private void RemoveFromMenu(BoardRow row)
   {
@@ -833,7 +814,7 @@ public class LeaderboardView : Entity
     Trial trial = current.Subject.Trial;
     if (local != null)
     {
-      Toggled(row, local, trial);
+      AddWithToggleSound(row, local, trial);
       return;
     }
     string key = Key(row);
@@ -857,12 +838,12 @@ public class LeaderboardView : Entity
           return;
         }
         RefreshIfOutdated(row, replay);
-        Toggled(row, replay, trial);
+        AddWithToggleSound(row, replay, trial);
       }
     );
   }
 
-  private static void Toggled(BoardRow row, Replay replay, Trial trial)
+  private static void AddWithToggleSound(BoardRow row, Replay replay, Trial trial)
   {
     GhostComparisons.Add(row, replay, trial);
     Audio.Play(SFX.ui_main_button_toggle_on);
@@ -929,7 +910,7 @@ public class LeaderboardView : Entity
 
     public override void Render()
     {
-      float alpha = view.options.BackdropAlpha * view.cover;
+      float alpha = view.options.BackdropAlpha * view.coveredBeneath;
       if (view.backdropFrom > 0f)
         alpha = MathHelper.Lerp(view.backdropFrom, alpha, view.opened);
       Draw.Rect(-1f, -1f, 1922f, 1082f, Color.Black * alpha);

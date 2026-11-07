@@ -67,7 +67,7 @@ public class GhostLayer : Entity
     }
     foreach (PlaybackGhost ghost in ghosts)
       if (!kept.Contains(ghost))
-        ghost.Dispose();
+        ghost.RemoveBuffer();
     ghosts.Clear();
     ghosts.AddRange(kept);
   }
@@ -85,7 +85,7 @@ public class GhostLayer : Entity
   private void DisposeAll()
   {
     foreach (PlaybackGhost ghost in ghosts)
-      ghost.Dispose();
+      ghost.RemoveBuffer();
     ghosts.Clear();
   }
 

@@ -35,7 +35,6 @@ public class OuiTrials : ListScreen
   private TrialsMenu outgoing;
   private Coroutine switching;
   private TrialModeMenu open;
-  private LeaderboardView view;
   private readonly List<TrialRow> rows = [];
   private LeaderboardView.Bookmark? resumeBoard;
 
@@ -76,12 +75,10 @@ public class OuiTrials : ListScreen
     built.OnSwitchRight = () => Switch(1);
     built.OnCancel = () =>
     {
-      built.Focused = false;
-      Audio.Play(SFX.ui_main_button_back);
       if (Campaigns.IsEvent(Campaign))
-        Overworld.Goto<OuiEvents>();
+        GoBackTo<OuiEvents>();
       else
-        Overworld.Goto<OuiCampaigns>();
+        GoBackTo<OuiCampaigns>();
     };
     return built;
   }
@@ -116,7 +113,7 @@ public class OuiTrials : ListScreen
 
     outgoingCampaign = Campaign;
     campaignIndex = (campaignIndex + direction + count) % count;
-    RefreshCampaign();
+    RefreshStandings();
     Audio.Play(direction > 0 ? SFX.ui_main_button_toggle_on : SFX.ui_main_button_toggle_off);
     outgoing = menu;
     outgoing.Focused = false;
@@ -171,20 +168,9 @@ public class OuiTrials : ListScreen
       open.Release();
       open = null;
     }
-    if (view == null)
-      return;
-    view.Discard();
-    view = null;
-    SetDim(1f);
   }
 
-  protected override void FetchOnline()
-  {
-    Identity.EnsureRegistered();
-    RefreshCampaign();
-  }
-
-  private void RefreshCampaign()
+  protected override void RefreshStandings()
   {
     Standings.EnsureFresh(Campaign);
     if (Campaigns.IsEvent(Campaign))
@@ -223,7 +209,7 @@ public class OuiTrials : ListScreen
   {
     open = null;
     SetDim(1f);
-    RefreshCampaign();
+    RefreshStandings();
     if (Focused)
       menu.Focused = true;
   }
@@ -246,7 +232,7 @@ public class OuiTrials : ListScreen
     }
   }
 
-  private bool BoardPromptShown => menu != null && open == null && view == null;
+  protected override bool BoardPromptShown => menu != null && open == null && view == null;
 
   private void HandOverToBoard(Trial trial)
   {
@@ -260,24 +246,21 @@ public class OuiTrials : ListScreen
     LeaderboardView.Bookmark? resume = null,
     float coveredFrom = 0f,
     float backdropFrom = 0f
-  )
-  {
-    menu.Focused = false;
-    Focused = false;
-    view = new LeaderboardView(
-      BoardSubject.ForTrial(trial),
-      SetBoardDim,
-      OnBoardClosed,
-      StartGhost,
-      resume,
-      coveredFrom: coveredFrom,
-      backdropFrom: backdropFrom
-    )
-    {
-      OnSubjectChanged = SelectRowOf,
-    };
-    Scene.Add(view);
-  }
+  ) =>
+    ShowBoard(
+      new LeaderboardView(
+        BoardSubject.ForTrial(trial),
+        SetBoardDim,
+        OnBoardClosed,
+        StartGhost,
+        resume,
+        coveredFrom: coveredFrom,
+        backdropFrom: backdropFrom
+      )
+      {
+        OnSubjectChanged = SelectRowOf,
+      }
+    );
 
   private void SetBoardDim(float opened)
   {
@@ -292,7 +275,7 @@ public class OuiTrials : ListScreen
   private void StartGhost(Trial trial, Replay replay, bool race)
   {
     view.Focused = false;
-    ReturnBoard = view.Showing;
+    ReturnBoard = view.CurrentBookmark;
     Add(new Coroutine(StartRoutine(trial, replay, race, fromBoard: true)));
   }
 
@@ -307,14 +290,6 @@ public class OuiTrials : ListScreen
     resumeBoard = null;
     OpenBoard(row.Trial, place);
     return true;
-  }
-
-  private void OnBoardClosed(BoardSubject shown)
-  {
-    view = null;
-    RefreshCampaign();
-    menu.Focused = true;
-    Focused = true;
   }
 
   private void SelectRowOf(BoardSubject shown)
@@ -411,13 +386,6 @@ public class OuiTrials : ListScreen
       DrawCampaignHeader(Campaign, menu.X, menu.Alpha, menu.Focused);
     if (outgoing != null)
       DrawCampaignHeader(outgoingCampaign, outgoing.X, outgoing.Alpha, false);
-  }
-
-  protected override void RenderPrompts(float alpha)
-  {
-    if (!BoardPromptShown)
-      return;
-    ButtonRow.DrawCenter(Dialog.Clean("climbtrials_trials_leaderboard"), Input.MenuJournal, alpha);
   }
 
   private void DrawCampaignHeader(Campaign campaign, float atX, float alpha, bool active)
