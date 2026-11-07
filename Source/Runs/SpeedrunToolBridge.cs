@@ -5,23 +5,28 @@ using System.Reflection;
 using Celeste.Mod.ClimbTrials.Entities;
 using Celeste.Mod.ClimbTrials.Replays;
 using MonoMod.ModInterop;
+using SaveSlot = System.Collections.Generic.Dictionary<
+  System.Type,
+  System.Collections.Generic.Dictionary<string, object>
+>;
 
 namespace Celeste.Mod.ClimbTrials.Runs;
 
 public static class SpeedrunToolBridge
 {
+  private delegate object SaveLoadActionRegistration(
+    Action<SaveSlot, Level> saveState,
+    Action<SaveSlot, Level> loadState,
+    Action clearState,
+    Action<Level> beforeSaveState,
+    Action<Level> beforeLoadState,
+    Action preCloneEntities
+  );
+
   [ModImportName("SpeedrunTool.SaveLoad")]
   private static class SaveLoadImports
   {
-    public static Func<
-      Action<Dictionary<Type, Dictionary<string, object>>, Level>,
-      Action<Dictionary<Type, Dictionary<string, object>>, Level>,
-      Action,
-      Action<Level>,
-      Action<Level>,
-      Action,
-      object
-    > RegisterSaveLoadAction = null;
+    public static SaveLoadActionRegistration RegisterSaveLoadAction = null;
     public static Action<object> Unregister = null;
     public static Action<Type, bool> IgnoreSaveState = null;
   }
@@ -291,10 +296,7 @@ public static class SpeedrunToolBridge
       noticePending = true;
   }
 
-  private static void OnSaveState(
-    Dictionary<Type, Dictionary<string, object>> slotValues,
-    Level level
-  ) =>
+  private static void OnSaveState(SaveSlot slotValues, Level level) =>
     RunWithoutThrowing(
       nameof(OnSaveState),
       () =>
@@ -305,10 +307,7 @@ public static class SpeedrunToolBridge
       }
     );
 
-  private static void OnLoadState(
-    Dictionary<Type, Dictionary<string, object>> slotValues,
-    Level level
-  ) =>
+  private static void OnLoadState(SaveSlot slotValues, Level level) =>
     RunWithoutThrowing(
       nameof(OnLoadState),
       () =>
@@ -337,10 +336,7 @@ public static class SpeedrunToolBridge
       TrialRecords.ReloadFromDisk();
   }
 
-  private static void StoreSnapshot(
-    Dictionary<Type, Dictionary<string, object>> slotValues,
-    RunSnapshot snapshot
-  )
+  private static void StoreSnapshot(SaveSlot slotValues, RunSnapshot snapshot)
   {
     slotValues[typeof(SpeedrunToolBridge)] = new Dictionary<string, object>
     {
@@ -348,7 +344,7 @@ public static class SpeedrunToolBridge
     };
   }
 
-  private static RunSnapshot FindSnapshot(Dictionary<Type, Dictionary<string, object>> slotValues)
+  private static RunSnapshot FindSnapshot(SaveSlot slotValues)
   {
     Dictionary<string, object> bridgeValues = slotValues.GetValueOrDefault(
       typeof(SpeedrunToolBridge)

@@ -133,9 +133,10 @@ public static class RunManager
     FinishedBefore = Trial != null && TrialRecords.Get(Trial.Id) != null;
     Replay = replay;
     if (replay == null)
+    {
       GameplayRenderer.RenderDebug = false;
-    if (replay == null)
       SpeedrunToolBridge.ResumeAfterReplay();
+    }
     else
       SpeedrunToolBridge.SuspendForReplay();
     Practice = replay == null && SpeedrunToolBridge.Enabled;
