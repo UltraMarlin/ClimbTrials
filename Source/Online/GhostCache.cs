@@ -69,7 +69,7 @@ public static class GhostCache
     }
     catch (Exception e)
     {
-      Logger.Log(LogLevel.Warn, LogTag, $"replay {replayId} could not be read: {e.Message}");
+      Logger.Warn(LogTag, $"replay {replayId} could not be read: {e.Message}");
       return null;
     }
   }

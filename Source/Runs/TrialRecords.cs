@@ -62,14 +62,10 @@ public static class TrialRecords
     }
     catch (Exception e) when (e is IOException or UnauthorizedAccessException)
     {
-      Logger.Log(
-        LogLevel.Warn,
-        LogTag,
-        $"records of version {version} left for the next start: {e.Message}"
-      );
+      Logger.Warn(LogTag, $"records of version {version} left for the next start: {e.Message}");
       return;
     }
-    Logger.Log(LogLevel.Info, LogTag, $"records of version {version}: cleared {cleared} PBs");
+    Logger.Info(LogTag, $"records of version {version}: cleared {cleared} PBs");
   }
 
   public static int Clear()
@@ -103,8 +99,7 @@ public static class TrialRecords
     }
     catch (Exception e) when (e is IOException or UnauthorizedAccessException)
     {
-      Logger.Log(
-        LogLevel.Warn,
+      Logger.Warn(
         LogTag,
         $"Delete PB of '{trialId}' stopped, its replay could not be deleted: {e.Message}"
       );

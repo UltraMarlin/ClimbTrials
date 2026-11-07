@@ -120,7 +120,7 @@ public static class Campaigns
     {
       All = [];
       LoadError = e.Message;
-      Logger.Log(LogLevel.Error, TrialFile.LogTag, e.Message);
+      Logger.Error(TrialFile.LogTag, e.Message);
     }
   }
 

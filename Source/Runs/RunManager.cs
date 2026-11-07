@@ -167,21 +167,19 @@ public static class RunManager
     session.SetFlag(TrialFlagPrefix + Trial?.Id);
     foreach (CameraOffsetDef def in run.CameraOffsets)
       if (session.MapData.Get(def.Room) == null)
-        Logger.Log(LogLevel.Warn, LogTag, $"camera offset has room that doesnt exist '{def.Room}'");
+        Logger.Warn(LogTag, $"camera offset has room that doesnt exist '{def.Room}'");
     foreach (WaypointDef waypoint in run.Waypoints)
     {
       string actual = session.MapData.GetAt(waypoint.Position)?.Name;
       if (actual != waypoint.Room)
-        Logger.Log(
-          LogLevel.Warn,
+        Logger.Warn(
           LogTag,
           $"waypoint at {waypoint.Position} has room '{waypoint.Room}' but is in '{actual ?? "no room"}'"
         );
     }
     foreach (SplitRect rect in run.SplitRects)
       if (!SplitMap.IsInsideItsRoom(rect, session.MapData))
-        Logger.Log(
-          LogLevel.Warn,
+        Logger.Warn(
           LogTag,
           $"Discarded: split rectangle {rect.Rect} is not inside room '{rect.Room}'"
         );
@@ -776,14 +774,14 @@ public static class RunManager
         ValidationResult check = ReplayValidator.Check(recorded, Trial);
         submittable = check.Passes;
         if (!check.Passes)
-          Logger.Log(LogLevel.Info, LogTag, $"replay check: {check.Describe()}");
+          Logger.Info(LogTag, $"replay check: {check.Describe()}");
       }
       else if (Recorder.Stopped == StopReason.Limit)
       {
         ValidationResult check = ReplayValidator.CheckAttempt();
         submittable = check.Passes;
         if (!check.Passes)
-          Logger.Log(LogLevel.Info, LogTag, $"attempt check without replay: {check.Describe()}");
+          Logger.Info(LogTag, $"attempt check without replay: {check.Describe()}");
       }
       LastFinish = TrialRecords.Record(Trial, Attempt.ElapsedTicks, submittable);
       if (LastFinish.IsPersonalBest)

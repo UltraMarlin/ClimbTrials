@@ -96,8 +96,7 @@ public static class RunGuards
     if (RunManager.Run == null)
       return orig(self, spotlightWipe, skipScreenWipe, skipCompleteScreen);
 
-    Logger.Log(
-      LogLevel.Info,
+    Logger.Info(
       LogTag,
       $"chapter end reached in '{RunManager.Trial?.Id}' room '{self.Session.Level}', "
         + "returning to trials"

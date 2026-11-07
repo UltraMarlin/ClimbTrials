@@ -112,14 +112,9 @@ public static class ServerClient
   public static void Load()
   {
     if (TryBaseUri(out _))
-      Logger.Log(
-        LogLevel.Info,
-        LogTag,
-        $"server {ResolvedServerUrl}, offline mode {Settings.OfflineMode}"
-      );
+      Logger.Info(LogTag, $"server {ResolvedServerUrl}, offline mode {Settings.OfflineMode}");
     else
-      Logger.Log(
-        LogLevel.Warn,
+      Logger.Warn(
         LogTag,
         $"ServerUrl '{ResolvedServerUrl}' refused: https, or http on localhost only"
       );
@@ -265,7 +260,7 @@ public static class ServerClient
         if (showsIcon)
           ReleaseIcon();
         if (!result.Ok)
-          Logger.Log(LogLevel.Info, LogTag, $"{path}: {result.Error}, {result.Message}");
+          Logger.Info(LogTag, $"{path}: {result.Error}, {result.Message}");
         Identity.UpdateFromAnswer(result.Error, clientId);
         RunCallback(path, result, onDone);
       });
@@ -410,7 +405,7 @@ public static class ServerClient
     }
     catch (Exception e)
     {
-      Logger.Log(LogLevel.Error, LogTag, $"{path}: callback threw {e}");
+      Logger.Error(LogTag, $"{path}: callback threw {e}");
     }
   }
 }

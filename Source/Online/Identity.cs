@@ -87,7 +87,7 @@ public static class Identity
 
   private static void Forget()
   {
-    Logger.Log(LogLevel.Info, LogTag, "the server deleted this player, dropped the client id");
+    Logger.Info(LogTag, "the server deleted this player, dropped the client id");
     Store("", "");
   }
 

@@ -389,7 +389,7 @@ public static class Events
       .ToLowerInvariant();
     if (actual != hash)
     {
-      Logger.Log(LogLevel.Warn, LogTag, $"event '{id}' skipped: its definition hash differs");
+      Logger.Warn(LogTag, $"event '{id}' skipped: its definition hash differs");
       return null;
     }
     try
@@ -400,7 +400,7 @@ public static class Events
     }
     catch (Exception e) when (e is TrialFileException or InvalidOperationException)
     {
-      Logger.Log(LogLevel.Warn, LogTag, $"event '{id}' skipped: {e.Message}");
+      Logger.Warn(LogTag, $"event '{id}' skipped: {e.Message}");
       return null;
     }
   }
@@ -460,7 +460,7 @@ public static class Events
     }
     catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException)
     {
-      Logger.Log(LogLevel.Warn, LogTag, $"the events copy on disk was not read: {e.Message}");
+      Logger.Warn(LogTag, $"the events copy on disk was not read: {e.Message}");
     }
   }
 
@@ -502,7 +502,7 @@ public static class Events
     }
     catch (Exception e) when (e is IOException or UnauthorizedAccessException)
     {
-      Logger.Log(LogLevel.Warn, LogTag, $"the events copy on disk was not written: {e.Message}");
+      Logger.Warn(LogTag, $"the events copy on disk was not written: {e.Message}");
     }
   }
 }

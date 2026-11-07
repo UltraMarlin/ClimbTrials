@@ -79,11 +79,7 @@ public static class Uploader
     }
     catch (StartingValuesException e)
     {
-      Logger.Log(
-        LogLevel.Error,
-        LogTag,
-        $"could not encode the replay of '{trialId}' to submit: {e.Message}"
-      );
+      Logger.Error(LogTag, $"could not encode the replay of '{trialId}' to submit: {e.Message}");
       return null;
     }
   }

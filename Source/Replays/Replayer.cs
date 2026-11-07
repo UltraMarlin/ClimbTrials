@@ -816,7 +816,7 @@ public static class Replayer
   {
     ClearReplayedInputs();
     Audio.Play(DesyncSound);
-    Logger.Log(LogLevel.Warn, LogTag, message);
+    Logger.Warn(LogTag, message);
   }
 
   private static void ClearReplayedInputs()

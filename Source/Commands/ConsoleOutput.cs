@@ -23,6 +23,6 @@ public static class ConsoleOutput
   public static void Log(string tag, string line)
   {
     Engine.Commands.Log(line);
-    Logger.Log(LogLevel.Info, tag, line);
+    Logger.Info(tag, line);
   }
 }

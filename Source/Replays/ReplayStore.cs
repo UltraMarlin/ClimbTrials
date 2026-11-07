@@ -46,8 +46,7 @@ public static class ReplayStore
     }
     catch (StartingValuesException e)
     {
-      Logger.Log(
-        LogLevel.Error,
+      Logger.Error(
         LogTag,
         $"did not save the replay for '{replay.TrialId}', the old file stays: " + e.Message
       );
@@ -88,11 +87,7 @@ public static class ReplayStore
       {
         replay = null;
         failureNotice = Dialog.Clean("climbtrials_replay_deleted_trial_changed");
-        Logger.Log(
-          LogLevel.Info,
-          LogTag,
-          $"deleting replay for '{trialId}', the trial has changed"
-        );
+        Logger.Info(LogTag, $"deleting replay for '{trialId}', the trial has changed");
         Delete(trialId);
         return false;
       }
@@ -105,7 +100,7 @@ public static class ReplayStore
     {
       replay = null;
       failureNotice = Dialog.Clean("climbtrials_replay_deleted");
-      Logger.Log(LogLevel.Warn, LogTag, $"deleting unreadable replay for '{trialId}': {e.Message}");
+      Logger.Warn(LogTag, $"deleting unreadable replay for '{trialId}': {e.Message}");
       Delete(trialId);
       return false;
     }
@@ -113,8 +108,7 @@ public static class ReplayStore
     {
       replay = null;
       failureNotice = Dialog.Clean("climbtrials_replay_kept_unreadable");
-      Logger.Log(
-        LogLevel.Error,
+      Logger.Error(
         LogTag,
         $"kept replay for '{trialId}' that could not be read: {e.GetType().Name}: {e.Message}"
       );
@@ -134,7 +128,7 @@ public static class ReplayStore
       removed = true;
     if (!removed)
       return false;
-    Logger.Log(LogLevel.Info, LogTag, $"deleted replay for '{trialId}'");
+    Logger.Info(LogTag, $"deleted replay for '{trialId}'");
     return true;
   }
 
@@ -155,12 +149,12 @@ public static class ReplayStore
     }
     catch (Exception e) when (e is IOException or UnauthorizedAccessException)
     {
-      Logger.Log(LogLevel.Warn, LogTag, $"older replay files left for the next start: {e.Message}");
+      Logger.Warn(LogTag, $"older replay files left for the next start: {e.Message}");
     }
     if (deletedCount == 0)
       return;
     Refresh();
-    Logger.Log(LogLevel.Info, LogTag, $"deleted {deletedCount} replay files of an older format");
+    Logger.Info(LogTag, $"deleted {deletedCount} replay files of an older format");
   }
 
   private static bool IsOlderFormat(string path)
@@ -177,7 +171,7 @@ public static class ReplayStore
     string[] files = Directory.GetFiles(Folder, "*.ctreplay");
     foreach (string file in files)
       File.Delete(file);
-    Logger.Log(LogLevel.Info, LogTag, $"deleted {files.Length} replay files");
+    Logger.Info(LogTag, $"deleted {files.Length} replay files");
     return files.Length;
   }
 }

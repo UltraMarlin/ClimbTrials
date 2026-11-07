@@ -56,7 +56,7 @@ public static class DebugUse
       return false;
     Causes |= cause;
     order.Add(cause);
-    Logger.Log(LogLevel.Info, LogTag, $"run '{RunManager.Trial?.Id}' debug use: {cause}");
+    Logger.Info(LogTag, $"run '{RunManager.Trial?.Id}' debug use: {cause}");
     return true;
   }
 

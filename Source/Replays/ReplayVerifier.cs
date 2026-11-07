@@ -212,8 +212,7 @@ public static class ReplayVerifier
   {
     string rank = entry.Rank is int place ? RankText.Format(place) : "#-";
     string older = olderTrial ? " (older trial)" : "";
-    Logger.Log(
-      LogLevel.Info,
+    Logger.Info(
       LogTag,
       $"{entry.TrialId} {rank} {entry.Player} {TimeText.Format(entry.Ticks)} {result}{older}"
     );

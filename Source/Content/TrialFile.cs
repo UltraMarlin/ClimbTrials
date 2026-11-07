@@ -79,7 +79,7 @@ public static class TrialFile
       campaigns.Add(campaign);
       trials += campaign.Trials.Count;
     }
-    Logger.Log(LogLevel.Info, LogTag, $"loaded {campaigns.Count} campaigns, {trials} trials");
+    Logger.Info(LogTag, $"loaded {campaigns.Count} campaigns, {trials} trials");
     return campaigns;
   }
 
@@ -160,7 +160,7 @@ public static class TrialFile
 
     if (array.ValueKind != JsonValueKind.Array)
       throw new TrialFileException($"{at}, field '{key}': expected an array");
-      
+
     List<byte[]> hashes = [];
     foreach (JsonElement element in array.EnumerateArray())
     {

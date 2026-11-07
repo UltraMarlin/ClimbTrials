@@ -159,7 +159,7 @@ public static class SpeedrunToolBridge
   private static void ReportMissing(string member)
   {
     if (reportedMissing.Add(member))
-      Logger.Log(LogLevel.Warn, LogTag, $"Speedrun Tool member not found: {member}");
+      Logger.Warn(LogTag, $"Speedrun Tool member not found: {member}");
   }
 
   private static bool CallIfFound(MethodInfo method, string memberName, params object[] arguments)
@@ -268,7 +268,7 @@ public static class SpeedrunToolBridge
     }
     catch (Exception e)
     {
-      Logger.Log(LogLevel.Error, LogTag, $"{callbackName} failed: {e.GetType().Name}: {e.Message}");
+      Logger.Error(LogTag, $"{callbackName} failed: {e.GetType().Name}: {e.Message}");
     }
   }
 
