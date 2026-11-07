@@ -65,7 +65,16 @@ public class ReplayBanner : Entity
       : Replayer.Desynced ? "climbtrials_replay_desynced"
       : Replayer.State == ReplayState.Paused || Replayer.PauseQueued ? "climbtrials_replay_paused"
       : "climbtrials_replay_title";
-    Outline(Dialog.Clean(titleKey), TitleY, 1.1f, stopped ? DesyncColor : TitleColor, TitleStroke);
+    Color titleColor = stopped ? DesyncColor : TitleColor;
+    TextOutline.DrawRoundOutline(
+      Dialog.Clean(titleKey),
+      new Vector2(960f, TitleY),
+      new Vector2(0.5f, 0.5f),
+      Vector2.One * 1.1f,
+      titleColor,
+      TitleStroke,
+      TextOutline.StrokeFor(titleColor)
+    );
 
     string played = Dialog.Clean("climbtrials_replay_played_date");
     string owner = Identity.NameOf(replay);
@@ -99,23 +108,5 @@ public class ReplayBanner : Entity
         (Dialog.Clean("climbtrials_replay_frame_advance"), binds.ReplayFrameAdvance.Button)
       );
     ButtonRow.DrawRight(alpha, prompts);
-  }
-
-  private static void Outline(
-    string text,
-    float centerY,
-    float scale,
-    Color color,
-    float stroke = 2f
-  )
-  {
-    Vector2 position = new(960f, centerY);
-    Vector2 justify = new(0.5f, 0.5f);
-    Vector2 size = Vector2.One * scale;
-    Color strokeColor = TextOutline.StrokeFor(color);
-    if (stroke > 2f)
-      TextOutline.DrawRoundOutline(text, position, justify, size, color, stroke, strokeColor);
-    else
-      ActiveFont.DrawOutline(text, position, justify, size, color, stroke, strokeColor);
   }
 }

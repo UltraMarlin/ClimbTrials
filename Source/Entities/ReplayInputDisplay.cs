@@ -42,31 +42,27 @@ public class ReplayInputDisplay : Entity
   private readonly record struct Button(
     string Key,
     Actions Flags,
-    Func<InputFrame, bool> HiddenWhen,
+    Actions HiddenWhenHeld = Actions.None,
     bool WhilePaused = false
   );
 
   private static readonly Button[] NormalButtons =
   [
-    new("climbtrials_input_jump", Actions.Jump, null),
-    new("climbtrials_input_dash", Actions.Dash, null),
-    new("climbtrials_input_grab", Actions.Grab, null),
+    new("climbtrials_input_jump", Actions.Jump),
+    new("climbtrials_input_dash", Actions.Dash),
+    new("climbtrials_input_grab", Actions.Grab),
   ];
-  private static readonly Button CrouchDash = new(
-    "climbtrials_input_demo",
-    Actions.CrouchDash,
-    null
-  );
+  private static readonly Button CrouchDash = new("climbtrials_input_demo", Actions.CrouchDash);
   private static readonly Button[] DetailedButtons =
   [
-    new("climbtrials_input_talk", Actions.Talk, Holding(Actions.Dash)),
-    new("climbtrials_pause", Actions.Pause | Actions.Esc, null),
-    new("climbtrials_input_restart", Actions.QuickRestart, null),
-    new("climbtrials_input_menu_up", Actions.MenuUp, null, WhilePaused: true),
-    new("climbtrials_input_menu_down", Actions.MenuDown, null, WhilePaused: true),
-    new("climbtrials_input_confirm", Actions.MenuConfirm, Holding(Actions.Jump)),
-    new("climbtrials_input_cancel", Actions.MenuCancel, Holding(Actions.Dash)),
-    new("climbtrials_input_journal", Actions.MenuJournal, Holding(Actions.Grab)),
+    new("climbtrials_input_talk", Actions.Talk, HiddenWhenHeld: Actions.Dash),
+    new("climbtrials_pause", Actions.Pause | Actions.Esc),
+    new("climbtrials_input_restart", Actions.QuickRestart),
+    new("climbtrials_input_menu_up", Actions.MenuUp, WhilePaused: true),
+    new("climbtrials_input_menu_down", Actions.MenuDown, WhilePaused: true),
+    new("climbtrials_input_confirm", Actions.MenuConfirm, HiddenWhenHeld: Actions.Jump),
+    new("climbtrials_input_cancel", Actions.MenuCancel, HiddenWhenHeld: Actions.Dash),
+    new("climbtrials_input_journal", Actions.MenuJournal, HiddenWhenHeld: Actions.Grab),
   ];
 
   private static readonly Vector2[] Directions =
@@ -126,11 +122,8 @@ public class ReplayInputDisplay : Entity
     scannedReplay = replay;
   }
 
-  private static Func<InputFrame, bool> Holding(Actions flags) =>
-    frame => (frame.Held & flags) != 0;
-
   private static bool HeldOnSomeFrame(List<InputFrame> frames, Button button) =>
-    frames.Exists(frame => IsHeldIn(frame, button) && !(button.HiddenWhen?.Invoke(frame) ?? false));
+    frames.Exists(frame => IsHeldIn(frame, button) && (frame.Held & button.HiddenWhenHeld) == 0);
 
   private static bool IsHeldIn(InputFrame frame, Button button) =>
     (frame.Held & button.Flags) != 0 && (!button.WhilePaused || frame.Paused);

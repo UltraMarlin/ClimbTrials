@@ -13,7 +13,6 @@ public abstract class BoardSubject
   public abstract string Id { get; }
   public abstract string Name { get; }
   public abstract MTexture Skull { get; }
-  public abstract string CountKey { get; }
   public abstract IReadOnlyList<BoardSubject> Siblings { get; }
   public abstract void Fetch(int chunk, Action<ServerResult<Board>> onDone);
   public abstract bool IsChunkCached(int chunk);
@@ -38,7 +37,6 @@ public abstract class BoardSubject
     public override string Id => trial.Id;
     public override string Name => trial.Name;
     public override MTexture Skull => GFX.Gui[trial.SkullTexture];
-    public override string CountKey => "climbtrials_board_runners";
     public override Trial Trial => trial;
     public override Campaign Campaign => Campaigns.CampaignOf(trial);
 
@@ -64,7 +62,6 @@ public abstract class BoardSubject
     public override string Id => campaign.Id;
     public override string Name => campaign.Name;
     public override MTexture Skull => null;
-    public override string CountKey => "climbtrials_board_runners";
     public override Campaign Campaign => campaign;
     public override IReadOnlyList<BoardSubject> Siblings =>
       (Campaigns.IsEvent(campaign) ? Events.Ordered() : Campaigns.All).Select(ForCampaign).ToList();

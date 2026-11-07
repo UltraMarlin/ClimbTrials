@@ -25,6 +25,5 @@ public static class BoardLayout
   public const float MessageY = 560f;
   public const float SecondLineGap = 28f;
   public const float SecondLineGrowth = 24f;
-  public const float SecondLineLift = SecondLineGrowth;
   public const float HiddenTimeAlpha = 0.5f;
 }

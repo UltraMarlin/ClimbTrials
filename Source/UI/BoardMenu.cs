@@ -88,7 +88,7 @@ public class BoardMenu : TextMenu
     return widestTag > 0f ? widestTag + TeamTagGap : 0f;
   }
 
-  public float TopLift => header.HasSecondLine ? BoardLayout.SecondLineLift : 0f;
+  public float TopLift => header.HasSecondLine ? BoardLayout.SecondLineGrowth : 0f;
 
   public BoardPage Page => page;
 
@@ -239,54 +239,6 @@ public class BoardMenu : TextMenu
     arrow.DrawCentered(new Vector2(Position.X - half, centerY), left, scale * new Vector2(-1f, 1f));
   }
 
-  public static void DrawRow(
-    BoardRow row,
-    BoardSubject subject,
-    BoardMode mode,
-    Vector2 left,
-    float width,
-    float tagColumnWidth,
-    float alpha,
-    bool highlighted
-  )
-  {
-    Color color = (highlighted ? TrialsMenu.Highlight : Colors.DimText) * alpha;
-    Vector2 justify = new(0f, 0.5f);
-    Vector2 scale = Vector2.One * BoardLayout.TextScale;
-    Color stroke = TextOutline.StrokeFor(color);
-    if (row.Rank is int rank)
-    {
-      Vector2 rankAt = left + new Vector2(BoardLayout.RankX, 0f);
-      ActiveFont.DrawOutline(RankText.Format(rank), rankAt, justify, scale, color, 2f, stroke);
-    }
-    float nameX = NameColumnX(mode);
-    if (row.ShowsTeamTag)
-      DrawTeamTag(row, left + new Vector2(nameX, 0f), alpha);
-    Vector2 nameAt = left + new Vector2(nameX + tagColumnWidth, 0f);
-    ActiveFont.DrawOutline(row.Name, nameAt, justify, scale, color, 2f, stroke);
-    DrawWatchStatus(
-      row,
-      left + new Vector2(BoardLayout.RankX - WatchStatusGap, 0f),
-      new Vector2(1f, 0.5f),
-      alpha
-    );
-
-    if (row.Ticks is not long ticks)
-    {
-      float hiddenWidth = TimeText.Width(TimeText.TypicalTime, Style);
-      Vector2 hiddenAt = new(left.X + width - hiddenWidth, left.Y + TimeText.Height(Style) / 2f);
-      Color hidden = Colors.DimText * (BoardLayout.HiddenTimeAlpha * alpha);
-      TimeText.DrawHidden(hiddenAt, Style, hidden);
-      return;
-    }
-    string time = TimeText.Format(ticks);
-    Medal medal = subject.ShownMedal(row, mode);
-    float timeWidth = TimeText.Width(time, Style);
-    Vector2 baseline = new(left.X + width - timeWidth, left.Y + TimeText.Height(Style) / 2f);
-    Color timeColor = medal == Medal.None ? Colors.DimText : MedalIcon.TextColor(medal);
-    TimeText.Draw(baseline, time, Style, timeColor * alpha);
-  }
-
   private static float NameColumnX(BoardMode mode) =>
     mode == BoardMode.OwnTimeOnly ? BoardLayout.RankX : BoardLayout.NameX;
 
@@ -412,7 +364,7 @@ public class BoardMenu : TextMenu
       if (runnersShown && page.Total.HasValue)
       {
         DrawHeaderLine(
-          Dialog.Get(subject.CountKey).Replace("{0}", $"{page.Total}"),
+          Dialog.Get("climbtrials_board_runners").Replace("{0}", $"{page.Total}"),
           centerX,
           lineY,
           alpha
@@ -485,13 +437,49 @@ public class BoardMenu : TextMenu
         float ruleY = position.Y - bounce - Height() / 2f - BoardLayout.RuleGap;
         Color rule = Color.White * (BoardLayout.RuleAlpha * Container.Alpha);
         Draw.Rect(position.X, ruleY, Container.Width, 1f, rule);
-        float alpha = Container.Alpha;
-        DrawRow(Row, subject, mode, position, Container.Width, tagColumnWidth, alpha, highlighted);
+        DrawRow(position, Container.Alpha, highlighted);
         return;
       }
       Vector2 left = position + new Vector2(menu.EntryOffsetX, 0f);
-      float rowAlpha = Container.Alpha * menu.EntryAlpha * menu.RowsAlpha;
-      DrawRow(Row, subject, mode, left, Container.Width, tagColumnWidth, rowAlpha, highlighted);
+      DrawRow(left, Container.Alpha * menu.EntryAlpha * menu.RowsAlpha, highlighted);
+    }
+
+    private void DrawRow(Vector2 left, float alpha, bool highlighted)
+    {
+      Color color = (highlighted ? TrialsMenu.Highlight : Colors.DimText) * alpha;
+      Vector2 justify = new(0f, 0.5f);
+      Vector2 scale = Vector2.One * BoardLayout.TextScale;
+      Color stroke = TextOutline.StrokeFor(color);
+      if (Row.Rank is int rank)
+      {
+        Vector2 rankAt = left + new Vector2(BoardLayout.RankX, 0f);
+        ActiveFont.DrawOutline(RankText.Format(rank), rankAt, justify, scale, color, 2f, stroke);
+      }
+      float nameX = NameColumnX(mode);
+      if (Row.ShowsTeamTag)
+        DrawTeamTag(Row, left + new Vector2(nameX, 0f), alpha);
+      Vector2 nameAt = left + new Vector2(nameX + tagColumnWidth, 0f);
+      ActiveFont.DrawOutline(Row.Name, nameAt, justify, scale, color, 2f, stroke);
+      DrawWatchStatus(
+        Row,
+        left + new Vector2(BoardLayout.RankX - WatchStatusGap, 0f),
+        new Vector2(1f, 0.5f),
+        alpha
+      );
+
+      Vector2 baseline = new(
+        left.X + Container.Width - TimeText.Width(time, Style),
+        left.Y + TimeText.Height(Style) / 2f
+      );
+      if (!Row.Ticks.HasValue)
+      {
+        Color hidden = Colors.DimText * (BoardLayout.HiddenTimeAlpha * alpha);
+        TimeText.DrawHidden(baseline, Style, hidden);
+        return;
+      }
+      Medal medal = subject.ShownMedal(Row, mode);
+      Color timeColor = medal == Medal.None ? Colors.DimText : MedalIcon.TextColor(medal);
+      TimeText.Draw(baseline, time, Style, timeColor * alpha);
     }
   }
 }
