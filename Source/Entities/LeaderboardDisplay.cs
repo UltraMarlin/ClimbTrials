@@ -27,15 +27,7 @@ public class LeaderboardDisplay : Entity
   private static readonly Color myTimeColor = Calc.HexToColor("fad768");
   private readonly List<FadeBuffer> layers = [];
   private List<Row> rows = [];
-  private TrialStanding cachedStanding;
-  private StandingsState cachedState;
-  private LeaderboardMode cachedMode;
-  private long cachedBest;
-  private bool cachedGoalsShown;
-  private float cachedShift;
-  private GoalTimesDisplayMode cachedGoalMode;
-  private bool cachedOfflineMode;
-  private bool built;
+  private RowSource? builtFrom;
   private float rowsTop = RunHudLayout.ListY;
   private float rowHeight;
   private float rankGap;
@@ -51,9 +43,20 @@ public class LeaderboardDisplay : Entity
     string Name,
     string Time,
     Color Color,
-    bool Message = false,
+    string Message = null,
     float NameFit = 1f,
     bool HiddenTime = false
+  );
+
+  private readonly record struct RowSource(
+    TrialStanding Standing,
+    StandingsState State,
+    LeaderboardMode Mode,
+    long Best,
+    bool GoalsShown,
+    float Shift,
+    GoalTimesDisplayMode GoalMode,
+    bool OfflineMode
   );
 
   public LeaderboardDisplay()
@@ -99,30 +102,19 @@ public class LeaderboardDisplay : Entity
     LeaderboardMode mode = Mode;
     long best = TrialRecords.Get(trial.Id)?.BestTicks ?? long.MaxValue;
     bool goalsShown = GoalListDisplay.Shown;
-    float shift = RunHudLayout.ColumnShift;
-    GoalTimesDisplayMode goalMode = ClimbTrialsModule.Settings.HudSettings.GoalTimes;
-    bool offlineMode = ClimbTrialsModule.Settings.OfflineMode;
-    bool same =
-      built
-      && ReferenceEquals(standing, cachedStanding)
-      && state == cachedState
-      && mode == cachedMode
-      && best == cachedBest
-      && goalsShown == cachedGoalsShown
-      && shift == cachedShift
-      && goalMode == cachedGoalMode
-      && offlineMode == cachedOfflineMode;
-    if (same)
+    RowSource source = new(
+      standing,
+      state,
+      mode,
+      best,
+      goalsShown,
+      RunHudLayout.ColumnShift,
+      ClimbTrialsModule.Settings.HudSettings.GoalTimes,
+      ClimbTrialsModule.Settings.OfflineMode
+    );
+    if (builtFrom == source)
       return;
-    built = true;
-    cachedStanding = standing;
-    cachedState = state;
-    cachedMode = mode;
-    cachedBest = best;
-    cachedGoalsShown = goalsShown;
-    cachedShift = shift;
-    cachedGoalMode = goalMode;
-    cachedOfflineMode = offlineMode;
+    builtFrom = source;
 
     textScale = mode == LeaderboardMode.Subtle ? SubtleTextScale : NormalTextScale;
     textAlpha = mode == LeaderboardMode.Subtle ? SubtleTextAlpha : NormalTextAlpha;
@@ -165,7 +157,7 @@ public class LeaderboardDisplay : Entity
         new Row(
           row.Rank is int place ? RankText.Format(place) : "",
           row.Name,
-          row.Ticks is long ticks ? TimeText.Format(ticks) : "",
+          row.Ticks is long ticks ? TimeText.Format(ticks) : TimeText.TypicalTime,
           color,
           NameFit: NameFitFor(row.Name),
           HiddenTime: row.Ticks == null
@@ -178,7 +170,7 @@ public class LeaderboardDisplay : Entity
   private static float NameFitFor(string name) => TextFit.FitName("{0}", name, NameMinFit);
 
   private static Row Message(string key) =>
-    new(Dialog.Clean(key), "", "", Colors.DimText, Message: true);
+    new("", "", "", Colors.DimText, Message: Dialog.Clean(key));
 
   private void MeasureColumns()
   {
@@ -189,13 +181,12 @@ public class LeaderboardDisplay : Entity
     float columnGap = textScale * ColumnGapPerScale;
     foreach (Row row in rows)
     {
-      float rank = ActiveFont.Measure(row.Rank).X * textScale;
+      float rank = ActiveFont.Measure(row.Message ?? row.Rank).X * textScale;
       widest = Math.Max(widest, RankX + rank);
-      if (!row.Message)
+      if (row.Message == null)
         rankColumn = Math.Max(rankColumn, rank);
       widestName = Math.Max(widestName, ActiveFont.Measure(row.Name).X * textScale * row.NameFit);
-      string time = row.HiddenTime ? TimeText.TypicalTime : row.Time;
-      widestTime = Math.Max(widestTime, TimeText.Width(time, timeStyle));
+      widestTime = Math.Max(widestTime, TimeText.Width(row.Time, timeStyle));
     }
     nameX = rankColumn > 0f ? RankX + rankColumn + columnGap : RankX;
     float timeX = nameX + widestName + columnGap;
@@ -235,7 +226,7 @@ public class LeaderboardDisplay : Entity
     Vector2 justify = new(0f, 0.5f);
     Vector2 scale = Vector2.One * textScale;
     ActiveFont.DrawOutline(
-      row.Rank,
+      row.Message ?? row.Rank,
       new Vector2(RankX, centerY),
       justify,
       scale,
@@ -253,17 +244,12 @@ public class LeaderboardDisplay : Entity
         1.35f,
         Color.Black
       );
-    if (row.HiddenTime)
-    {
-      float right = widest - TimeText.Width(TimeText.TypicalTime, timeStyle);
-      Vector2 baseline = new(right, centerY + TimeText.Height(timeStyle) / 2f);
-      TimeText.DrawHidden(baseline, timeStyle, Color.White * BoardLayout.HiddenTimeAlpha);
-    }
-    else if (row.Time.Length > 0)
+    if (row.Time.Length > 0)
     {
       float right = widest - TimeText.Width(row.Time, timeStyle);
       Vector2 baseline = new(right, centerY + TimeText.Height(timeStyle) / 2f);
-      TimeText.Draw(baseline, row.Time, timeStyle, row.Color);
+      Color timeColor = row.HiddenTime ? Color.White * BoardLayout.HiddenTimeAlpha : row.Color;
+      TimeText.Draw(baseline, row.Time, timeStyle, timeColor, digitsAsDashes: row.HiddenTime);
     }
   }
 

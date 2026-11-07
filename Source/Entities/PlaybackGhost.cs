@@ -11,19 +11,32 @@ namespace Celeste.Mod.ClimbTrials.Entities;
 
 public class PlaybackGhost : Entity
 {
-  public const float StrongFarAlpha = 0.8f;
-  public const float StrongNearAlpha = 0.4f;
-  public const float StrongDuckNear = 14f;
-  public const float StrongDuckFar = 24f;
-  public const float SubtleFarAlpha = 0.6f;
-  public const float SubtleNearAlpha = 0.12f;
-  public const float SubtleDuckNear = 14f;
-  public const float SubtleDuckFar = 32f;
+  private readonly record struct GhostLook(
+    float FarAlpha,
+    float NearAlpha,
+    float DuckNear,
+    float DuckFar
+  );
 
-  public const float ComparisonFarAlpha = 0.75f;
-  public const float ComparisonNearAlpha = 0.6f;
-  public const float ComparisonDuckNear = 14f;
-  public const float ComparisonDuckFar = 24f;
+  private static readonly GhostLook StrongLook = new(
+    FarAlpha: 0.8f,
+    NearAlpha: 0.4f,
+    DuckNear: 14f,
+    DuckFar: 24f
+  );
+  private static readonly GhostLook SubtleLook = new(
+    FarAlpha: 0.6f,
+    NearAlpha: 0.12f,
+    DuckNear: 14f,
+    DuckFar: 32f
+  );
+  private static readonly GhostLook ComparisonLook = new(
+    FarAlpha: 0.75f,
+    NearAlpha: 0.6f,
+    DuckNear: 14f,
+    DuckFar: 24f
+  );
+
   private const float RaceTagAlpha = 0.4f;
   private const float ComparisonOutlineDarken = 0.8f;
 
@@ -36,6 +49,7 @@ public class PlaybackGhost : Entity
   private const int HairSettleSteps = 10;
   private const int BufferSize = 96;
   private static readonly Vector2 BufferAnchor = new(48f, 72f);
+  private static readonly Vector2 SlashOffset = new(0f, -6f);
 
   public readonly Replay Replay;
   public readonly string Name;
@@ -137,7 +151,6 @@ public class PlaybackGhost : Entity
 
   private void DetectDash(int shown)
   {
-    Vector2 SlashOffset = new(0f, -6f);
     if (shown < 1 || shown + 1 >= shownFrames.Length)
       return;
 
@@ -155,25 +168,10 @@ public class PlaybackGhost : Entity
     slashDirection = InputFrame.DashDirFromByte(direction);
   }
 
-  private static bool Subtle =>
-    ClimbTrialsModule.Settings.GhostVisibility == GhostVisibility.Subtle;
-
-  private float FarAlpha =>
-    comparison ? ComparisonFarAlpha
-    : Subtle ? SubtleFarAlpha
-    : StrongFarAlpha;
-  private float NearAlpha =>
-    comparison ? ComparisonNearAlpha
-    : Subtle ? SubtleNearAlpha
-    : StrongNearAlpha;
-  private float DuckNear =>
-    comparison ? ComparisonDuckNear
-    : Subtle ? SubtleDuckNear
-    : StrongDuckNear;
-  private float DuckFar =>
-    comparison ? ComparisonDuckFar
-    : Subtle ? SubtleDuckFar
-    : StrongDuckFar;
+  private GhostLook Look =>
+    comparison ? ComparisonLook
+    : ClimbTrialsModule.Settings.GhostVisibility == GhostVisibility.Subtle ? SubtleLook
+    : StrongLook;
 
   public float TagAlpha => comparison ? Alpha : Alpha * Alpha * RaceTagAlpha;
 
@@ -205,8 +203,11 @@ public class PlaybackGhost : Entity
 
   public void Render(Player player)
   {
-    float distance = player == null ? DuckFar : (player.Position - Position).Length();
-    Alpha = Calc.ClampedMap(distance, DuckNear, DuckFar, NearAlpha, FarAlpha) * fadeAlpha;
+    GhostLook look = Look;
+    float distance = player == null ? look.DuckFar : (player.Position - Position).Length();
+    Alpha =
+      Calc.ClampedMap(distance, look.DuckNear, look.DuckFar, look.NearAlpha, look.FarAlpha)
+      * fadeAlpha;
     layer.Alpha = Alpha;
     base.Render();
     DrawSlash();
