@@ -44,7 +44,6 @@ public class PlaybackGhost : Entity
   private readonly bool comparison;
   private float Alpha { get; set; }
 
-  private readonly Color color;
   private readonly int[] shownFrames;
   private readonly PlayerSprite sprite;
   private readonly PlayerHair hair;
@@ -60,7 +59,6 @@ public class PlaybackGhost : Entity
   {
     this.comparison = comparison;
     Replay = replay;
-    this.color = color;
     TagColor = tagColor;
     Name = Identity.NameOf(replay);
     shownFrames = replay.ShownFrames;
@@ -69,6 +67,8 @@ public class PlaybackGhost : Entity
     Add(sprite);
     sprite.Visible = false;
     hair.Visible = false;
+    sprite.Color = color;
+    hair.Color = color;
     sprite.Play(FirstKnownAnimation());
     Add(layer = new FadeBuffer("climbtrials-ghost", BufferSize, BufferSize, DrawOpaque));
     if (comparison)
@@ -179,8 +179,6 @@ public class PlaybackGhost : Entity
 
   private void DrawOpaque()
   {
-    sprite.Color = color;
-    hair.Color = color;
     hair.Render();
     sprite.Render();
   }

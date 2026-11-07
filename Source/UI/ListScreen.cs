@@ -24,6 +24,7 @@ public abstract class ListScreen : Oui
   protected float alpha;
   private float dim = 1f;
   private float sinceFetch;
+  private string hintText;
   protected abstract int ScreenDepth { get; }
   protected virtual string TitleKey => "climbtrials_campaigns_title";
   protected virtual float TitleLift => 0f;
@@ -137,6 +138,8 @@ public abstract class ListScreen : Oui
     }
     TrialRecords.EnsureLoaded();
     ReplayStore.Refresh();
+    hintText =
+      hintKey == null ? null : $"{Dialog.Clean("climbtrials_hint_prefix")} {Dialog.Clean(hintKey)}";
     FetchOnline();
     sinceFetch = 0f;
     menu = BuildMenu();
@@ -243,9 +246,9 @@ public abstract class ListScreen : Oui
       );
     DrawOfflineLabel();
     notice.Render(new Vector2(screenX, ScreenLayout.NoticeY), ScreenLayout.NoticeScale, totalAlpha);
-    if (hintKey != null && !notice.Showing)
+    if (hintText != null && !notice.Showing)
       TextOutline.DrawDim(
-        $"{Dialog.Clean("climbtrials_hint_prefix")} {Dialog.Clean(hintKey)}",
+        hintText,
         new Vector2(screenX, ScreenLayout.NoticeY),
         new Vector2(0.5f, 0.5f),
         ScreenLayout.NoticeScale,
