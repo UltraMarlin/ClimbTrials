@@ -96,7 +96,7 @@ public sealed class RunDefinition
 
   public AreaKey Area => AreaData.Get(Sid).ToKey(Mode);
   public MapData Map => AreaData.Get(Sid).Mode[(int)Mode].MapData;
-  public Vector2 FinishCenter => new(Finish.Center.X, Finish.Center.Y);
+  public Vector2 FinishCenter => Finish.Center.ToVector2();
   public bool HasModifiers => Dashes != null || Grabless || NoRefills;
 
   public Vector2? CameraOffsetFor(string room)

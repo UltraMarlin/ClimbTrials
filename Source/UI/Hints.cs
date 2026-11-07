@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.UI;
 
@@ -14,10 +15,7 @@ public static class Hints
 
   private static bool OptionsUntouched => !Settings.HasChangedOptions;
 
-  private static bool RetryUnbound =>
-    Settings.Retry.Keys.Count == 0
-    && Settings.Retry.Buttons.Count == 0
-    && Settings.Retry.MouseButtons.Count == 0;
+  private static bool RetryUnbound => !Settings.Retry.Binding.HasInput;
 
   private static readonly Hint[] All =
   [
@@ -30,6 +28,6 @@ public static class Hints
   public static string Pick()
   {
     List<string> keys = All.Where(hint => hint.Applies()).Select(hint => hint.DialogKey).ToList();
-    return keys.Count == 0 ? null : keys[random.Next(keys.Count)];
+    return keys.Count == 0 ? null : random.Choose(keys);
   }
 }

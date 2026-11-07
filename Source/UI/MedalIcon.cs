@@ -42,6 +42,6 @@ public static class MedalIcon
     MTexture texture = GFX.Gui["collectables/heartgem/3/FakeHeart0000"];
     float scale = height / texture.Height;
     float shownAlpha = medal == Medal.None ? alpha * NoMedalAlpha : alpha;
-    texture.DrawCentered(center, Tint(medal) * shownAlpha, Vector2.One * scale);
+    texture.DrawCentered(center, Tint(medal) * shownAlpha, scale);
   }
 }

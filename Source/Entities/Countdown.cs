@@ -87,7 +87,7 @@ public class Countdown : Entity
   {
     if (Scene.Paused)
       return;
-    float fade = Math.Clamp(beatAge / (beat * 0.6f), 0f, 1f);
+    float fade = Calc.ClampedMap(beatAge, 0f, beat * 0.6f);
     float scale = PeakScale - (PeakScale - RestScale) * Ease.CubeOut(fade);
     string text = showingGo ? "GO" : remaining.ToString();
     Color color = showingGo ? GoColor : Color.White;

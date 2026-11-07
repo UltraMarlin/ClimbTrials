@@ -61,9 +61,7 @@ public class OuiHubTextEntry : OuiModOptionString
   public override IEnumerator Leave(Oui next)
   {
     leaveStartTime = Scene.TimeActive;
-    IEnumerator leaving = base.Leave(next);
-    while (leaving.MoveNext())
-      yield return leaving.Current;
+    yield return new SwapImmediately(base.Leave(next));
     Headline = null;
     Letter = null;
   }

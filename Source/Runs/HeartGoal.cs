@@ -1,5 +1,4 @@
 using Celeste.Mod.ClimbTrials.Entities;
-using MonoMod.Utils;
 
 namespace Celeste.Mod.ClimbTrials.Runs;
 
@@ -91,7 +90,7 @@ public static class HeartGoal
   {
     if (pendingCut != null)
     {
-      DynamicData.For(pendingCut).Get<SoundEmitter>("sfx")?.Source.Param("end", 1f);
+      pendingCut.sfx?.Source.Param("end", 1f);
       pendingCut.RemoveSelf();
       pendingCut = null;
       poemPending = true;

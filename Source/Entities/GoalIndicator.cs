@@ -99,7 +99,7 @@ public class GoalIndicator : Entity
     MapData map = SceneAs<Level>().Session.MapData;
     RunDefinition run = RunManager.Run;
     if (run.FinishKind == FinishKind.RoomEnter && map.Get(run.FinishRoom) is LevelData goal)
-      goalRoomCenter = new Vector2(goal.Bounds.Center.X, goal.Bounds.Center.Y);
+      goalRoomCenter = goal.Bounds.Center.ToVector2();
     foreach (Collectible item in run.FindCollectibles(map))
     {
       if (item.Kind == CollectibleKind.SummitGem)
@@ -128,7 +128,10 @@ public class GoalIndicator : Entity
 
     bool paused = SceneAs<Level>().Paused;
     Arrow shown = Array.Find(arrows, arrow => arrow.Visible);
-    int shownCount = Array.FindAll(targets, target => target != null).Length;
+    int shownCount = 0;
+    foreach (Target? target in targets)
+      if (target.HasValue)
+        shownCount++;
     int shownIndex = 0;
     Visible = false;
     for (int ring = 0; ring < arrows.Length; ring++)
@@ -205,9 +208,11 @@ public class GoalIndicator : Entity
   private Vector2 ClampToCamera(Vector2 position)
   {
     Camera camera = SceneAs<Level>().Camera;
-    return new Vector2(
-      Calc.Clamp(position.X, camera.Left + EdgeMargin, camera.Right - EdgeMargin),
-      Calc.Clamp(position.Y, camera.Top + EdgeMargin, camera.Bottom - EdgeMargin)
+    return position.Clamp(
+      camera.Left + EdgeMargin,
+      camera.Top + EdgeMargin,
+      camera.Right - EdgeMargin,
+      camera.Bottom - EdgeMargin
     );
   }
 
@@ -295,7 +300,7 @@ public class GoalIndicator : Entity
       bool[] taken = SceneAs<Level>().Session.SummitGems;
       foreach (Gem gem in gems)
       {
-        bool collected = gem.Id >= 0 && gem.Id < taken.Length && taken[gem.Id];
+        bool collected = taken.IsInRange(gem.Id) && taken[gem.Id];
         if (!collected)
           Consider(gem.World, TargetKind.SummitGem);
       }
@@ -306,16 +311,7 @@ public class GoalIndicator : Entity
 
   private void DrawArrow(Arrow arrow)
   {
-    Vector2 drawAt = arrow.Position.Round();
-    for (int i = -1; i <= 1; i++)
-    {
-      for (int j = -1; j <= 1; j++)
-      {
-        if (i != 0 || j != 0)
-          texture.DrawCentered(drawAt + new Vector2(i, j), Color.Black, 1f, arrow.Angle);
-      }
-    }
-    texture.DrawCentered(drawAt, arrow.Color, 1f, arrow.Angle);
+    texture.DrawOutlineCentered(arrow.Position.Round(), arrow.Color, 1f, arrow.Angle);
   }
 
   public override void Render()

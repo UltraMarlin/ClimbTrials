@@ -154,10 +154,7 @@ public abstract class ListScreen : Oui
       yield return Motion.EnterScreen(side, PlaceSlide);
     }
 
-    screenX = OnScreenX;
-    alpha = 1f;
-    menu.X = screenX;
-    menu.Alpha = alpha * dim;
+    PlaceSlide(0f, 1f);
     if (handedOver)
       yield break;
 

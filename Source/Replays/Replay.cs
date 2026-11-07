@@ -139,7 +139,7 @@ public sealed class Replay
     ReadOnlySpan<byte> hash = SHA256
       .HashData(bytes.AsSpan(0, payloadLength))
       .AsSpan(0, checksum.Length);
-    if (!CryptographicOperations.FixedTimeEquals(hash, checksum))
+    if (!hash.SequenceEqual(checksum))
       throw new InvalidDataException("replay file is corrupted");
   }
 

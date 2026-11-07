@@ -342,21 +342,18 @@ public static class SpeedrunToolBridge
     RunSnapshot snapshot
   )
   {
-    Dictionary<string, object> bridgeValues = new();
-    bridgeValues[SnapshotKey] = snapshot;
-    slotValues[typeof(SpeedrunToolBridge)] = bridgeValues;
+    slotValues[typeof(SpeedrunToolBridge)] = new Dictionary<string, object>
+    {
+      [SnapshotKey] = snapshot,
+    };
   }
 
   private static RunSnapshot FindSnapshot(Dictionary<Type, Dictionary<string, object>> slotValues)
   {
-    if (!slotValues.ContainsKey(typeof(SpeedrunToolBridge)))
-      return null;
-
-    Dictionary<string, object> bridgeValues = slotValues[typeof(SpeedrunToolBridge)];
-    if (!bridgeValues.ContainsKey(SnapshotKey))
-      return null;
-
-    return bridgeValues[SnapshotKey] as RunSnapshot;
+    Dictionary<string, object> bridgeValues = slotValues.GetValueOrDefault(
+      typeof(SpeedrunToolBridge)
+    );
+    return bridgeValues?.GetValueOrDefault(SnapshotKey) as RunSnapshot;
   }
 
   private static void ShowPendingNotice()

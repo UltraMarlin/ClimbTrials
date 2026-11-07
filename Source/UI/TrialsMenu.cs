@@ -126,6 +126,6 @@ public class TrialsMenu : TextMenu
   private float EdgeFade(float rowY, float height)
   {
     float inside = Math.Min(rowY - ListTop, ListBottom - rowY);
-    return Calc.Clamp(inside / (height * 0.5f), 0f, 1f);
+    return Calc.ClampedMap(inside, 0f, height * 0.5f);
   }
 }

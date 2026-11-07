@@ -65,18 +65,7 @@ public class OuiEvents : CampaignListScreen
       StartOpeningCheck();
   }
 
-  private bool UpcomingChangedSinceBuild()
-  {
-    IReadOnlyList<UpcomingEvent> upcoming = Events.Upcoming;
-    if (upcoming.Count != builtUpcoming.Count)
-      return true;
-
-    for (int i = 0; i < upcoming.Count; i++)
-      if (upcoming[i] != builtUpcoming[i])
-        return true;
-
-    return false;
-  }
+  private bool UpcomingChangedSinceBuild() => !Events.Upcoming.SequenceEqual(builtUpcoming);
 
   private void StartOpeningCheck()
   {

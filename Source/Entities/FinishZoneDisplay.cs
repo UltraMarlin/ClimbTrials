@@ -17,7 +17,7 @@ public class FinishZoneDisplay : Entity
 
   public FinishZoneDisplay(Rectangle worldRect)
   {
-    Position = new Vector2(worldRect.X, worldRect.Y);
+    Position = worldRect.Location.ToVector2();
     width = worldRect.Width;
     height = worldRect.Height;
     Depth = Depths.Below;

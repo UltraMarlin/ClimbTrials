@@ -97,7 +97,7 @@ public class PlaybackGhost : Entity
       DetectDash(i);
     shownIndex = index;
     long pastEnd = ticks - Replay.TicksOfShownFrame(last) - Attempt.SecondsToTicks(HoldSeconds);
-    fadeAlpha = 1f - Calc.Clamp((float)pastEnd / Attempt.SecondsToTicks(FadeSeconds), 0f, 1f);
+    fadeAlpha = 1f - Calc.ClampedMap(pastEnd, 0f, Attempt.SecondsToTicks(FadeSeconds));
 
     InputFrame frame = Replay.Frames[shownFrames[index]];
     Visible = frame.HasPlayer && fadeAlpha > 0f;

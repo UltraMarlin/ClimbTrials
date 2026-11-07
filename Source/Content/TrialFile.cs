@@ -65,20 +65,12 @@ public static class TrialFile
     if (loaded.Count == 0)
       throw new TrialFileException($"Folder '{Folder}' holds no campaign file");
 
-    loaded.Sort(
-      (a, b) =>
-        a.Order != b.Order
-          ? a.Order.CompareTo(b.Order)
-          : string.CompareOrdinal(a.Campaign.Id, b.Campaign.Id)
-    );
-
-    List<Campaign> campaigns = [];
-    int trials = 0;
-    foreach ((Campaign campaign, int _) in loaded)
-    {
-      campaigns.Add(campaign);
-      trials += campaign.Trials.Count;
-    }
+    List<Campaign> campaigns = loaded
+      .OrderBy(entry => entry.Order)
+      .ThenBy(entry => entry.Campaign.Id, StringComparer.Ordinal)
+      .Select(entry => entry.Campaign)
+      .ToList();
+    int trials = campaigns.Sum(campaign => campaign.Trials.Count);
     Logger.Info(LogTag, $"loaded {campaigns.Count} campaigns, {trials} trials");
     return campaigns;
   }

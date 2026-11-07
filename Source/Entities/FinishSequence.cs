@@ -44,7 +44,7 @@ public class FinishSequence : Entity
   private const string TiedPbSound = SFX.char_theo_resort_ceilingvent_hey;
   private const string TiedPbLaughSound = SFX.char_gran_laugh_firstphrase;
   private const float TiedPbLaughDelay = 0.8f;
-  private const double TiedPbLaughChance = 0.2;
+  private const float TiedPbLaughChance = 0.2f;
   private static readonly Random laughRandom = new();
   private const string FinishSound = SFX.game_07_checkpointconfetti;
   private const float ConfettiLift = 8f;
@@ -156,7 +156,7 @@ public class FinishSequence : Entity
   private IEnumerator PlayTiedPbSounds()
   {
     Audio.Play(TiedPbSound);
-    if (laughRandom.NextDouble() >= TiedPbLaughChance)
+    if (!laughRandom.Chance(TiedPbLaughChance))
       yield break;
     yield return TiedPbLaughDelay;
     Audio.Play(TiedPbLaughSound);
@@ -223,7 +223,7 @@ public class FinishSequence : Entity
   }
 
   private static float Pop(float age) =>
-    1f + 0.6f * (1f - Ease.BackIn(Math.Clamp(age / MedalPopDuration, 0f, 1f)));
+    1f + 0.6f * (1f - Ease.BackIn(Calc.ClampedMap(age, 0f, MedalPopDuration)));
 
   private void RenderResult()
   {
@@ -231,7 +231,7 @@ public class FinishSequence : Entity
     string delta = deltaText;
     float deltaAge = timeAge - DeltaStagger;
 
-    float boxAlpha = BoxAlpha * Ease.CubeOut(Math.Clamp(timeAge / MedalPopDuration, 0f, 1f));
+    float boxAlpha = BoxAlpha * Ease.CubeOut(Calc.ClampedMap(timeAge, 0f, MedalPopDuration));
     float boxWidth =
       Math.Max(TimeText.Width(time, TimeText.Large), deltaRestWidth) + 2f * BoxPaddingX;
     float boxTop = TimeBaselineY - TimeText.Height(TimeText.Large) - BoxPaddingTop;
@@ -239,12 +239,12 @@ public class FinishSequence : Entity
       delta == null ? TimeBaselineY + BoxPaddingBottom : DeltaBaselineY + DeltaBoxPaddingBottom;
     Draw.Rect(960f - boxWidth / 2f, boxTop, boxWidth, boxBottom - boxTop, boxColor * boxAlpha);
 
-    float alpha = Ease.CubeOut(Math.Clamp(timeAge / TimeFadeDuration, 0f, 1f));
+    float alpha = Ease.CubeOut(Calc.ClampedMap(timeAge, 0f, TimeFadeDuration));
     DrawAnimated(time, TimeText.Large, TimeBaselineY, timeAge, Color.White * alpha);
 
     if (delta == null || deltaAge < 0f)
       return;
-    float deltaAlpha = Ease.CubeOut(Math.Clamp(deltaAge / TimeFadeDuration, 0f, 1f));
+    float deltaAlpha = Ease.CubeOut(Calc.ClampedMap(deltaAge, 0f, TimeFadeDuration));
     DrawDeltaLine(delta, deltaAge, deltaAlpha);
   }
 
@@ -361,10 +361,9 @@ public class FinishSequence : Entity
       float alpha = Math.Min(1f, remaining / SparkFadeShare);
       bool white = spark.Blink && Calc.BetweenInterval(spark.Life, SparkBlinkInterval);
       Color color = (white ? Color.White : spark.Color) * alpha;
-      float left = MathF.Floor(spark.Position.X) * GamePixel;
-      float top = MathF.Floor(spark.Position.Y) * GamePixel;
+      Vector2 cell = spark.Position.Floor() * GamePixel;
       float size = spark.Size * GamePixel;
-      Draw.Rect(left, top, size, size, color);
+      Draw.Rect(cell.X, cell.Y, size, size, color);
     }
   }
 
@@ -381,7 +380,7 @@ public class FinishSequence : Entity
 
   private void RenderPrompts()
   {
-    float alpha = Ease.CubeOut(Math.Clamp(promptAge / PromptFadeDuration, 0f, 1f));
+    float alpha = Ease.CubeOut(Calc.ClampedMap(promptAge, 0f, PromptFadeDuration));
     List<(string, VirtualButton)> prompts =
     [
       ButtonRow.MenuPrompt,

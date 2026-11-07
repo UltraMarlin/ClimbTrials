@@ -307,7 +307,7 @@ internal static class HeaderCoding
         string label = walk.CodeText(
           HeaderField.PauseRowLabel,
           givenRow?.Label,
-          Math.Max(0, Math.Min(MaxTextBytes, bytesLeft)),
+          Math.Clamp(bytesLeft, 0, MaxTextBytes),
           out int labelBytes
         );
         bytesLeft -= labelBytes;

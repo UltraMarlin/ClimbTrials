@@ -154,7 +154,7 @@ public static class TrialDraft
         spawn = ToPair(Spawn ?? Vector2.Zero),
         spawnFacing = SpawnFacing?.ToString(),
         finishRoom = finish?.Room,
-        finishKind = char.ToLowerInvariant(kind.ToString()[0]) + kind.ToString()[1..],
+        finishKind = JsonNamingPolicy.CamelCase.ConvertName(kind.ToString()),
         finish = kind == FinishKind.Heart || (kind == FinishKind.RoomEnter && drawn == null)
           ? null
           : new[] { rect.X, rect.Y, rect.Width, rect.Height },

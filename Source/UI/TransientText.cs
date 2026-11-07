@@ -38,7 +38,7 @@ public sealed class TransientText
   {
     if (!Showing)
       return;
-    Color shown = color * (alpha * Math.Clamp((duration - age) / FadeTime, 0f, 1f));
+    Color shown = color * (alpha * Calc.ClampedMap(duration - age, 0f, FadeTime));
     DrawLine(text, center, scale, shown);
   }
 

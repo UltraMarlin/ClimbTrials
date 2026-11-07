@@ -13,7 +13,7 @@ public class FinishZone : Entity
   public FinishZone(Rectangle worldRect)
   {
     this.worldRect = worldRect;
-    Position = new Vector2(worldRect.X, worldRect.Y);
+    Position = worldRect.Location.ToVector2();
     Collider = new Hitbox(worldRect.Width, worldRect.Height, 0f, 0f);
     Add(new PlayerCollider(OnPlayer));
     Depth = Depths.Top;

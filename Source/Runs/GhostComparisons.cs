@@ -52,18 +52,8 @@ public static class GhostComparisons
   public static IEnumerable<ComparedGhost> Shown =>
     ghosts.Where(ghost => ghost.Replay != RunManager.Replay);
 
-  public static bool Showing
-  {
-    get
-    {
-      if (!RunManager.Replaying)
-        return false;
-      foreach (ComparedGhost ghost in ghosts)
-        if (ghost.Replay != RunManager.Replay)
-          return true;
-      return false;
-    }
-  }
+  public static bool Showing =>
+    RunManager.Replaying && ghosts.Exists(ghost => ghost.Replay != RunManager.Replay);
 
   public static Replay SwitchingTo => switchingTo?.Replay;
 

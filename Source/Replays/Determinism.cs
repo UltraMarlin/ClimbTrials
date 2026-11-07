@@ -39,7 +39,7 @@ public static class Determinism
   {
     random = new Random(loadSeed);
     frame = FrameBase;
-    Calc.PushRandom(new Random(loadSeed));
+    Calc.PushRandom(loadSeed);
     loadingInline = true;
     try
     {

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Celeste.Mod.ClimbTrials.Replays.Codec;
 using Celeste.Mod.ClimbTrials.UI;
+using Monocle;
 
 namespace Celeste.Mod.ClimbTrials.Replays;
 
@@ -61,7 +62,7 @@ public static class PauseRows
       string label = kind == PauseRowKind.OtherMod ? LabelOf(item) : null;
       record.Rows.Add(new PauseRow(kind, item.Hoverable, label));
     }
-    if (menu.Selection >= 0 && menu.Selection < menu.Items.Count)
+    if (menu.Items.IsInRange(menu.Selection))
       record.SelectedRow = selectable.IndexOf(menu.Items[menu.Selection]);
     return record;
   }
@@ -75,7 +76,7 @@ public static class PauseRows
     for (int i = 0; i < wanted.Count; i++)
       if (wanted[i].Hoverable != record.Rows[i].Hoverable)
         wanted[i].Disabled = !record.Rows[i].Hoverable;
-    if (record.SelectedRow >= 0 && record.SelectedRow < wanted.Count)
+    if (wanted.IsInRange(record.SelectedRow))
       menu.Selection = menu.Items.IndexOf(wanted[record.SelectedRow]);
   }
 

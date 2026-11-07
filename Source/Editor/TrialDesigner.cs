@@ -1,3 +1,4 @@
+using System;
 using Celeste.Mod.ClimbTrials.Entities;
 using Celeste.Mod.ClimbTrials.Runs;
 using Microsoft.Xna.Framework;
@@ -89,9 +90,9 @@ public class TrialDesigner : Entity
   }
 
   private static Vector2 Snap(Vector2 world) =>
-    new(System.MathF.Round(world.X / Grid) * Grid, System.MathF.Round(world.Y / Grid) * Grid);
+    new(Calc.Snap(world.X, Grid), Calc.Snap(world.Y, Grid));
 
-  private static float SnapDown(float value) => System.MathF.Floor(value / Grid) * Grid;
+  private static float SnapDown(float value) => MathF.Floor(value / Grid) * Grid;
 
   private Vector2 RawMouseWorld() => SceneAs<Level>().ScreenToWorld(MInput.Mouse.Position);
 
@@ -119,10 +120,8 @@ public class TrialDesigner : Entity
         Begin(Mode.Idle);
         break;
       case Mode.PlacingWaypoint when MInput.Mouse.PressedLeftButton:
-        bool shift =
-          MInput.Keyboard.Check(Keys.LeftShift) || MInput.Keyboard.Check(Keys.RightShift);
-        bool control =
-          MInput.Keyboard.Check(Keys.LeftControl) || MInput.Keyboard.Check(Keys.RightControl);
+        bool shift = MInput.Keyboard.Check(Keys.LeftShift, Keys.RightShift);
+        bool control = MInput.Keyboard.Check(Keys.LeftControl, Keys.RightControl);
         Player player = level.Tracker.GetEntity<Player>();
         Vector2? spawn = shift && player != null ? Snap(player.Position) : null;
         bool setsSpawn = spawn != null || !control;
@@ -156,10 +155,10 @@ public class TrialDesigner : Entity
 
   private static Rectangle SquaresBetween(Vector2 a, Vector2 b)
   {
-    float left = SnapDown(System.Math.Min(a.X, b.X));
-    float top = SnapDown(System.Math.Min(a.Y, b.Y));
-    float right = SnapDown(System.Math.Max(a.X, b.X)) + Grid;
-    float bottom = SnapDown(System.Math.Max(a.Y, b.Y)) + Grid;
+    float left = SnapDown(Math.Min(a.X, b.X));
+    float top = SnapDown(Math.Min(a.Y, b.Y));
+    float right = SnapDown(Math.Max(a.X, b.X)) + Grid;
+    float bottom = SnapDown(Math.Max(a.Y, b.Y)) + Grid;
     return new Rectangle((int)left, (int)top, (int)(right - left), (int)(bottom - top));
   }
 
