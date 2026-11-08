@@ -1,0 +1,71 @@
+name: Build
+
+on:
+  push:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Read the version from everest.yaml
+        id: mod
+        run: |
+          version=$(yq '.[0].Version' everest.yaml)
+          if [ -z "$version" ] || [ "$version" = "null" ]; then
+            echo "::error::everest.yaml has no Version"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Check the tag against everest.yaml
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          VERSION: ${{ steps.mod.outputs.version }}
+        run: |
+          if [ "$GITHUB_REF_NAME" != "v$VERSION" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match version $VERSION in everest.yaml"
+            exit 1
+          fi
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Download Everest lib-stripped
+        uses: robinraju/release-downloader@v1
+        with:
+          repository: EverestAPI/Everest
+          latest: true
+          fileName: lib-stripped.zip
+
+      - name: Extract lib-stripped.zip
+        run: unzip -q lib-stripped.zip
+
+      - name: Build
+        run: dotnet build Source --configuration Release -p:ZipName=ClimbTrials-v$VERSION.zip
+        env:
+          CelestePrefix: ${{ github.workspace }}/lib-stripped
+          VERSION: ${{ steps.mod.outputs.version }}
+
+      - name: Upload the zip
+        uses: actions/upload-artifact@v7
+        with:
+          name: ClimbTrials-v${{ steps.mod.outputs.version }}
+          path: ClimbTrials-v${{ steps.mod.outputs.version }}.zip
+          if-no-files-found: error
+
+      - name: Create a draft release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v3
+        with:
+          name: ClimbTrials v${{ steps.mod.outputs.version }}
+          draft: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: ClimbTrials-v${{ steps.mod.outputs.version }}.zip
+          fail_on_unmatched_files: true

@@ -8,7 +8,7 @@
         <CelestePrefix Condition="'$(CelestePrefix)' == '' And Exists('$(CELESTE_DIR)/Celeste.dll')">$(CELESTE_DIR)</CelestePrefix>
         <CelestePrefix Condition="'$(CelestePrefix)' == ''">lib-stripped</CelestePrefix>
         <ZipName Condition="'$(ZipName)' == ''">ClimbTrials.zip</ZipName>
-        <ZippedFiles>..\everest.yaml;..\ClimbTrials\**\*.*;..\bin\**\*.*;..\Audio\**\*.*;..\Dialog\**\*.*;..\Graphics\**\*.*;..\Ahorn\**\*.*;..\Loenn\**\*.*</ZippedFiles>
+        <ZippedFiles>..\everest.yaml;..\LICENSE;..\ClimbTrials\**\*.*;..\bin\**\*.*;..\Audio\**\*.*;..\Dialog\**\*.*;..\Graphics\**\*.*;..\Ahorn\**\*.*;..\Loenn\**\*.*</ZippedFiles>
     </PropertyGroup>
 
     <!--Disable "Copy Local" for all references-->
@@ -42,8 +42,8 @@
         <Copy SourceFiles="$(OutputPath)\$(AssemblyName).pdb" DestinationFolder="..\bin" />
     </Target>
 
-    <Target Name="DeployMod" AfterTargets="CopyFiles" Condition="'$(SkipDeploy)' != 'true' And '$(OS)' != 'Windows_NT'">
-        <Error Condition="'$(CELESTE_DIR)' == '' Or !Exists('$(CELESTE_DIR)/Mods')" Text="Deploy failed. Set CELESTE_DIR to the Celeste folder." />
+    <Target Name="DeployMod" AfterTargets="CopyFiles" Condition="'$(SkipDeploy)' != 'true' And '$(OS)' != 'Windows_NT' And '$(CELESTE_DIR)' != ''">
+        <Error Condition="!Exists('$(CELESTE_DIR)/Mods')" Text="Deploy failed. CELESTE_DIR has no Mods folder." />
         <Exec Command="sh ./deploy.sh" WorkingDirectory=".." />
     </Target>
 
@@ -51,7 +51,7 @@
         <Watch Include="..\everest.yaml;..\ClimbTrials\**\*;..\Audio\**\*;..\Dialog\**\*;..\Graphics\**\*;..\Ahorn\**\*;..\Loenn\**\*" />
     </ItemGroup>
 
-    <Target Name="PackageMod" AfterTargets="CopyFiles" Inputs="$(ZippedFiles)" Outputs="..\$(ZipName)" Condition="'$(Configuration)' == 'Release'">
+    <Target Name="PackageMod" AfterTargets="CopyFiles" Inputs="$(ZippedFiles)" Outputs="..\$(ZipName)" Condition="'$(Configuration)' == 'Release' And '$(SkipDeploy)' != 'true'">
         <ItemGroup>
             <FilesToPackage Include="$(ZippedFiles)" />
         </ItemGroup>
