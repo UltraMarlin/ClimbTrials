@@ -20,7 +20,8 @@ public class RunTimerDisplay : Entity
   }
 
   public static bool ShouldShow =>
-    RunManager.Attempt.State switch
+    !RunHudLayout.SpeedrunToolTimerShown
+    && RunManager.Attempt.State switch
     {
       AttemptState.Idle => RunManager.Run != null,
       AttemptState.Running => RunManager.Replaying

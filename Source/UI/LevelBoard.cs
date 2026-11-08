@@ -35,9 +35,7 @@ public static class LevelBoard
       GhostComparisons.Forget();
     }
     if (
-      RunManager.AttemptInProgress
-      && !RunManager.Replaying
-      && !RunManager.Practice
+      RunManager.RealAttemptInProgress
       && RunManager.RestartAttempt("climbtrials_notice_leaderboard")
     )
       return;

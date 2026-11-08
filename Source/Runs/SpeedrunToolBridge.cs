@@ -236,16 +236,18 @@ public static class SpeedrunToolBridge
     return true;
   }
 
-  public static void OnRunLevelLoaded(bool practice)
+  public static void OnRunLevelLoaded()
   {
     if (!Loaded)
       return;
 
-    if (practice)
-      CallIfFound(resetTimeMethod, "ResetTime");
+    if (RunManager.Practice)
+      ResetRoomTimer();
     else
       CallIfFound(clearPbTimesMethod, "ClearPbTimes", true);
   }
+
+  public static void ResetRoomTimer() => CallIfFound(resetTimeMethod, "ResetTime");
 
   public static void ClearCarriedState()
   {

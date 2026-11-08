@@ -116,6 +116,7 @@ CLIMBTRIALS_NOTICE_SPEEDRUNTOOL_ON=           Speedrun Tool enabled
 CLIMBTRIALS_NOTICE_SPEEDRUNTOOL_OFF=          Speedrun Tool disabled
 CLIMBTRIALS_NOTICE_SPEEDRUNTOOL_OPTIONS=      Use Speedrun Tool's options
 CLIMBTRIALS_NOTICE_STATE_NOT_THIS_TRIAL=      Save state not from this trial, attempt restarted
+CLIMBTRIALS_NOTICE_STATE_AFTER_FINISH=        Save state was saved after the finish, attempt restarted
 CLIMBTRIALS_MENU_MODS=                        Runs will not be submitted. Non whitelisted mods loaded:
 CLIMBTRIALS_REPLAY_LIMIT=                     Replays on this trial aren't saved for runs longer than
 CLIMBTRIALS_REPLAY_RELOADED=                  Replay not saved, level reloaded

@@ -52,11 +52,8 @@ public static class HeartGoal
       return;
     }
 
-    if (!RunManager.Practice)
-    {
-      Audio.SetMusic(null);
-      Audio.SetAmbience(null);
-    }
+    Audio.SetMusic(null);
+    Audio.SetAmbience(null);
     orig(self, player);
   }
 
