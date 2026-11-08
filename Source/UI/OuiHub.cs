@@ -17,10 +17,10 @@ public class OuiHub : ListScreen
   private const float LoadErrorScale = 0.5f;
   private const float CampaignsIconScale = 1.1f;
 
-  private const string EventsIcon = "ClimbTrials/Trophy_Icon";
-  private const string OptionsIcon = "ClimbTrials/Settings_Icon";
-  private const string InviteCodeIcon = "ClimbTrials/Letter_Icon";
-  private const string NameIcon = "ClimbTrials/Name_Icon";
+  private const string EventsIcon = "ClimbTrials/Custom/Trophy_Icon";
+  private const string OptionsIcon = "ClimbTrials/Custom/Settings_Icon";
+  private const string InviteCodeIcon = "ClimbTrials/Custom/Letter_Icon";
+  private const string NameIcon = "ClimbTrials/Custom/Name_Icon";
   private const int InviteCodeEntryMaxLength = 24;
   private const int InviteCodeMinLength = 6;
   private const int InviteCodeMaxLength = 12;

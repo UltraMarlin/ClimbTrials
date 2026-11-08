@@ -21,7 +21,7 @@ public static class MainMenuEntry
       1,
       new MainMenuSmallButton(
         "climbtrials_menu",
-        "ClimbTrials/Time_Icon",
+        "ClimbTrials/Custom/Time_Icon",
         menu,
         Vector2.Zero,
         Vector2.Zero,

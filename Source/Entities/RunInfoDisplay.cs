@@ -13,16 +13,16 @@ public class RunInfoDisplay : Entity
   private const float ModifierListX = 18f;
   private const float ModifierListGap = 10f;
   private const float ModifierListHeight = 54f;
-  private const string WaypointIcon = "ClimbTrials/Waypoint_Icon";
+  private const string WaypointIcon = "ClimbTrials/Edited/Waypoint_Icon";
   private const string StrawberryIcon = "collectables/strawberry";
   private static readonly string[] DashIcons =
   [
-    "ClimbTrials/mod_dashless",
-    "ClimbTrials/mod_dash1",
-    "ClimbTrials/mod_dash2",
+    "ClimbTrials/Edited/mod_dashless",
+    "ClimbTrials/Edited/mod_dash1",
+    "ClimbTrials/Edited/mod_dash2",
   ];
-  private const string GrablessIcon = "ClimbTrials/mod_grabless";
-  private const string NoRefillsIcon = "ClimbTrials/mod_norefills";
+  private const string GrablessIcon = "ClimbTrials/Edited/mod_grabless";
+  private const string NoRefillsIcon = "ClimbTrials/Edited/mod_norefills";
 
   // TODO: Replace with custom icon?
   private const string SummitGemSprite = "collectables/summitgems/0/gem";
