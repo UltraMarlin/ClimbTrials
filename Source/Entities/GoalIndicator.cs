@@ -12,25 +12,32 @@ public class GoalIndicator : Entity
 {
   private const string ArrowTexture = "ClimbTrials/goal_arrow";
   private const float CenterLift = 4f;
-  private const float StrongRadiusFar = 48f;
-  private const float SubtleRadiusFar = 80f;
   private const float RadiusNear = 20f;
   private const float RingGap = 12f;
   private const float FadeFar = 120f;
   private const float FadeNear = 20f;
-  private const float StrongAlpha = 1f;
-  private const float SubtleAlpha = 0.4f;
   private const float MinAlpha = 0.1f;
-  private const float TurnTime = 0.3f;
+  private const float TurnTime = 0.5f;
   private const float FollowTime = 0.2f;
   private const float EdgeMargin = 10f;
-  private const int LightStartRadius = 12;
-  private const int LightEndRadius = 26;
-  private const float LightAlpha = 0.4f;
   private static readonly Color WaypointColor = Calc.HexToColor("b2ebbe");
   private static readonly Color StrawberryColor = Calc.HexToColor("f76f6f");
   private static readonly Color SummitGemColor = Calc.HexToColor("c2f0ff");
   private static readonly Color FinishColor = Calc.HexToColor("f7d472");
+
+  private readonly record struct IndicatorLook(float Alpha, float RadiusFar);
+
+  private static readonly IndicatorLook StrongLook = new(Alpha: 1f, RadiusFar: 48f);
+  private static readonly IndicatorLook SubtleLook = new(Alpha: 0.6f, RadiusFar: 80f);
+
+  private static GoalIndicatorSettings Settings => ClimbTrialsModule.Settings.GoalIndicatorSettings;
+
+  private static bool Shown =>
+    Settings.Style != GoalIndicatorMode.Off
+    && !(Settings.HideAfterFirstFinish && RunManager.FinishedBefore);
+
+  private static IndicatorLook Look =>
+    Settings.Style == GoalIndicatorMode.Strong ? StrongLook : SubtleLook;
 
   private enum TargetKind
   {
@@ -61,8 +68,8 @@ public class GoalIndicator : Entity
     public Color Color = WaypointColor;
     public Vector2 Position;
     public Target? Aim;
+    public IndicatorLook PlacedLook;
     public FadeBuffer Layer;
-    public VertexLight Light;
   }
 
   private readonly MTexture texture = GFX.Game[ArrowTexture];
@@ -73,6 +80,31 @@ public class GoalIndicator : Entity
   private readonly Arrow[] arrows = new Arrow[Rings.Length];
   private readonly float arrowHalf;
   private readonly Target?[] targets = new Target?[Rings.Length];
+  private readonly HashSet<EntityID> carried = [];
+
+  public static void Load()
+  {
+    On.Celeste.LightingRenderer.Render += OnLightingRender;
+  }
+
+  public static void Unload()
+  {
+    On.Celeste.LightingRenderer.Render -= OnLightingRender;
+  }
+
+  private static void OnLightingRender(
+    On.Celeste.LightingRenderer.orig_Render orig,
+    LightingRenderer self,
+    Scene scene
+  )
+  {
+    orig(self, scene);
+    if (scene.Tracker.GetEntity<GoalIndicator>() is not { Visible: true } indicator)
+      return;
+    GameplayRenderer.Begin();
+    indicator.Components.Render();
+    GameplayRenderer.End();
+  }
 
   public GoalIndicator()
   {
@@ -87,8 +119,6 @@ public class GoalIndicator : Entity
       Arrow arrow = new();
       arrow.Layer = new FadeBuffer("climbtrials-goal-arrow", side, side, () => DrawArrow(arrow));
       Add(arrow.Layer);
-      arrow.Light = new VertexLight(Color.White, 0.8f, LightStartRadius, LightEndRadius);
-      Add(arrow.Light);
       arrows[ring] = arrow;
     }
   }
@@ -115,55 +145,46 @@ public class GoalIndicator : Entity
   {
     base.Update();
     RunDefinition run = RunManager.Run;
-    Player player = Scene.Tracker.GetEntity<Player>();
     if (run == null)
     {
       RemoveSelf();
       return;
     }
 
+    Player player = Scene.Tracker.GetEntity<Player>();
     Array.Fill(targets, null);
     if (Shown && player != null && !player.Dead)
       FillTargets(run, player);
 
-    bool paused = SceneAs<Level>().Paused;
-    Arrow shown = Array.Find(arrows, arrow => arrow.Visible);
     int shownCount = 0;
     foreach (Target? target in targets)
       if (target.HasValue)
         shownCount++;
+    Visible = shownCount > 0;
+
+    Arrow shownBefore = Array.Find(arrows, arrow => arrow.Visible);
+    bool paused = SceneAs<Level>().Paused;
     int shownIndex = 0;
-    Visible = false;
     for (int ring = 0; ring < arrows.Length; ring++)
     {
       Arrow arrow = arrows[ring];
-      bool appearing = !arrow.Visible;
-      arrow.Visible = targets[ring] != null;
       if (targets[ring] is not Target target)
       {
+        arrow.Visible = false;
         arrow.Aim = null;
         continue;
       }
-      Visible = true;
-      if (paused && arrow.Aim != target)
-        appearing = true;
-      arrow.Aim = target;
-      if (appearing && shown != null && !paused)
-      {
-        arrow.Angle = shown.Angle;
-        arrow.Position = shown.Position;
-        appearing = false;
-      }
+      bool snap = EnterArrow(arrow, target, shownBefore, paused);
       float offset = (shownIndex - (shownCount - 1) / 2f) * RingGap;
       shownIndex++;
-      Steer(arrow, target, player, offset, appearing, paused);
+      Steer(arrow, target, player, offset, snap, paused);
     }
+
     foreach (Arrow arrow in arrows)
     {
       arrow.Layer.Visible = arrow.Visible;
       arrow.Layer.Origin = arrow.Position.Round() - Vector2.One * arrowHalf;
-      arrow.Light.Position = arrow.Position.Round();
-      arrow.Light.Alpha = arrow.Visible && arrow.Alpha >= MinAlpha ? arrow.Alpha * LightAlpha : 0f;
+      arrow.Layer.Alpha = arrow.Alpha < MinAlpha ? 0f : arrow.Alpha;
     }
   }
 
@@ -172,7 +193,7 @@ public class GoalIndicator : Entity
     Target target,
     Player player,
     float offset,
-    bool appearing,
+    bool snap,
     bool paused
   )
   {
@@ -186,12 +207,13 @@ public class GoalIndicator : Entity
     Vector2 center = player.Center - Vector2.UnitY * CenterLift;
     Vector2 toTarget = target.Position - center;
     float fade = Calc.ClampedMap(toTarget.Length(), FadeNear, FadeFar);
-    arrow.Alpha = fade * BaseAlpha();
-    if (paused && !appearing)
+    IndicatorLook look = Look;
+    arrow.Alpha = fade * look.Alpha;
+    if (paused && !snap)
       return;
 
-    float radius = MathHelper.Lerp(RadiusNear, RadiusFar(), fade) + offset;
-    if (appearing)
+    float radius = MathHelper.Lerp(RadiusNear, look.RadiusFar, fade) + offset;
+    if (snap)
     {
       arrow.Angle = toTarget.Angle();
       arrow.Position = ClampToCamera(center + Calc.AngleToVector(arrow.Angle, radius));
@@ -215,18 +237,6 @@ public class GoalIndicator : Entity
       camera.Bottom - EdgeMargin
     );
   }
-
-  private static GoalIndicatorSettings Settings => ClimbTrialsModule.Settings.GoalIndicatorSettings;
-
-  private static bool Shown =>
-    Settings.Style != GoalIndicatorMode.Off
-    && !(Settings.HideAfterFirstFinish && RunManager.FinishedBefore);
-
-  private static float BaseAlpha() =>
-    Settings.Style == GoalIndicatorMode.Strong ? StrongAlpha : SubtleAlpha;
-
-  private static float RadiusFar() =>
-    Settings.Style == GoalIndicatorMode.Strong ? StrongRadiusFar : SubtleRadiusFar;
 
   private void FillTargets(RunDefinition run, Player player)
   {
@@ -277,7 +287,7 @@ public class GoalIndicator : Entity
 
     if (only is null or TargetKind.Strawberry)
     {
-      HashSet<EntityID> carried = [];
+      carried.Clear();
       foreach (Follower follower in player.Leader.Followers)
       {
         if (follower.Entity is Strawberry berry)
@@ -309,15 +319,29 @@ public class GoalIndicator : Entity
     return best;
   }
 
+  private static bool EnterArrow(Arrow arrow, Target target, Arrow shownBefore, bool paused)
+  {
+    bool spotChanged = arrow.Aim != target || arrow.PlacedLook != Look;
+    bool entering = !arrow.Visible || (paused && spotChanged);
+    arrow.Visible = true;
+    arrow.Aim = target;
+    arrow.PlacedLook = Look;
+
+    if (!entering)
+      return false;
+
+    if (paused || shownBefore == null)
+      return true;
+
+    arrow.Angle = shownBefore.Angle;
+    arrow.Position = shownBefore.Position;
+    return false;
+  }
+
   private void DrawArrow(Arrow arrow)
   {
     texture.DrawOutlineCentered(arrow.Position.Round(), arrow.Color, 1f, arrow.Angle);
   }
 
-  public override void Render()
-  {
-    foreach (Arrow arrow in arrows)
-      arrow.Layer.Alpha = arrow.Alpha < MinAlpha ? 0f : arrow.Alpha;
-    base.Render();
-  }
+  public override void Render() { }
 }

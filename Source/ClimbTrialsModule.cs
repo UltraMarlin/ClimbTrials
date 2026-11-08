@@ -1,6 +1,7 @@
 using System;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Editor;
+using Celeste.Mod.ClimbTrials.Entities;
 using Celeste.Mod.ClimbTrials.Online;
 using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.Runs;
@@ -49,6 +50,7 @@ public class ClimbTrialsModule : EverestModule
     RunGuards.Load();
     RunBinds.Load();
     HeartGoal.Load();
+    GoalIndicator.Load();
     RoomGoal.Load();
     DebugUse.Load();
     TrialDesigner.Load();
@@ -117,6 +119,7 @@ public class ClimbTrialsModule : EverestModule
     PausedEffects.Unload();
     RunGuards.Unload();
     HeartGoal.Unload();
+    GoalIndicator.Unload();
     RoomGoal.Unload();
     DebugUse.Unload();
     SpeedrunToolBridge.Unload();
