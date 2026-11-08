@@ -11,7 +11,7 @@ I have been watching too many Trackmania videos on youtube the past year. So the
 - PB replays can be rewatched, raced against and submitted to the public in-game leaderboards.
 - Watch, race or compare other players PBs in-game
 
-## Important
+## Important please read
 
 ### Data shared with the server
 
@@ -29,6 +29,23 @@ This also means I am very defensive/restrictive by default with what mods are al
 **Currently no other mods are allowed to be loaded to submit runs** (with the exception of SpeedrunTool for practice). This includes skins, maps, etc..
 I hope to improve on that in the future, and feedback from players will help me make priorities.
 
+### Playing on multiple devices
+
+If you want to play on multiple installations/devices, follow these steps:
+- (If you havent already) start the game with the mod installed on the first device, open the ClimbTrials menu to register on the server, optionally set a player name for the leaderboards.
+- Close the game and open `Saves/modsettings-ClimbTrials.celeste` in your Celeste installation folder
+- Copy (at least) the first 3 lines of this file, which should consist of your chosen `PlayerName`, the flag `PlayerNameChosen` and your `ClientId`.
+  - Important!!! Consider your `ClientId` to be like a password! **If you share it anywhere, anyone could play and submit under your name/identity!**
+- On your second installation/device, either create `Saves/modsettings-ClimbTrials.celeste` if it doesn't exist and paste the copied lines, or replace the lines in an already existing file.
+
+For example, the three lines to copy look like this:
+
+```
+PlayerName: CelestePlayer
+PlayerNameChosen: true
+ClientId: ct_012a345b678c901d234e567f890
+```
+
 ## Other things I have planned for this
 
 - I would love to give everyone the ability to create and share trials of their own
@@ -44,16 +61,16 @@ Speaking of which
 
 Thanks to everyone who helped playtest this mod over the last couple of weeks:
 
-- amberlovesarchie
-- Tiyo
-- zkad
+- [amberlovesarchie](https://www.speedrun.com/users/AMBERLOVESARCHIE)
+- [Tiyo](https://www.speedrun.com/users/Tiyo)
+- [zkad](https://www.speedrun.com/users/Zkad)
+- [Isaactayy](https://www.speedrun.com/users/Isaactayy)
 - isaac
-- isaac 2
-- cursed
+- [curs3dspirit](https://www.speedrun.com/users/CursedSpirit)
 - BinaKleinerAls3
-- cactus
+- [CactusSB](https://www.speedrun.com/users/CactusSB)
 - [Norah](https://gamebanana.com/members/1713780)
-- wind
+- [Windrunner315](https://www.speedrun.com/users/Windrunner315)
 
 The feedback I got from you made working on this even more fun, and even the small things helped making this mod better and more polished, so I appreciate it!
 
