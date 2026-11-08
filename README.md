@@ -1,6 +1,6 @@
 # ClimbTrials
 
-I have been watching too many Trackmania videos on youtube the past year. So then I thought why are there no in game leaderboards in Celeste. Then I made this mod.
+I have been watching too many Trackmania videos on youtube the past year. So then I thought why are there no in-game leaderboards in Celeste. Then I made this mod.
 
 ## What is ClimbTrials?
 
@@ -13,9 +13,20 @@ I have been watching too many Trackmania videos on youtube the past year. So the
 
 ## Important
 
+### Data shared with the server
+
+When you install this mod and open it for the first time, you will be automatically registered to the leaderboard server.
+Finishing a trial and getting a PB sends your time, inputs and run data and currently loaded mods + versions to the leaderboard server for validation.
+If you don't want that, you can turn on the offline mode in mod settings.
+You can still play the trials and beat your PB, but any features that needs a connection to the server will no longer work!
+Offline PBs can still be submitted after the fact if you turn offline mode back off.
+
+### Playing with other mods loaded
+
 One thing that was important to me was making sure that the replay system is as robust as I can make it, so that replays don't randomly desync for others.
-This also means I am very defensive/restrictive by default with what mods are allowed to be installed when playing and submitting to the public leaderboards.
-Currently NO other mods are allowed to be used to submit runs (with the exception of SpeedrunTool for practice).
+This also means I am very defensive/restrictive by default with what mods are allowed to be loaded when playing and submitting to the public leaderboards.
+
+**Currently no other mods are allowed to be loaded to submit runs** (with the exception of SpeedrunTool for practice). This includes skins, maps, etc..
 I hope to improve on that in the future, and feedback from players will help me make priorities.
 
 ## Other things I have planned for this
