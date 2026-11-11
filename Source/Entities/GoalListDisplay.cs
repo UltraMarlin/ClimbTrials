@@ -62,9 +62,11 @@ public class GoalListDisplay : Entity
     {
       if (best <= goals.GoldTicks)
         rows.Add(Goal(Medal.Diamond, goals.DiamondTicks, best));
+      if (best <= goals.GrandmasterTicks)
+        rows.Add(Goal(Medal.Grandmaster, goals.GrandmasterTicks, best));
       rows.Add(Pb(best, goals.MedalReached(best)));
     }
-    return rows.OrderBy(row => row.Ticks).ThenBy(row => row.IsPb).ToList();
+    return rows.OrderBy(row => row.Ticks).ThenByDescending(row => row.IsPb).ToList();
   }
 
   private static Row Goal(Medal medal, long ticks, long best) =>
