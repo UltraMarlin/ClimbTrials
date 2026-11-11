@@ -55,7 +55,9 @@ public class RunNotice : Entity
     if (RunManager.Run == null || SceneAs<Level>().Paused)
       return;
 
+    Replayer.UseWatcherLanguage();
     notice.Render(new Vector2(960f, NoticeY), NoticeScale, 1f);
+    Replayer.UseReplayLanguage();
     base.Render();
   }
 

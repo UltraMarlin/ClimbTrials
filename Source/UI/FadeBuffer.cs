@@ -1,4 +1,5 @@
 using System;
+using Celeste.Mod.ClimbTrials.Replays;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Monocle;
@@ -124,7 +125,9 @@ public sealed class FadeBuffer : Component
       null,
       Matrix.CreateTranslation(-origin.X, -origin.Y, 0f)
     );
+    Replayer.UseWatcherLanguage();
     draw();
+    Replayer.UseReplayLanguage();
     Draw.SpriteBatch.End();
   }
 

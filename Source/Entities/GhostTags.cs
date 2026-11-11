@@ -50,6 +50,7 @@ public class GhostTags : Entity
   {
     if (Scene is not Level level)
       return;
+    Replayer.UseWatcherLanguage();
     Vector2 scale = Vector2.One * PlaybackGhost.TagScale;
     if (measuredIn != Dialog.Language)
       tagBounds.Clear();
@@ -80,6 +81,7 @@ public class GhostTags : Entity
     Forget(shownLifts);
     Forget(sortHeights);
     Forget(tagBounds);
+    Replayer.UseReplayLanguage();
   }
 
   private readonly record struct TagBounds(float Width, float Top, float Bottom);

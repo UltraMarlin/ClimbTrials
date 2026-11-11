@@ -166,7 +166,9 @@ public class ReplayInputDisplay : Entity
     float boxTop = TopOfBlock(DetailedRowShown ? TopRowTop : BottomRowTop) - PaddingY;
     Draw.Rect(0f, boxTop, RightEdge() + PaddingX, ScreenBottom - boxTop, boxColor * BoxAlpha);
     base.Render();
+    Replayer.UseWatcherLanguage();
     DrawLayout(idle: false);
+    Replayer.UseReplayLanguage();
   }
 
   private float RightEdge()

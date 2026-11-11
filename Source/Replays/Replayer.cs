@@ -72,7 +72,8 @@ public static class Replayer
   private static GrabModes savedGrabMode;
   private static CrouchDashModes savedCrouchDashMode;
   private static ScreenshakeAmount savedScreenShake;
-  private static Language savedLanguage;
+  private static Language watcherLanguage;
+  private static Language replayLanguage;
 
   public static void Load()
   {
@@ -111,10 +112,11 @@ public static class Replayer
     savedScreenShake = Settings.Instance.ScreenShake;
     ApplyRecordedSettings();
 
-    savedLanguage = Dialog.Language;
     if (Dialog.Languages.TryGetValue(replay.Language, out Language language))
     {
       Fonts.Load(language.FontFace);
+      watcherLanguage = Dialog.Language;
+      replayLanguage = language;
       Dialog.Language = language;
     }
 
@@ -307,10 +309,22 @@ public static class Replayer
     savedSticks.Clear();
 
     RestorePlayerSettings();
-    if (savedLanguage != null)
-      Dialog.Language = savedLanguage;
-    savedLanguage = null;
+    UseWatcherLanguage();
+    watcherLanguage = null;
+    replayLanguage = null;
     State = ReplayState.Idle;
+  }
+
+  public static void UseWatcherLanguage()
+  {
+    if (watcherLanguage != null)
+      Dialog.Language = watcherLanguage;
+  }
+
+  public static void UseReplayLanguage()
+  {
+    if (replayLanguage != null)
+      Dialog.Language = replayLanguage;
   }
 
   private static void OnEngineUpdate(
@@ -319,6 +333,7 @@ public static class Replayer
     GameTime gameTime
   )
   {
+    UseReplayLanguage();
     if (State != ReplayState.Paused && menu == null)
     {
       stepHeldTicks = 0;
@@ -398,6 +413,7 @@ public static class Replayer
       Input.ESC.ConsumePress();
     }
     menuStarted = false;
+    UseWatcherLanguage();
     menu = new WatcherMenu(
       ResumeReplay,
       OpenModOptions,
@@ -406,6 +422,7 @@ public static class Replayer
       OpenBoard,
       LeaveReplay
     );
+    UseReplayLanguage();
     WatcherOverlay.Add(menu);
   }
 

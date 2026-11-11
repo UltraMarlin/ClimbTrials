@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Celeste.Mod.ClimbTrials.Content;
+using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.Runs;
 using Celeste.Mod.ClimbTrials.UI;
 using Microsoft.Xna.Framework;
@@ -37,6 +38,7 @@ public class RunInfoDisplay : Entity
     Trial trial = RunManager.Trial;
     if (trial == null || RunManager.Run == null || GhostComparisons.Showing)
       return;
+    Replayer.UseWatcherLanguage();
     RunDefinition run = trial.Run;
     RunProgress progress = RunManager.Progress;
     float top = RunHudLayout.ConditionsY;
@@ -71,6 +73,7 @@ public class RunInfoDisplay : Entity
         DrawIcon(frames[0], top);
       DrawText($"{progress.SummitGems}/{run.RequiredSummitGems}", top);
     }
+    Replayer.UseReplayLanguage();
   }
 
   private static float DrawModifierIcon(MTexture texture, float left, float top)

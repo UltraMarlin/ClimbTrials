@@ -22,18 +22,25 @@ public static class WatcherOverlay
 
   public static void Update(GameTime gameTime, bool engineSkipped)
   {
+    Replayer.UseWatcherLanguage();
     if (engineSkipped)
       MainThreadHelper.Instance?.Update(gameTime);
 
-    if (scene is not Scene current)
-      return;
+    if (scene is Scene current)
+    {
+      MenuKeys.Watcher.Tick(Engine.RawDeltaTime);
 
-    MenuKeys.Watcher.Tick(Engine.RawDeltaTime);
-
-    current.BeforeUpdate();
-    current.Update();
-    current.AfterUpdate();
+      current.BeforeUpdate();
+      current.Update();
+      current.AfterUpdate();
+    }
+    Replayer.UseReplayLanguage();
   }
 
-  public static void Render() => scene?.Entities.Render();
+  public static void Render()
+  {
+    Replayer.UseWatcherLanguage();
+    scene?.Entities.Render();
+    Replayer.UseReplayLanguage();
+  }
 }
