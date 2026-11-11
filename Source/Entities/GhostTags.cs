@@ -25,7 +25,6 @@ public class GhostTags : Entity
   private readonly HashSet<(PlaybackGhost Below, PlaybackGhost Above)> stackedBefore = [];
   private readonly List<PlaybackGhost> gone = [];
   private readonly Comparison<NameTag> bottomFirst;
-  private Language measuredIn;
 
   private readonly record struct NameTag(
     PlaybackGhost Ghost,
@@ -52,9 +51,6 @@ public class GhostTags : Entity
       return;
     Replayer.UseWatcherLanguage();
     Vector2 scale = Vector2.One * PlaybackGhost.TagScale;
-    if (measuredIn != Dialog.Language)
-      tagBounds.Clear();
-    measuredIn = Dialog.Language;
     tags.Clear();
     for (int i = 0; i < ghosts.Ghosts.Count; i++)
     {
