@@ -25,6 +25,7 @@ public abstract class ListScreen : Oui
   private float dim = 1f;
   private float sinceFetch;
   private string hintText;
+  private string modsWarning;
   protected abstract int ScreenDepth { get; }
   protected virtual string TitleKey => "climbtrials_campaigns_title";
   protected virtual float TitleLift => 0f;
@@ -140,6 +141,7 @@ public abstract class ListScreen : Oui
     ReplayStore.Refresh();
     hintText =
       hintKey == null ? null : $"{Dialog.Clean("climbtrials_hint_prefix")} {Dialog.Clean(hintKey)}";
+    modsWarning = ModCheck.OthersLoaded ? ModCheck.MenuWarning() : null;
     FetchOnline();
     sinceFetch = 0f;
     menu = BuildMenu();
@@ -254,10 +256,9 @@ public abstract class ListScreen : Oui
         ScreenLayout.NoticeScale,
         totalAlpha
       );
-    string status =
-      SpeedrunToolBridge.Enabled ? Dialog.Clean("climbtrials_practice_status")
-      : ModCheck.OthersLoaded ? ModCheck.MenuWarning()
-      : null;
+    string status = SpeedrunToolBridge.Enabled
+      ? Dialog.Clean("climbtrials_practice_status")
+      : modsWarning;
     if (status != null)
       TextOutline.Draw(
         status,

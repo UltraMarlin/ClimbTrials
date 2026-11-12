@@ -4,7 +4,9 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Celeste.Mod.ClimbTrials.Content;
 using Celeste.Mod.ClimbTrials.Online;
+using Celeste.Mod.ClimbTrials.Replays;
 using Celeste.Mod.ClimbTrials.Replays.Codec;
+using Celeste.Mod.ClimbTrials.Runs;
 using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -21,6 +23,7 @@ public class OuiHub : ListScreen
   private const string OptionsIcon = "ClimbTrials/Custom/Settings_Icon";
   private const string InviteCodeIcon = "ClimbTrials/Custom/Letter_Icon";
   private const string NameIcon = "ClimbTrials/Custom/Name_Icon";
+  private const string RestartIcon = "menu/exit";
   private const int InviteCodeEntryMaxLength = 24;
   private const int InviteCodeMinLength = 6;
   private const int InviteCodeMaxLength = 12;
@@ -87,6 +90,17 @@ public class OuiHub : ListScreen
     nameRow = new HubRow(NameText, NameLive, NameIcon);
     nameRow.Pressed(OnNameRow);
     built.Add(nameRow);
+
+    if (ModCheck.OthersLoaded)
+    {
+      HubRow restartRow = new(
+        () => Dialog.Clean("climbtrials_restart_allowed_mods"),
+        () => true,
+        RestartIcon
+      );
+      restartRow.Pressed(StartRestartHold);
+      built.Add(restartRow);
+    }
 
     built.OnCancel = GoBackTo<OuiMainMenu>;
     return built;
@@ -176,6 +190,12 @@ public class OuiHub : ListScreen
     Audio.Play(SFX.ui_main_button_select);
     menu.Focused = false;
     Overworld.Goto<OuiClimbTrialsOptions>();
+  }
+
+  private void StartRestartHold()
+  {
+    Audio.Play(SFX.ui_main_button_select);
+    ConfirmHold.Start(menu, SFX.ui_main_button_select, AllowedModsRestart.Restart);
   }
 
   private static string NameText()

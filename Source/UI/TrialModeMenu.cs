@@ -20,7 +20,6 @@ public class TrialModeMenu : MenuOnTop
   private const float LabelGap = 16f;
 
   private readonly Action closed;
-  private readonly ConfirmButton deletePbRow;
 
   public TrialModeMenu(
     Trial trial,
@@ -61,17 +60,15 @@ public class TrialModeMenu : MenuOnTop
       AddSubmitRow(trial, record, state, submit);
     Add(new Button(Dialog.Clean("climbtrials_trials_leaderboard")).Pressed(board));
     if (pbOffBoard)
-    {
-      deletePbRow = new ConfirmButton(
-        Dialog.Clean("climbtrials_trials_delete_pb"),
-        Dialog.Clean("climbtrials_trials_delete_pb_confirm"),
-        canAct: () =>
-          Uploader.UploadFor(trial.Id).State
-            is not (UploadState.Submitting or UploadState.Accepted),
-        deletePb
+      Add(
+        new DimButton(
+          Dialog.Clean("climbtrials_trials_delete_pb"),
+          canAct: () =>
+            Uploader.UploadFor(trial.Id).State
+              is not (UploadState.Submitting or UploadState.Accepted),
+          onPressed: () => ConfirmHold.Start(this, SFX.ui_main_savefile_delete, deletePb)
+        )
       );
-      Add(deletePbRow);
-    }
 
     OnCancel = Back;
     OnESC = Back;
@@ -137,11 +134,6 @@ public class TrialModeMenu : MenuOnTop
   private void Back()
   {
     Audio.Play(SFX.ui_main_button_back);
-    if (deletePbRow?.Asking == true)
-    {
-      deletePbRow.StopAsking();
-      return;
-    }
     Dismiss();
   }
 
