@@ -27,7 +27,6 @@ public class OuiHub : ListScreen
   private const int InviteCodeEntryMaxLength = 24;
   private const int InviteCodeMinLength = 6;
   private const int InviteCodeMaxLength = 12;
-  private const string InviteCodeAlphabet = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
 
   private static readonly Regex NameRule = new($"^[A-Za-z0-9 _.-]{{1,{NameMaxLength}}}$");
 
@@ -336,7 +335,7 @@ public class OuiHub : ListScreen
   }
 
   private static string CleanInviteCode(string typed) =>
-    string.Concat(typed.ToUpperInvariant().Where(letter => InviteCodeAlphabet.Contains(letter)));
+    string.Concat(typed.Where(char.IsAsciiLetterOrDigit)).ToUpperInvariant();
 
   private static string JoinedNotice(JoinAnswer answer)
   {
