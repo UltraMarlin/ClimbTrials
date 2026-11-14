@@ -2,7 +2,7 @@
   "id": "c2",
   "name": "Experimental",
   "description": "Trying different things here.",
-  "order": 2,
+  "order": -2,
   "trials": [
     {
       "id": "t06",
@@ -381,7 +381,7 @@
     },
     {
       "id": "t16",
-      "name": "Why do I hear 5B music?",
+      "name": "Why Do I Hear 5B Music?",
       "difficulty": "Hard",
       "replayLimitSeconds": 60,
       "run": {
@@ -438,7 +438,7 @@
     },
     {
       "id": "t14",
-      "name": "Who are all these people?",
+      "name": "Who Are All These People?",
       "difficulty": "Hard",
       "replayLimitSeconds": 90,
       "run": {
@@ -500,7 +500,7 @@
     },
     {
       "id": "t15",
-      "name": "That\u0027s not how you play 1B",
+      "name": "That\u0027s Not How You Play 1B",
       "difficulty": "Expert",
       "replayLimitSeconds": 180,
       "run": {

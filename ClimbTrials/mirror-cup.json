@@ -2,11 +2,11 @@
   "id": "c4",
   "name": "Mirror Cup",
   "description": "Confront yourself and everyone else, or don't.",
-  "order": 4,
+  "order": -4,
   "trials": [
     {
       "id": "t28",
-      "name": "Going for a swim",
+      "name": "Going for a Swim",
       "difficulty": "Normal",
       "replayLimitSeconds": 90,
       "run": {
@@ -81,7 +81,7 @@
     },
     {
       "id": "t32",
-      "name": "Who put this room here?",
+      "name": "Who Put This Room Here?",
       "difficulty": "Normal",
       "replayLimitSeconds": 90,
       "run": {
@@ -365,7 +365,7 @@
     },
     {
       "id": "t31",
-      "name": "Clip that!",
+      "name": "Clip That!",
       "difficulty": "Expert",
       "replayLimitSeconds": 180,
       "run": {

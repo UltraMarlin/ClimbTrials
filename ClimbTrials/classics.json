@@ -2,7 +2,7 @@
   "id": "cl1",
   "name": "Classics",
   "description": "Regular gameplay, you probably have played before.",
-  "order": 1,
+  "order": -1,
   "trials": [
     {
       "id": "t01",
@@ -110,7 +110,7 @@
     },
     {
       "id": "t04",
-      "name": "The fun part of 2000M",
+      "name": "The Fun Part of 2000M",
       "difficulty": "Normal",
       "replayLimitSeconds": 90,
       "run": {
@@ -141,7 +141,7 @@
     },
     {
       "id": "t18",
-      "name": "No throwing allowed",
+      "name": "No Throwing Allowed",
       "difficulty": "Normal",
       "replayLimitSeconds": 90,
       "run": {
@@ -245,7 +245,7 @@
     },
     {
       "id": "t05",
-      "name": "It's just 7B flag 10",
+      "name": "It's Just 7B Flag 10",
       "difficulty": "Hard",
       "replayLimitSeconds": 90,
       "run": {
@@ -275,7 +275,7 @@
     },
     {
       "id": "t23",
-      "name": "The heart part of 7C",
+      "name": "The Heart Part of 7C",
       "difficulty": "Normal",
       "replayLimitSeconds": 60,
       "run": {

@@ -2,7 +2,7 @@
   "id": "c1",
   "name": "Test",
   "description": "Testing stuff",
-  "order": 3,
+  "order": -999999,
   "trials": [
     {
       "id": "t10",
@@ -32,66 +32,6 @@
         "gold": 5,
         "diamond": 4,
         "grandmaster": 3
-      }
-    },
-    {
-      "id": "t08",
-      "name": "Shrine Hub Waypoints",
-      "difficulty": "Normal",
-      "replayLimitSeconds": 90,
-      "run": {
-        "sid": "Celeste/4-GoldenRidge",
-        "mode": "Normal",
-        "startRoom": "b-00",
-        "spawn": [4416, -1016],
-        "spawnFacing": null,
-        "finishRoom": "b-00",
-        "finish": [4384, -1040, 64, 24],
-        "waypoints": [
-          {
-            "room": "b-00",
-            "position": [4312, -1068]
-          },
-          {
-            "room": "b-00",
-            "position": [4428, -1370]
-          },
-          {
-            "room": "b-00",
-            "position": [4550, -1298]
-          },
-          {
-            "room": "b-00",
-            "position": [4512, -1216]
-          },
-          {
-            "room": "b-00",
-            "position": [4314, -1246]
-          },
-          {
-            "room": "b-00",
-            "position": [4374, -1288]
-          }
-        ],
-        "cameraOffsets": [
-          {
-            "room": "b-00",
-            "offset": [0, 0]
-          }
-        ],
-        "bloomBaseAdd": null,
-        "lightingAlphaAdd": null,
-        "ignoredStrawberries": [],
-        "requiredStrawberries": 0,
-        "dashes": 2,
-        "grabless": false
-      },
-      "goals": {
-        "bronze": 60,
-        "silver": 50,
-        "gold": 40,
-        "diamond": 30,
-        "grandmaster": 20
       }
     }
   ]
