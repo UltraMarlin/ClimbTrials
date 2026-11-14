@@ -32,7 +32,7 @@ public class TrialWaypoint : Entity
   {
     Index = index;
     this.definition = definition;
-    Depth = 2000;
+    Depth = Depths.Below;
     Collider = new Hitbox(16f, 16f, -8f, -8f);
     Add(new PlayerCollider(OnPlayer, null, new Hitbox(30f, 30f, -15f, -15f)));
     Add(icon);

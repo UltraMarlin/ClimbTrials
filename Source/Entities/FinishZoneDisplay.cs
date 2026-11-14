@@ -20,7 +20,7 @@ public class FinishZoneDisplay : Entity
     Position = worldRect.Location.ToVector2();
     width = worldRect.Width;
     height = worldRect.Height;
-    Depth = Depths.Below;
+    Depth = Depths.Below + 1;
   }
 
   public override void Render()
