@@ -162,16 +162,4 @@ public static class ReplayStore
     using FileStream stream = File.OpenRead(path);
     return stream.ReadByte() < Replay.FormatVersion;
   }
-
-  public static int DeleteAll()
-  {
-    TrialsWithReplayFile.Clear();
-    if (!Directory.Exists(Folder))
-      return 0;
-    string[] files = Directory.GetFiles(Folder, "*.ctreplay");
-    foreach (string file in files)
-      File.Delete(file);
-    Logger.Info(LogTag, $"deleted {files.Length} replay files");
-    return files.Length;
-  }
 }

@@ -12,7 +12,6 @@ public static class TrialRecords
 {
   public const int Slot = -1;
   private const string LogTag = "ClimbTrials/Records";
-  private const int CurrentVersion = 2;
 
   private static ClimbTrialsModuleSaveData records;
 
@@ -50,34 +49,6 @@ public static class TrialRecords
   }
 
   public static void PutIntoModuleSaveData() => ClimbTrialsModule.Instance._SaveData = Records;
-
-  public static void DeleteOutdatedRecords()
-  {
-    int version = Records.Version;
-    if (version >= CurrentVersion)
-      return;
-    int cleared;
-    try
-    {
-      ReplayStore.DeleteAll();
-      cleared = Clear();
-    }
-    catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-    {
-      Logger.Warn(LogTag, $"records of version {version} left for the next start: {e.Message}");
-      return;
-    }
-    Logger.Info(LogTag, $"records of version {version}: cleared {cleared} PBs");
-  }
-
-  public static int Clear()
-  {
-    Dictionary<string, TrialRecord> bests = Records.PersonalBests;
-    int count = bests.Count;
-    bests.Clear();
-    Write();
-    return count;
-  }
 
   public static int Remove(IEnumerable<string> trialIds)
   {
@@ -173,7 +144,6 @@ public static class TrialRecords
 
   private static void Write()
   {
-    Records.Version = CurrentVersion;
     ClimbTrialsModule module = ClimbTrialsModule.Instance;
     module.WriteSaveData(Slot, module.SerializeSaveData(Slot));
   }
