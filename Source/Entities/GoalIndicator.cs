@@ -17,8 +17,6 @@ public class GoalIndicator : Entity
   private const float FadeFar = 120f;
   private const float FadeNear = 20f;
   private const float MinAlpha = 0.1f;
-  private const float TurnTime = 0.5f;
-  private const float FollowTime = 0.2f;
   private const float EdgeMargin = 10f;
   private static readonly Color WaypointColor = Calc.HexToColor("b2ebbe");
   private static readonly Color StrawberryColor = Calc.HexToColor("f76f6f");
@@ -29,6 +27,11 @@ public class GoalIndicator : Entity
 
   private static readonly IndicatorLook StrongLook = new(Alpha: 1f, RadiusFar: 48f);
   private static readonly IndicatorLook SubtleLook = new(Alpha: 0.6f, RadiusFar: 80f);
+
+  private readonly record struct IndicatorMotion(float TurnTime, float FollowTime);
+
+  private static readonly IndicatorMotion SnappyMotion = new(TurnTime: 0.2f, FollowTime: 0.1f);
+  private static readonly IndicatorMotion SmoothMotion = new(TurnTime: 0.5f, FollowTime: 0.2f);
 
   private static GoalIndicatorSettings Settings => ClimbTrialsModule.Settings.GoalIndicatorSettings;
 
@@ -213,17 +216,19 @@ public class GoalIndicator : Entity
       return;
 
     float radius = MathHelper.Lerp(RadiusNear, look.RadiusFar, fade) + offset;
-    if (snap)
+    if (snap || Settings.Motion == GoalIndicatorMotion.Instant)
     {
       arrow.Angle = toTarget.Angle();
       arrow.Position = ClampToCamera(center + Calc.AngleToVector(arrow.Angle, radius));
       return;
     }
 
-    float turn = 1f - (float)Math.Pow(0.01, Engine.DeltaTime / TurnTime);
+    IndicatorMotion motion =
+      Settings.Motion == GoalIndicatorMotion.Snappy ? SnappyMotion : SmoothMotion;
+    float turn = 1f - (float)Math.Pow(0.01, Engine.DeltaTime / motion.TurnTime);
     arrow.Angle = Calc.AngleLerp(arrow.Angle, toTarget.Angle(), turn);
     Vector2 wanted = center + Calc.AngleToVector(arrow.Angle, radius);
-    float follow = 1f - (float)Math.Pow(0.01, Engine.DeltaTime / FollowTime);
+    float follow = 1f - (float)Math.Pow(0.01, Engine.DeltaTime / motion.FollowTime);
     arrow.Position = ClampToCamera(Vector2.Lerp(arrow.Position, wanted, follow));
   }
 

@@ -69,6 +69,16 @@ public class PlaybackGhost : Entity
   private Vector2 slashOrigin;
   private Vector2 slashDirection;
 
+  private bool HiddenBySetting =>
+    !comparison && ClimbTrialsModule.Settings.GhostVisibility == GhostVisibility.Hidden;
+
+  private GhostLook Look =>
+    comparison ? ComparisonLook
+    : ClimbTrialsModule.Settings.GhostVisibility == GhostVisibility.Subtle ? SubtleLook
+    : StrongLook;
+
+  public float TagAlpha => comparison ? Alpha : Alpha * Alpha * RaceTagAlpha;
+
   public PlaybackGhost(Replay replay, Color color, Color tagColor, bool comparison)
   {
     this.comparison = comparison;
@@ -114,7 +124,7 @@ public class PlaybackGhost : Entity
     fadeAlpha = 1f - Calc.ClampedMap(pastEnd, 0f, Attempt.SecondsToTicks(FadeSeconds));
 
     InputFrame frame = Replay.Frames[shownFrames[index]];
-    Visible = frame.HasPlayer && fadeAlpha > 0f;
+    Visible = frame.HasPlayer && fadeAlpha > 0f && !HiddenBySetting;
     if (!frame.HasPlayer)
     {
       hairSettled = false;
@@ -167,13 +177,6 @@ public class PlaybackGhost : Entity
     slashOrigin = current.Position + SlashOffset;
     slashDirection = InputFrame.DashDirFromByte(direction);
   }
-
-  private GhostLook Look =>
-    comparison ? ComparisonLook
-    : ClimbTrialsModule.Settings.GhostVisibility == GhostVisibility.Subtle ? SubtleLook
-    : StrongLook;
-
-  public float TagAlpha => comparison ? Alpha : Alpha * Alpha * RaceTagAlpha;
 
   private void DrawOpaque()
   {

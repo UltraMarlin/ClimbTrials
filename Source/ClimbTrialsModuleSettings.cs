@@ -27,6 +27,13 @@ public enum GoalIndicatorTargets
   EachCondition,
 }
 
+public enum GoalIndicatorMotion
+{
+  Instant,
+  Snappy,
+  Smooth,
+}
+
 public enum InputDisplayMode
 {
   Off,
@@ -57,6 +64,7 @@ public enum HideVfxMode
 
 public enum GhostVisibility
 {
+  Hidden,
   Subtle,
   Strong,
 }
@@ -88,6 +96,7 @@ public class GoalIndicatorSettings
 {
   public GoalIndicatorMode Style { get; set; } = GoalIndicatorMode.Subtle;
   public GoalIndicatorTargets Targets { get; set; } = GoalIndicatorTargets.EachCondition;
+  public GoalIndicatorMotion Motion { get; set; } = GoalIndicatorMotion.Smooth;
 
   [SettingSubText("modoptions_climbtrialsmodule_hideafterfirstfinish_desc")]
   public bool HideAfterFirstFinish { get; set; } = true;

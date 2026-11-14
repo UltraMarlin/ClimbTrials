@@ -608,8 +608,8 @@ public static class RunManager
     {
       if (Attempt.State != AttemptState.Finished)
         ghosts.Sync(Attempt.ElapsedTicks);
-      else if (!level.Paused)
-        ghosts.Advance(Engine.RawDeltaTime);
+      else
+        ghosts.Advance(level.Paused ? 0f : Engine.RawDeltaTime);
     }
     if (AttemptInProgress && RetryPressed)
       StartRun(Run);
