@@ -98,6 +98,13 @@ public class ClimbTrialsModule : EverestModule
     Engine.Scene.OnEndOfFrame += () => Engine.Scene.Entities.UpdateLists();
   }
 
+  public override byte[] SerializeSaveData(int index)
+  {
+    if (index == TrialRecords.Slot)
+      TrialRecords.PutIntoModuleSaveData();
+    return base.SerializeSaveData(index);
+  }
+
   public override void SaveSettings()
   {
     if (_Settings != null && !Settings.HasChangedOptions && Settings.DiffersFromDefaults())

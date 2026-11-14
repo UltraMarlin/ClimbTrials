@@ -137,7 +137,6 @@ public abstract class ListScreen : Oui
       Overworld.Mountain.GotoRotationMode();
       Overworld.Maddy.Hide();
     }
-    TrialRecords.EnsureLoaded();
     ReplayStore.Refresh();
     hintText =
       hintKey == null ? null : $"{Dialog.Clean("climbtrials_hint_prefix")} {Dialog.Clean(hintKey)}";

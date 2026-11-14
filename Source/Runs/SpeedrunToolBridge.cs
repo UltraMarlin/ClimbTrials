@@ -69,7 +69,6 @@ public static class SpeedrunToolBridge
   private static readonly HashSet<string> reportedMissing = [];
   private static bool noticePending;
   private static bool suspendedForReplay;
-  private static EverestModuleSaveData saveDataBeforeLoad;
 
   public static bool Loaded => FindModule() != null;
 
@@ -105,8 +104,8 @@ public static class SpeedrunToolBridge
       OnSaveState,
       OnLoadState,
       null,
-      OnBeforeSaveState,
-      OnBeforeLoadState,
+      OnBeforeSaveOrLoadState,
+      OnBeforeSaveOrLoadState,
       null
     );
 
@@ -279,24 +278,15 @@ public static class SpeedrunToolBridge
     }
   }
 
-  private static void OnBeforeSaveState(Level level) =>
-    RunWithoutThrowing(nameof(OnBeforeSaveState), NoteSaveStateUse);
-
-  private static void OnBeforeLoadState(Level level) =>
+  private static void OnBeforeSaveOrLoadState(Level level) =>
     RunWithoutThrowing(
-      nameof(OnBeforeLoadState),
+      nameof(OnBeforeSaveOrLoadState),
       () =>
       {
-        saveDataBeforeLoad = ClimbTrialsModule.Instance._SaveData;
-        NoteSaveStateUse();
+        if (!RunManager.Practice && DebugUse.Record(DebugCause.SaveStateUsed))
+          noticePending = true;
       }
     );
-
-  private static void NoteSaveStateUse()
-  {
-    if (!RunManager.Practice && DebugUse.Record(DebugCause.SaveStateUsed))
-      noticePending = true;
-  }
 
   private static void OnSaveState(SaveSlot slotValues, Level level) =>
     RunWithoutThrowing(
@@ -314,9 +304,6 @@ public static class SpeedrunToolBridge
       nameof(OnLoadState),
       () =>
       {
-        EverestModuleSaveData beforeLoad = saveDataBeforeLoad;
-        saveDataBeforeLoad = null;
-        KeepRecordsData(beforeLoad);
         if (RunManager.Run == null)
           return;
 
@@ -329,14 +316,6 @@ public static class SpeedrunToolBridge
           RunManager.RestoreAfterLoad(level, FindSnapshot(slotValues));
       }
     );
-
-  private static void KeepRecordsData(EverestModuleSaveData beforeLoad)
-  {
-    if (TrialRecords.IsRecordsData(beforeLoad))
-      ClimbTrialsModule.Instance._SaveData = beforeLoad;
-    else if (TrialRecords.IsRecordsData(ClimbTrialsModule.Instance._SaveData))
-      TrialRecords.ReloadFromDisk();
-  }
 
   private static void StoreSnapshot(SaveSlot slotValues, RunSnapshot snapshot)
   {

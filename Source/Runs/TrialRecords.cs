@@ -10,12 +10,27 @@ public readonly record struct CampaignRecord(Medal Medal, long? TotalTicks);
 
 public static class TrialRecords
 {
-  private const int Slot = -1;
+  public const int Slot = -1;
   private const string LogTag = "ClimbTrials/Records";
   private const int CurrentVersion = 2;
 
-  public static TrialRecord Get(string trialId) =>
-    ClimbTrialsModule.SaveData?.PersonalBests.GetValueOrDefault(trialId);
+  private static ClimbTrialsModuleSaveData records;
+
+  private static ClimbTrialsModuleSaveData Records
+  {
+    get
+    {
+      if (records == null)
+      {
+        ClimbTrialsModule module = ClimbTrialsModule.Instance;
+        module.DeserializeSaveData(Slot, module.ReadSaveData(Slot));
+        records = ClimbTrialsModule.SaveData;
+      }
+      return records;
+    }
+  }
+
+  public static TrialRecord Get(string trialId) => Records.PersonalBests.GetValueOrDefault(trialId);
 
   public static CampaignRecord Totals(Campaign campaign)
   {
@@ -34,24 +49,11 @@ public static class TrialRecords
     return new CampaignRecord(medal, total);
   }
 
-  public static bool IsRecordsData(EverestModuleSaveData saveData) => saveData?.Index == Slot;
-
-  public static void EnsureLoaded()
-  {
-    if (!IsRecordsData(ClimbTrialsModule.SaveData))
-      ReloadFromDisk();
-  }
-
-  public static void ReloadFromDisk()
-  {
-    ClimbTrialsModule module = ClimbTrialsModule.Instance;
-    module.DeserializeSaveData(Slot, module.ReadSaveData(Slot));
-  }
+  public static void PutIntoModuleSaveData() => ClimbTrialsModule.Instance._SaveData = Records;
 
   public static void DeleteOutdatedRecords()
   {
-    EnsureLoaded();
-    int version = ClimbTrialsModule.SaveData.Version;
+    int version = Records.Version;
     if (version >= CurrentVersion)
       return;
     int cleared;
@@ -70,8 +72,7 @@ public static class TrialRecords
 
   public static int Clear()
   {
-    EnsureLoaded();
-    Dictionary<string, TrialRecord> bests = ClimbTrialsModule.SaveData.PersonalBests;
+    Dictionary<string, TrialRecord> bests = Records.PersonalBests;
     int count = bests.Count;
     bests.Clear();
     Write();
@@ -80,8 +81,7 @@ public static class TrialRecords
 
   public static int Remove(IEnumerable<string> trialIds)
   {
-    EnsureLoaded();
-    Dictionary<string, TrialRecord> bests = ClimbTrialsModule.SaveData.PersonalBests;
+    Dictionary<string, TrialRecord> bests = Records.PersonalBests;
     int removed = 0;
     foreach (string trialId in trialIds)
       if (bests.Remove(trialId))
@@ -92,7 +92,6 @@ public static class TrialRecords
 
   public static bool Delete(string trialId)
   {
-    EnsureLoaded();
     try
     {
       ReplayStore.Delete(trialId);
@@ -111,8 +110,7 @@ public static class TrialRecords
 
   public static FinishResult Record(Trial trial, long ticks, bool submittable)
   {
-    EnsureLoaded();
-    Dictionary<string, TrialRecord> bests = ClimbTrialsModule.SaveData.PersonalBests;
+    Dictionary<string, TrialRecord> bests = Records.PersonalBests;
     TrialRecord previous = bests.GetValueOrDefault(trial.Id);
 
     bool faster = previous != null && ticks < previous.BestTicks;
@@ -148,11 +146,7 @@ public static class TrialRecords
 
   public static int Adopt(IEnumerable<(string TrialId, long Ticks, DateTime AchievedAtUtc)> times)
   {
-    EnsureLoaded();
-    Dictionary<string, TrialRecord> bests = ClimbTrialsModule.SaveData?.PersonalBests;
-    if (bests == null)
-      return 0;
-
+    Dictionary<string, TrialRecord> bests = Records.PersonalBests;
     int adopted = 0;
     foreach ((string trialId, long ticks, DateTime achievedAtUtc) in times)
     {
@@ -179,7 +173,7 @@ public static class TrialRecords
 
   private static void Write()
   {
-    ClimbTrialsModule.SaveData.Version = CurrentVersion;
+    Records.Version = CurrentVersion;
     ClimbTrialsModule module = ClimbTrialsModule.Instance;
     module.WriteSaveData(Slot, module.SerializeSaveData(Slot));
   }

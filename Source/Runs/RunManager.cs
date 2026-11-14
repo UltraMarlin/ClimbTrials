@@ -129,7 +129,6 @@ public static class RunManager
     if (replay == null)
       GhostComparisons.Forget();
     Run = run;
-    TrialRecords.EnsureLoaded();
     FinishedBefore = Trial != null && TrialRecords.Get(Trial.Id) != null;
     Replay = replay;
     if (replay == null)
@@ -915,6 +914,8 @@ public static class RunManager
   private static void OnSceneTransition(Scene last, Scene next)
   {
     if (Run == null || next is Level or LevelLoader or AssetReloadHelper)
+      return;
+    if (next is LevelEnter && Practice && !OwnsSaveData)
       return;
     if (next is MapEditor && !Replaying)
       return;
